@@ -17,6 +17,7 @@ QString CoreApplication::findConfigFile()
         appDirPath + "/../config/app.json",
         appDirPath + "/../../config/app.json",
         appDirPath + "/../../../config/app.json"
+
     };
 
     for (const QString& candidate : candidates)
