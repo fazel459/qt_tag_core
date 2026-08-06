@@ -1,0 +1,11 @@
+debug/FilterProcessor.o
+debug/SoftwareFilterFactory.o
+debug/main.o
+debug/CoreApplication.o
+debug/ConfigLoader.o
+debug/BatchHistorianWriter.o
+debug/CurrentStateWriter.o
+debug/DbManager.o
+debug/SimulatorDriver.o
+debug/RuleEngine.o
+debug/StorageExceptionFilter.o

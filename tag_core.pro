@@ -10,6 +10,8 @@ TEMPLATE = app
 INCLUDEPATH += src
 
 SOURCES += \
+    src/filters/FilterProcessor.cpp \
+    src/filters/SoftwareFilterFactory.cpp \
     src/main.cpp \
     src/app/CoreApplication.cpp \
     src/core/ConfigLoader.cpp \
@@ -25,6 +27,10 @@ HEADERS += \
     src/core/Models.h \
     src/core/ConfigLoader.h \
     src/core/ValueUtils.h \
+    src/filters/FilterProcessor.h \
+    src/filters/ISoftwareFilter.h \
+    src/filters/SoftwareFilterFactory.h \
+    src/filters/SoftwareFilters.h \
     src/storage/BatchHistorianWriter.h \
     src/storage/CurrentStateWriter.h \
     src/storage/StorageExceptionFilter.h \

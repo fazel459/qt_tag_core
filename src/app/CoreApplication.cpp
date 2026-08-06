@@ -164,10 +164,12 @@ bool CoreApplication::initialize()
         m_config
     );
 
+    m_filterProcessor = std::make_unique<FilterProcessor>(m_bus, m_config);
+
     m_simulatorDriver = std::make_unique<SimulatorDriver>(
         m_bus,
-        m_config.tags,
-        m_config.engineeringDecimals
+        m_config.tags
+
     );
 
     m_simulatorDriver->start();

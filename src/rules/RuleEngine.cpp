@@ -22,6 +22,11 @@ RuleEngine::RuleEngine(
 
     m_bus.subscribe("tags/#", [this](const BusMessage& message)
     {
+        if (!message.topic.endsWith("/update"))
+        {
+            return;
+        }
+
         onTagValue(message.value);
     });
 

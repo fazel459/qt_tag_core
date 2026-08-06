@@ -15,7 +15,6 @@ public:
     SimulatorDriver(
         TagBus& bus,
         const QVector<TagDefinition>& tags,
-        int engineeringDecimals = 4,
         QObject* parent = nullptr
     );
 

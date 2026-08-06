@@ -1,0 +1,11 @@
+release/FilterProcessor.o
+release/SoftwareFilterFactory.o
+release/main.o
+release/CoreApplication.o
+release/ConfigLoader.o
+release/BatchHistorianWriter.o
+release/CurrentStateWriter.o
+release/DbManager.o
+release/SimulatorDriver.o
+release/RuleEngine.o
+release/StorageExceptionFilter.o

@@ -12,6 +12,7 @@
 #include "../storage/DbManager.h"
 #include "../storage/StorageExceptionFilter.h"
 #include "../tagbus/TagBus.h"
+#include "../filters/FilterProcessor.h"
 
 class CoreApplication
 {
@@ -32,4 +33,7 @@ private:
     std::unique_ptr<RealtimeCache> m_realtimeCache;
     std::unique_ptr<RuleEngine> m_ruleEngine;
     std::unique_ptr<SimulatorDriver> m_simulatorDriver;
+    std::unique_ptr<FilterProcessor> m_filterProcessor;
 };
+
+

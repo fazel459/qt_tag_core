@@ -26,6 +26,11 @@ CurrentStateWriter::CurrentStateWriter(
 
     bus.subscribe("tags/#", [this](const BusMessage& message)
     {
+        if (!message.topic.endsWith("/update"))
+        {
+            return;
+        }
+
         enqueue(message.value);
     });
 
