@@ -1,0 +1,75 @@
+{
+  "database": {
+    "driver": "auto",
+    "odbc_driver": "PostgreSQL Unicode",
+    "host": "localhost",
+    "port": 5432,
+    "database": "tagsdb",
+    "username": "postgres",
+    "password": "459"
+  },
+
+  "tags": [
+    {
+      "tag_id": 1,
+      "tag_name": "SIM.UNIT02.PUMP101.FIC-101.PV",
+      "source_type": "simulator",
+      "data_type": "float",
+      "eng_units": "m3/h",
+      "raw_min": 0,
+      "raw_max": 100,
+      "eng_min": 0,
+      "eng_max": 100,
+      "scaling_type": "linear",
+      "slope": 1.0,
+      "offset": 0.0,
+      "deadband": 0.5,
+      "sim_profile": "sine",
+      "enabled": true
+    },
+
+    {
+      "tag_id": 2,
+      "tag_name": "SIM.UNIT02.PUMP101.TIT-101.PV",
+      "source_type": "simulator",
+      "data_type": "float",
+      "eng_units": "C",
+      "raw_min": 0,
+      "raw_max": 100,
+      "eng_min": 0,
+      "eng_max": 100,
+      "scaling_type": "linear",
+      "slope": 1.0,
+      "offset": 0.0,
+      "deadband": 0.5,
+      "sim_profile": "bad_quality",
+      "enabled": true
+    },
+
+    {
+      "tag_id": 3,
+      "tag_name": "SIM.UNIT02.PUMP101.LIT-101.PV",
+      "source_type": "simulator",
+      "data_type": "float",
+      "eng_units": "%",
+      "raw_min": 0,
+      "raw_max": 100,
+      "eng_min": 0,
+      "eng_max": 100,
+      "scaling_type": "linear",
+      "slope": 1.0,
+      "offset": 0.0,
+      "deadband": 0.5,
+      "sim_profile": "stuck",
+      "enabled": true
+    }
+  ],
+
+  "rules": [
+    {
+      "tag_id": 1,
+      "low": 20,
+      "high": 80
+    }
+  ]
+}

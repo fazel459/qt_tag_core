@@ -1,0 +1,7 @@
+debug/
+release/
+Makefile.Debug
+Makefile.Release
+tag_core.pro.user
+.qmake.stash
+Makefile
