@@ -7,8 +7,10 @@
 #include "../drivers/SimulatorDriver.h"
 #include "../realtime/RealtimeCache.h"
 #include "../rules/RuleEngine.h"
+#include "../storage/BatchHistorianWriter.h"
+#include "../storage/CurrentStateWriter.h"
 #include "../storage/DbManager.h"
-#include "../storage/HistorianWriter.h"
+#include "../storage/StorageExceptionFilter.h"
 #include "../tagbus/TagBus.h"
 
 class CoreApplication
@@ -24,7 +26,9 @@ private:
     DbManager m_db;
     TagBus m_bus;
 
-    std::unique_ptr<HistorianWriter> m_historianWriter;
+    std::unique_ptr<BatchHistorianWriter> m_historianWriter;
+    std::unique_ptr<CurrentStateWriter> m_currentStateWriter;
+    std::unique_ptr<StorageExceptionFilter> m_storageFilter;
     std::unique_ptr<RealtimeCache> m_realtimeCache;
     std::unique_ptr<RuleEngine> m_ruleEngine;
     std::unique_ptr<SimulatorDriver> m_simulatorDriver;

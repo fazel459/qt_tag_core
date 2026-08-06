@@ -40,7 +40,24 @@ struct TagDefinition
     double slope = 1.0;
     double offset = 0.0;
 
+    // Legacy deadband; اگر storage_deadband ست نشده باشد، از این استفاده می‌شود.
     double deadband = 0.0;
+
+    // Deadband مخصوص ذخیره تاریخی
+    // اگر منفی باشد، از deadband قبلی استفاده می‌شود.
+    double storageDeadband = -1.0;
+
+    // Hysteresis مخصوص آلارم برای همین تگ
+    // اگر منفی باشد، از مقدار پیش‌فرض/global/rule استفاده می‌شود.
+    double alarmHysteresis = -1.0;
+
+    // Heartbeat برای ذخیره تاریخی
+    // اگر منفی باشد، از مقدار پیش‌فرض استفاده می‌شود.
+    int heartbeatIntervalMs = -1;
+
+    // برای فاز بعدی: فیلترهای نرم‌افزاری
+    // none, moving_average, exponential_average, median, debounce, outlier_rejection
+    QString softwareFilter = "none";
 
     QString simProfile = "sine";
 
@@ -72,6 +89,13 @@ struct ThresholdRule
 
     double low = 0.0;
     double high = 0.0;
+
+    // اگر منفی باشد، از مقدار پیش‌فرض استفاده می‌شود.
+    double highHysteresis = -1.0;
+    double lowHysteresis = -1.0;
+
+    int onDelayMs = -1;
+    int offDelayMs = -1;
 };
 
 struct AppConfig
@@ -85,6 +109,22 @@ struct AppConfig
     QString dbUser = "postgres";
     QString dbPassword = "postgres";
 
+    int batchFlushIntervalMs = 500;
+    int batchMaxSize = 1000;
+
+    double globalMinDeadband = 0.0;
+
+    double defaultAlarmHysteresis = 0.0;
+    int defaultAlarmOnDelayMs = 0;
+    int defaultAlarmOffDelayMs = 0;
+
+    int badQualityDelayMs = 0;
+
+    int defaultHeartbeatIntervalMs = 30000;
+
+    int currentStateFlushIntervalMs = 500;
+
     QVector<TagDefinition> tags;
     QVector<ThresholdRule> rules;
+    int engineeringDecimals = 4;
 };

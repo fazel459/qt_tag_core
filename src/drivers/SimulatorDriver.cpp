@@ -7,7 +7,7 @@
 #include <QRandomGenerator>
 
 #include "../scaling/ScalingEngine.h"
-
+#include "../core/ValueUtils.h"
 namespace
 {
     constexpr double PI = 3.14159265358979323846;
@@ -16,12 +16,19 @@ namespace
 SimulatorDriver::SimulatorDriver(
     TagBus& bus,
     const QVector<TagDefinition>& tags,
+    int engineeringDecimals,
     QObject* parent
 )
     : QObject(parent)
     , m_bus(bus)
     , m_tags(tags)
+    , m_engineeringDecimals(engineeringDecimals)
 {
+    if (m_engineeringDecimals < 0)
+    {
+        m_engineeringDecimals = 0;
+    }
+
     m_timer.setInterval(1000);
     m_timer.setParent(this);
 
@@ -59,24 +66,20 @@ void SimulatorDriver::tick()
         }
 
         const double raw = generateRaw(tag);
-        const double engineeringValue = ScalingEngine::scale(tag, raw);
 
+        const double scaled = ScalingEngine::scale(tag, raw);
         TagValue value;
         value.tagId = tag.tagId;
         value.tagName = tag.tagName;
         value.timestamp = QDateTime::currentDateTimeUtc();
-        value.rawValue = raw;
-        value.engineeringValue = engineeringValue;
+        value.rawValue = roundToDecimals(raw, m_engineeringDecimals);
+        value.engineeringValue = roundToDecimals(scaled, m_engineeringDecimals);
         value.quality = quality;
         value.source = SourceKind::Simulator;
         value.sequence = ++m_sequence;
 
-        if (!m_deadbandFilter.shouldPublish(tag, value))
-        {
-            continue;
-        }
 
-        const QString topic = QStringLiteral("tags/%1/value").arg(tag.tagId);
+        const QString topic = QStringLiteral("tags/%1/update").arg(tag.tagId);
 
         m_bus.publish(topic, value);
 

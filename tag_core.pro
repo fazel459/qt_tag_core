@@ -13,14 +13,21 @@ SOURCES += \
     src/main.cpp \
     src/app/CoreApplication.cpp \
     src/core/ConfigLoader.cpp \
+    src/storage/BatchHistorianWriter.cpp \
+    src/storage/CurrentStateWriter.cpp \
     src/storage/DbManager.cpp \
     src/drivers/SimulatorDriver.cpp \
-    src/rules/RuleEngine.cpp
+    src/rules/RuleEngine.cpp \
+    src/storage/StorageExceptionFilter.cpp
 
 HEADERS += \
     src/app/CoreApplication.h \
     src/core/Models.h \
     src/core/ConfigLoader.h \
+    src/core/ValueUtils.h \
+    src/storage/BatchHistorianWriter.h \
+    src/storage/CurrentStateWriter.h \
+    src/storage/StorageExceptionFilter.h \
     src/tagbus/TagBus.h \
     src/storage/DbManager.h \
     src/storage/HistorianWriter.h \

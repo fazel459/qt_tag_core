@@ -409,6 +409,233 @@ bool DbManager::clearActiveAlarms(qint64 tagId, const QString& ruleType)
     return true;
 }
 
+bool DbManager::writeBatch(const QVector<TagValue> &rawValues, const QVector<TagValue> &latestValues)
+{
+    if (rawValues.isEmpty() && latestValues.isEmpty())
+        {
+            return true;
+        }
+
+        if (!m_db.transaction())
+        {
+            qWarning() << "Cannot start database transaction:" << m_db.lastError().text();
+            return false;
+        }
+
+        if (!rawValues.isEmpty())
+        {
+            QSqlQuery rawQuery(m_db);
+
+            rawQuery.prepare(R"(
+                INSERT INTO tag_values_raw (
+                    time,
+                    tag_id,
+                    raw_value,
+                    eng_value,
+                    quality,
+                    source
+                )
+                VALUES (
+                    :time,
+                    :tag_id,
+                    :raw_value,
+                    :eng_value,
+                    :quality,
+                    :source
+                );
+            )");
+
+            for (const TagValue& value : rawValues)
+            {
+                rawQuery.bindValue(":time", value.timestamp);
+                rawQuery.bindValue(":tag_id", value.tagId);
+                rawQuery.bindValue(":raw_value", value.rawValue);
+                rawQuery.bindValue(":eng_value", value.engineeringValue);
+                rawQuery.bindValue(":quality", static_cast<int>(value.quality));
+                rawQuery.bindValue(":source", sourceToString(value.source));
+
+                if (!rawQuery.exec())
+                {
+                    qWarning() << "Batch raw insert failed:" << rawQuery.lastError().text();
+                    m_db.rollback();
+                    return false;
+                }
+            }
+        }
+
+        if (!latestValues.isEmpty())
+        {
+            QSqlQuery currentQuery(m_db);
+
+            currentQuery.prepare(R"(
+                INSERT INTO tag_current_state (
+                    tag_id,
+                    last_value,
+                    last_quality,
+                    last_timestamp,
+                    updated_at
+                )
+                VALUES (
+                    :tag_id,
+                    :last_value,
+                    :last_quality,
+                    :last_timestamp,
+                    now()
+                )
+                ON CONFLICT (tag_id) DO UPDATE SET
+                    last_value = EXCLUDED.last_value,
+                    last_quality = EXCLUDED.last_quality,
+                    last_timestamp = EXCLUDED.last_timestamp,
+                    updated_at = now();
+            )");
+
+            for (const TagValue& value : latestValues)
+            {
+                currentQuery.bindValue(":tag_id", value.tagId);
+                currentQuery.bindValue(":last_value", value.engineeringValue);
+                currentQuery.bindValue(":last_quality", static_cast<int>(value.quality));
+                currentQuery.bindValue(":last_timestamp", value.timestamp);
+
+                if (!currentQuery.exec())
+                {
+                    qWarning() << "Batch current state upsert failed:" << currentQuery.lastError().text();
+                    m_db.rollback();
+                    return false;
+                }
+            }
+        }
+
+        if (!m_db.commit())
+        {
+            qWarning() << "Cannot commit database transaction:" << m_db.lastError().text();
+            return false;
+        }
+
+        return true;
+
+}
+
+bool DbManager::insertRawBatch(const QVector<TagValue>& rawValues)
+{
+    if (rawValues.isEmpty())
+    {
+        return true;
+    }
+
+    if (!m_db.transaction())
+    {
+        qWarning() << "Cannot start database transaction:" << m_db.lastError().text();
+        return false;
+    }
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        INSERT INTO tag_values_raw (
+            time,
+            tag_id,
+            raw_value,
+            eng_value,
+            quality,
+            source
+        )
+        VALUES (
+            :time,
+            :tag_id,
+            :raw_value,
+            :eng_value,
+            :quality,
+            :source
+        );
+    )");
+
+    for (const TagValue& value : rawValues)
+    {
+        query.bindValue(":time", value.timestamp);
+        query.bindValue(":tag_id", value.tagId);
+        query.bindValue(":raw_value", value.rawValue);
+        query.bindValue(":eng_value", value.engineeringValue);
+        query.bindValue(":quality", static_cast<int>(value.quality));
+        query.bindValue(":source", sourceToString(value.source));
+
+        if (!query.exec())
+        {
+            qWarning() << "Batch raw insert failed:" << query.lastError().text();
+            m_db.rollback();
+            return false;
+        }
+    }
+
+    if (!m_db.commit())
+    {
+        qWarning() << "Cannot commit database transaction:" << m_db.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+bool DbManager::upsertCurrentBatch(const QVector<TagValue>& latestValues)
+{
+    if (latestValues.isEmpty())
+    {
+        return true;
+    }
+
+    if (!m_db.transaction())
+    {
+        qWarning() << "Cannot start database transaction:" << m_db.lastError().text();
+        return false;
+    }
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        INSERT INTO tag_current_state (
+            tag_id,
+            last_value,
+            last_quality,
+            last_timestamp,
+            updated_at
+        )
+        VALUES (
+            :tag_id,
+            :last_value,
+            :last_quality,
+            :last_timestamp,
+            now()
+        )
+        ON CONFLICT (tag_id) DO UPDATE SET
+            last_value = EXCLUDED.last_value,
+            last_quality = EXCLUDED.last_quality,
+            last_timestamp = EXCLUDED.last_timestamp,
+            updated_at = now();
+    )");
+
+    for (const TagValue& value : latestValues)
+    {
+        query.bindValue(":tag_id", value.tagId);
+        query.bindValue(":last_value", value.engineeringValue);
+        query.bindValue(":last_quality", static_cast<int>(value.quality));
+        query.bindValue(":last_timestamp", value.timestamp);
+
+        if (!query.exec())
+        {
+            qWarning() << "Batch current state upsert failed:" << query.lastError().text();
+            m_db.rollback();
+            return false;
+        }
+    }
+
+    if (!m_db.commit())
+    {
+        qWarning() << "Cannot commit database transaction:" << m_db.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
 QString DbManager::sourceToString(SourceKind source)
 {
     switch (source)

@@ -6,7 +6,7 @@
 #include <QVector>
 
 #include "../core/Models.h"
-#include "../ingestion/DeadbandFilter.h"
+
 #include "../tagbus/TagBus.h"
 
 class SimulatorDriver : public QObject
@@ -15,6 +15,7 @@ public:
     SimulatorDriver(
         TagBus& bus,
         const QVector<TagDefinition>& tags,
+        int engineeringDecimals = 4,
         QObject* parent = nullptr
     );
 
@@ -33,7 +34,7 @@ private:
     QMap<qint64, double> m_phase;
     QMap<qint64, double> m_ramp;
 
-    DeadbandFilter m_deadbandFilter;
+int m_engineeringDecimals = 4;
 
     quint64 m_sequence = 0;
 };

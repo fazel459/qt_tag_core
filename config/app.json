@@ -1,4 +1,5 @@
 {
+  "engineering_decimals": 4,
   "database": {
     "driver": "auto",
     "odbc_driver": "PostgreSQL Unicode",
@@ -7,6 +8,21 @@
     "database": "tagsdb",
     "username": "postgres",
     "password": "459"
+  },
+
+  "historian": {
+    "batch_flush_interval_ms": 500,
+    "batch_max_size": 1000
+  },
+
+  "deadband": {
+    "global_min_deadband": 0.01,
+    "default_alarm_hysteresis": 0.5,
+    "default_alarm_on_delay_ms": 2000,
+    "default_alarm_off_delay_ms": 2000,
+    "bad_quality_delay_ms": 3000,
+    "default_heartbeat_interval_ms": 30000,
+    "current_state_flush_interval_ms": 500
   },
 
   "tags": [
@@ -24,6 +40,10 @@
       "slope": 1.0,
       "offset": 0.0,
       "deadband": 0.5,
+      "storage_deadband": 0.5,
+      "alarm_hysteresis": 1.0,
+      "heartbeat_interval_ms": 30000,
+      "software_filter": "none",
       "sim_profile": "sine",
       "enabled": true
     },
@@ -42,6 +62,10 @@
       "slope": 1.0,
       "offset": 0.0,
       "deadband": 0.5,
+      "storage_deadband": 0.5,
+      "alarm_hysteresis": 1.0,
+      "heartbeat_interval_ms": 30000,
+      "software_filter": "none",
       "sim_profile": "bad_quality",
       "enabled": true
     },
@@ -60,6 +84,10 @@
       "slope": 1.0,
       "offset": 0.0,
       "deadband": 0.5,
+      "storage_deadband": 0.5,
+      "alarm_hysteresis": 1.0,
+      "heartbeat_interval_ms": 30000,
+      "software_filter": "none",
       "sim_profile": "stuck",
       "enabled": true
     }
@@ -69,7 +97,11 @@
     {
       "tag_id": 1,
       "low": 20,
-      "high": 80
+      "high": 80,
+      "high_hysteresis": 2.0,
+      "low_hysteresis": 2.0,
+      "on_delay_ms": 2000,
+      "off_delay_ms": 2000
     }
   ]
 }

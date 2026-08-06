@@ -60,11 +60,38 @@ bool CoreApplication::initialize()
         m_db.upsertTag(tag);
     }
 
-    m_historianWriter = std::make_unique<HistorianWriter>(m_bus, m_db);
-    m_realtimeCache = std::make_unique<RealtimeCache>(m_bus);
-    m_ruleEngine = std::make_unique<RuleEngine>(m_bus, m_db, m_config.rules);
+    m_historianWriter = std::make_unique<BatchHistorianWriter>(
+        m_db,
+        m_config.batchFlushIntervalMs,
+        m_config.batchMaxSize
+    );
 
-    m_simulatorDriver = std::make_unique<SimulatorDriver>(m_bus, m_config.tags);
+    m_currentStateWriter = std::make_unique<CurrentStateWriter>(
+        m_bus,
+        m_db,
+        m_config.currentStateFlushIntervalMs
+    );
+
+    m_storageFilter = std::make_unique<StorageExceptionFilter>(
+        m_bus,
+        *m_historianWriter,
+        m_config
+    );
+
+    m_realtimeCache = std::make_unique<RealtimeCache>(m_bus);
+
+    m_ruleEngine = std::make_unique<RuleEngine>(
+        m_bus,
+        m_db,
+        m_config.rules,
+        m_config
+    );
+    m_simulatorDriver = std::make_unique<SimulatorDriver>(
+        m_bus,
+        m_config.tags,
+        m_config.engineeringDecimals
+    );
+
     m_simulatorDriver->start();
 
     qInfo() << "Tag Core initialized successfully";
