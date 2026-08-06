@@ -5,6 +5,97 @@
 #include <QSqlQuery>
 #include <QStringList>
 #include <QVariant>
+#include <QSqlRecord>
+namespace
+{
+
+QVariant field(const QSqlQuery& query, const QString& name)
+{
+    const int index = query.record().indexOf(name);
+
+    if (index < 0)
+    {
+        return QVariant();
+    }
+
+    return query.value(index);
+}
+
+QString variantToString(const QVariant& value, const QString& defaultValue)
+{
+    if (!value.isValid() || value.isNull())
+    {
+        return defaultValue;
+    }
+
+    return value.toString();
+}
+
+double variantToDouble(const QVariant& value, double defaultValue)
+{
+    if (!value.isValid() || value.isNull())
+    {
+        return defaultValue;
+    }
+
+    bool ok = false;
+    const double result = value.toDouble(&ok);
+
+    if (!ok)
+    {
+        return defaultValue;
+    }
+
+    return result;
+}
+
+int variantToInt(const QVariant& value, int defaultValue)
+{
+    if (!value.isValid() || value.isNull())
+    {
+        return defaultValue;
+    }
+
+    bool ok = false;
+    const int result = value.toInt(&ok);
+
+    if (!ok)
+    {
+        return defaultValue;
+    }
+
+    return result;
+}
+
+qint64 variantToLongLong(const QVariant& value, qint64 defaultValue)
+{
+    if (!value.isValid() || value.isNull())
+    {
+        return defaultValue;
+    }
+
+    bool ok = false;
+    const qint64 result = value.toLongLong(&ok);
+
+    if (!ok)
+    {
+        return defaultValue;
+    }
+
+    return result;
+}
+
+bool variantToBool(const QVariant& value, bool defaultValue)
+{
+    if (!value.isValid() || value.isNull())
+    {
+        return defaultValue;
+    }
+
+    return value.toBool();
+}
+
+} // namespace
 
 bool DbManager::initialize(const AppConfig& cfg)
 {
@@ -159,6 +250,79 @@ bool DbManager::migrate()
             ack_user TEXT
         );
         )"
+
+        R"(
+        CREATE TABLE IF NOT EXISTS system_settings (
+            key TEXT PRIMARY KEY,
+            value_text TEXT,
+            description TEXT,
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+        )",
+
+        R"(
+        CREATE TABLE IF NOT EXISTS threshold_rules (
+            rule_id BIGSERIAL PRIMARY KEY,
+            tag_id BIGINT NOT NULL REFERENCES tags(tag_id),
+            low DOUBLE PRECISION,
+            high DOUBLE PRECISION,
+            high_hysteresis DOUBLE PRECISION,
+            low_hysteresis DOUBLE PRECISION,
+            on_delay_ms INT,
+            off_delay_ms INT,
+            enabled BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+        )",
+
+        R"(
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_name = 'tags'
+                  AND column_name = 'offsett'
+            ) AND NOT EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_name = 'tags'
+                  AND column_name = 'scaling_offset'
+            ) THEN
+                ALTER TABLE tags RENAME COLUMN offsett TO scaling_offset;
+            END IF;
+        END $$;
+        )",
+
+        R"(
+        ALTER TABLE tags
+            ADD COLUMN IF NOT EXISTS scaling_type TEXT DEFAULT 'linear',
+            ADD COLUMN IF NOT EXISTS scaling_slope DOUBLE PRECISION DEFAULT 1.0,
+            ADD COLUMN IF NOT EXISTS scaling_offset DOUBLE PRECISION DEFAULT 0.0,
+            ADD COLUMN IF NOT EXISTS storage_deadband DOUBLE PRECISION,
+            ADD COLUMN IF NOT EXISTS alarm_hysteresis DOUBLE PRECISION,
+            ADD COLUMN IF NOT EXISTS heartbeat_interval_ms INT,
+            ADD COLUMN IF NOT EXISTS software_filter_type TEXT DEFAULT 'none',
+            ADD COLUMN IF NOT EXISTS software_filter_config TEXT DEFAULT '{}',
+            ADD COLUMN IF NOT EXISTS sim_profile TEXT DEFAULT 'sine';
+        )",
+
+        R"(
+        INSERT INTO system_settings (key, value_text, description)
+        VALUES
+            ('engineering_decimals', '4', 'Engineering value decimal digits'),
+            ('historian.batch_flush_interval_ms', '500', 'Historian flush interval'),
+            ('historian.batch_max_size', '1000', 'Historian max batch size'),
+            ('deadband.global_min_deadband', '0.01', 'Global minimum deadband'),
+            ('deadband.default_alarm_hysteresis', '0.5', 'Default alarm hysteresis'),
+            ('deadband.default_alarm_on_delay_ms', '2000', 'Default alarm on delay'),
+            ('deadband.default_alarm_off_delay_ms', '2000', 'Default alarm off delay'),
+            ('deadband.bad_quality_delay_ms', '3000', 'Bad quality delay'),
+            ('deadband.default_heartbeat_interval_ms', '30000', 'Default storage heartbeat'),
+            ('current_state.flush_interval_ms', '500', 'Current state flush interval')
+        ON CONFLICT (key) DO NOTHING;
+        )"
     };
 
     for (const QString& sql : statements)
@@ -190,7 +354,16 @@ bool DbManager::upsertTag(const TagDefinition& tag)
             raw_max,
             eng_min,
             eng_max,
+            scaling_type,
+            scaling_slope,
+            scaling_offset,
             deadband,
+            storage_deadband,
+            alarm_hysteresis,
+            heartbeat_interval_ms,
+            software_filter_type,
+            software_filter_config,
+            sim_profile,
             enabled,
             updated_at
         )
@@ -204,7 +377,16 @@ bool DbManager::upsertTag(const TagDefinition& tag)
             :raw_max,
             :eng_min,
             :eng_max,
+            :scaling_type,
+            :scaling_slope,
+            :scaling_offset,
             :deadband,
+            :storage_deadband,
+            :alarm_hysteresis,
+            :heartbeat_interval_ms,
+            :software_filter_type,
+            :software_filter_config,
+            :sim_profile,
             :enabled,
             now()
         )
@@ -217,7 +399,16 @@ bool DbManager::upsertTag(const TagDefinition& tag)
             raw_max = EXCLUDED.raw_max,
             eng_min = EXCLUDED.eng_min,
             eng_max = EXCLUDED.eng_max,
+            scaling_type = EXCLUDED.scaling_type,
+            scaling_slope = EXCLUDED.scaling_slope,
+            scaling_offset = EXCLUDED.scaling_offset,
             deadband = EXCLUDED.deadband,
+            storage_deadband = EXCLUDED.storage_deadband,
+            alarm_hysteresis = EXCLUDED.alarm_hysteresis,
+            heartbeat_interval_ms = EXCLUDED.heartbeat_interval_ms,
+            software_filter_type = EXCLUDED.software_filter_type,
+            software_filter_config = EXCLUDED.software_filter_config,
+            sim_profile = EXCLUDED.sim_profile,
             enabled = EXCLUDED.enabled,
             updated_at = now();
     )");
@@ -231,7 +422,41 @@ bool DbManager::upsertTag(const TagDefinition& tag)
     query.bindValue(":raw_max", tag.rawMax);
     query.bindValue(":eng_min", tag.engMin);
     query.bindValue(":eng_max", tag.engMax);
+    query.bindValue(":scaling_type", tag.scalingType);
+    query.bindValue(":scaling_slope", tag.slope);
+    query.bindValue(":scaling_offset", tag.offset);
     query.bindValue(":deadband", tag.deadband);
+
+    if (tag.storageDeadband >= 0.0)
+    {
+        query.bindValue(":storage_deadband", tag.storageDeadband);
+    }
+    else
+    {
+        query.bindValue(":storage_deadband", QVariant());
+    }
+
+    if (tag.alarmHysteresis >= 0.0)
+    {
+        query.bindValue(":alarm_hysteresis", tag.alarmHysteresis);
+    }
+    else
+    {
+        query.bindValue(":alarm_hysteresis", QVariant());
+    }
+
+    if (tag.heartbeatIntervalMs >= 0)
+    {
+        query.bindValue(":heartbeat_interval_ms", tag.heartbeatIntervalMs);
+    }
+    else
+    {
+        query.bindValue(":heartbeat_interval_ms", QVariant());
+    }
+
+    query.bindValue(":software_filter_type", tag.softwareFilter);
+    query.bindValue(":software_filter_config", tag.softwareFilterConfig.isEmpty() ? "{}" : tag.softwareFilterConfig);
+    query.bindValue(":sim_profile", tag.simProfile);
     query.bindValue(":enabled", tag.enabled);
 
     if (!query.exec())
@@ -657,4 +882,367 @@ QString DbManager::sourceToString(SourceKind source)
     }
 
     return "unknown";
+}
+
+int DbManager::countTags()
+{
+    QSqlQuery query(m_db);
+
+    if (!query.exec("SELECT count(*) FROM tags;"))
+    {
+        qWarning() << "Count tags failed:" << query.lastError().text();
+        return -1;
+    }
+
+    if (query.next())
+    {
+        return query.value(0).toInt();
+    }
+
+    return -1;
+}
+
+int DbManager::countRules()
+{
+    QSqlQuery query(m_db);
+
+    if (!query.exec("SELECT count(*) FROM threshold_rules;"))
+    {
+        qWarning() << "Count rules failed:" << query.lastError().text();
+        return -1;
+    }
+
+    if (query.next())
+    {
+        return query.value(0).toInt();
+    }
+
+    return -1;
+}
+
+QVector<TagDefinition> DbManager::loadTags()
+{
+    QVector<TagDefinition> tags;
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        SELECT
+            tag_id,
+            tag_name,
+            source_type,
+            data_type,
+            eng_units,
+            raw_min,
+            raw_max,
+            eng_min,
+            eng_max,
+            scaling_type,
+            scaling_slope,
+            scaling_offset,
+            deadband,
+            storage_deadband,
+            alarm_hysteresis,
+            heartbeat_interval_ms,
+            software_filter_type,
+            software_filter_config,
+            sim_profile,
+            enabled
+        FROM tags
+        ORDER BY tag_id;
+    )");
+
+    if (!query.exec())
+    {
+        qWarning() << "Load tags failed:" << query.lastError().text();
+        return tags;
+    }
+
+    while (query.next())
+    {
+        TagDefinition tag;
+
+        tag.tagId = variantToLongLong(field(query, "tag_id"), 0);
+        tag.tagName = variantToString(field(query, "tag_name"), QString());
+
+        tag.sourceType = variantToString(field(query, "source_type"), QStringLiteral("simulator"));
+        tag.dataType = variantToString(field(query, "data_type"), QStringLiteral("float"));
+        tag.engUnits = variantToString(field(query, "eng_units"), QString());
+
+        tag.rawMin = variantToDouble(field(query, "raw_min"), 0.0);
+        tag.rawMax = variantToDouble(field(query, "raw_max"), 100.0);
+
+        tag.engMin = variantToDouble(field(query, "eng_min"), 0.0);
+        tag.engMax = variantToDouble(field(query, "eng_max"), 100.0);
+
+        tag.scalingType = variantToString(field(query, "scaling_type"), QStringLiteral("linear"));
+        tag.slope = variantToDouble(field(query, "scaling_slope"), 1.0);
+        tag.offset = variantToDouble(field(query, "scaling_offset"), 0.0);
+
+        tag.deadband = variantToDouble(field(query, "deadband"), 0.0);
+
+        tag.storageDeadband = variantToDouble(field(query, "storage_deadband"), -1.0);
+        tag.alarmHysteresis = variantToDouble(field(query, "alarm_hysteresis"), -1.0);
+        tag.heartbeatIntervalMs = variantToInt(field(query, "heartbeat_interval_ms"), -1);
+
+        tag.softwareFilter = variantToString(field(query, "software_filter_type"), QStringLiteral("none"));
+        tag.softwareFilterConfig = variantToString(field(query, "software_filter_config"), QStringLiteral("{}"));
+
+        tag.simProfile = variantToString(field(query, "sim_profile"), QStringLiteral("sine"));
+
+        tag.enabled = variantToBool(field(query, "enabled"), true);
+
+        tags.push_back(tag);
+    }
+
+    return tags;
+}
+
+QVector<ThresholdRule> DbManager::loadRules()
+{
+    QVector<ThresholdRule> rules;
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        SELECT
+            rule_id,
+            tag_id,
+            low,
+            high,
+            high_hysteresis,
+            low_hysteresis,
+            on_delay_ms,
+            off_delay_ms
+        FROM threshold_rules
+        WHERE enabled = TRUE
+        ORDER BY tag_id;
+    )");
+
+    if (!query.exec())
+    {
+        qWarning() << "Load rules failed:" << query.lastError().text();
+        return rules;
+    }
+
+    while (query.next())
+    {
+        ThresholdRule rule;
+
+        rule.ruleId = variantToLongLong(field(query, "rule_id"), 0);
+        rule.tagId = variantToLongLong(field(query, "tag_id"), 0);
+
+        const QVariant lowValue = field(query, "low");
+
+        if (lowValue.isValid() && !lowValue.isNull())
+        {
+            rule.hasLow = true;
+            rule.low = variantToDouble(lowValue, 0.0);
+        }
+
+        const QVariant highValue = field(query, "high");
+
+        if (highValue.isValid() && !highValue.isNull())
+        {
+            rule.hasHigh = true;
+            rule.high = variantToDouble(highValue, 0.0);
+        }
+
+        rule.highHysteresis = variantToDouble(field(query, "high_hysteresis"), -1.0);
+        rule.lowHysteresis = variantToDouble(field(query, "low_hysteresis"), -1.0);
+
+        rule.onDelayMs = variantToInt(field(query, "on_delay_ms"), -1);
+        rule.offDelayMs = variantToInt(field(query, "off_delay_ms"), -1);
+
+        rules.push_back(rule);
+    }
+
+    return rules;
+}
+
+bool DbManager::insertRule(const ThresholdRule& rule)
+{
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        INSERT INTO threshold_rules (
+            tag_id,
+            low,
+            high,
+            high_hysteresis,
+            low_hysteresis,
+            on_delay_ms,
+            off_delay_ms,
+            enabled,
+            updated_at
+        )
+        VALUES (
+            :tag_id,
+            :low,
+            :high,
+            :high_hysteresis,
+            :low_hysteresis,
+            :on_delay_ms,
+            :off_delay_ms,
+            TRUE,
+            now()
+        );
+    )");
+
+    query.bindValue(":tag_id", rule.tagId);
+
+    if (rule.hasLow)
+    {
+        query.bindValue(":low", rule.low);
+    }
+    else
+    {
+        query.bindValue(":low", QVariant());
+    }
+
+    if (rule.hasHigh)
+    {
+        query.bindValue(":high", rule.high);
+    }
+    else
+    {
+        query.bindValue(":high", QVariant());
+    }
+
+    if (rule.highHysteresis >= 0.0)
+    {
+        query.bindValue(":high_hysteresis", rule.highHysteresis);
+    }
+    else
+    {
+        query.bindValue(":high_hysteresis", QVariant());
+    }
+
+    if (rule.lowHysteresis >= 0.0)
+    {
+        query.bindValue(":low_hysteresis", rule.lowHysteresis);
+    }
+    else
+    {
+        query.bindValue(":low_hysteresis", QVariant());
+    }
+
+    if (rule.onDelayMs >= 0)
+    {
+        query.bindValue(":on_delay_ms", rule.onDelayMs);
+    }
+    else
+    {
+        query.bindValue(":on_delay_ms", QVariant());
+    }
+
+    if (rule.offDelayMs >= 0)
+    {
+        query.bindValue(":off_delay_ms", rule.offDelayMs);
+    }
+    else
+    {
+        query.bindValue(":off_delay_ms", QVariant());
+    }
+
+    if (!query.exec())
+    {
+        qWarning() << "Insert rule failed:" << query.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+QString DbManager::settingValue(const QString& key, const QString& defaultValue) const
+{
+    QSqlQuery query(m_db);
+
+    query.prepare("SELECT value_text FROM system_settings WHERE key = :key;");
+    query.bindValue(":key", key);
+
+    if (!query.exec())
+    {
+        qWarning() << "Read setting failed:" << query.lastError().text();
+        return defaultValue;
+    }
+
+    if (query.next())
+    {
+        return query.value(0).toString();
+    }
+
+    return defaultValue;
+}
+
+bool DbManager::setSetting(const QString& key, const QString& value)
+{
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        INSERT INTO system_settings (
+            key,
+            value_text,
+            updated_at
+        )
+        VALUES (
+            :key,
+            :value,
+            now()
+        )
+        ON CONFLICT (key) DO UPDATE SET
+            value_text = EXCLUDED.value_text,
+            updated_at = now();
+    )");
+
+    query.bindValue(":key", key);
+    query.bindValue(":value", value);
+
+    if (!query.exec())
+    {
+        qWarning() << "Set setting failed:" << query.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+int DbManager::settingInt(const QString& key, int defaultValue) const
+{
+    const QString value = settingValue(key);
+
+    if (value.isEmpty())
+    {
+        return defaultValue;
+    }
+
+    bool ok = false;
+    const int intValue = value.toInt(&ok);
+
+    if (!ok)
+    {
+        return defaultValue;
+    }
+
+    return intValue;
+}
+
+double DbManager::settingDouble(const QString& key, double defaultValue) const
+{
+    const QString value = settingValue(key);
+
+    if (value.isEmpty())
+    {
+        return defaultValue;
+    }
+
+    bool ok = false;
+    const double doubleValue = value.toDouble(&ok);
+
+    if (!ok)
+    {
+        return defaultValue;
+    }
+
+    return doubleValue;
 }

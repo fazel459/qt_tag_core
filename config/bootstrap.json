@@ -1,0 +1,16 @@
+{
+  "database": {
+    "driver": "auto",
+    "odbc_driver": "PostgreSQL Unicode",
+    "host": "localhost",
+    "port": 5432,
+    "database": "tagsdb",
+    "username": "postgres",
+    "password": "459"
+  },
+
+  "bootstrap": {
+    "import_from_json_if_db_empty": true,
+    "import_file": "config/app.json"
+  }
+}

@@ -29,6 +29,20 @@ public:
     bool insertRawBatch(const QVector<TagValue>& rawValues);
     bool upsertCurrentBatch(const QVector<TagValue>& latestValues);
 
+    int countTags();
+    int countRules();
+
+    QVector<TagDefinition> loadTags();
+    QVector<ThresholdRule> loadRules();
+
+    bool insertRule(const ThresholdRule& rule);
+
+    QString settingValue(const QString& key, const QString& defaultValue = QString()) const;
+    bool setSetting(const QString& key, const QString& value);
+
+    int settingInt(const QString& key, int defaultValue) const;
+    double settingDouble(const QString& key, double defaultValue) const;
+
 private:
     bool migrate();
 

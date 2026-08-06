@@ -58,10 +58,11 @@ struct TagDefinition
     // برای فاز بعدی: فیلترهای نرم‌افزاری
     // none, moving_average, exponential_average, median, debounce, outlier_rejection
     QString softwareFilter = "none";
-
+    QString softwareFilterConfig = "{}";
     QString simProfile = "sine";
 
     bool enabled = true;
+
 };
 
 struct TagValue
@@ -83,6 +84,7 @@ struct TagValue
 struct ThresholdRule
 {
     qint64 tagId = 0;
+    qint64 ruleId = 0;
 
     bool hasLow = false;
     bool hasHigh = false;
@@ -96,6 +98,9 @@ struct ThresholdRule
 
     int onDelayMs = -1;
     int offDelayMs = -1;
+
+
+
 };
 
 struct AppConfig

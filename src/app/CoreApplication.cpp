@@ -39,21 +39,98 @@ bool CoreApplication::initialize()
 
     const QString configPath = findConfigFile();
 
-    auto config = ConfigLoader::load(configPath);
+    auto bootstrapConfig = ConfigLoader::load(configPath);
 
-    if (!config.has_value())
+    if (!bootstrapConfig.has_value())
     {
-        qCritical() << "Failed to load configuration";
+        qCritical() << "Failed to load bootstrap configuration";
         return false;
     }
 
-    m_config = config.value();
+    AppConfig bootstrap = bootstrapConfig.value();
 
-    if (!m_db.initialize(m_config))
+    if (!m_db.initialize(bootstrap))
     {
         qCritical() << "Failed to initialize database";
         return false;
     }
+
+    // اگر دیتابیس خالی بود، از فایل bootstrap/app.json seed می‌کنیم.
+    const int tagCount = m_db.countTags();
+
+    if (tagCount < 0)
+    {
+        qCritical() << "Failed to read tag count from database";
+        return false;
+    }
+
+    if (tagCount == 0 && !bootstrap.tags.isEmpty())
+    {
+        qInfo() << "Database tags are empty. Seeding tags from bootstrap file.";
+
+        for (const TagDefinition& tag : bootstrap.tags)
+        {
+            m_db.upsertTag(tag);
+        }
+    }
+
+    const int ruleCount = m_db.countRules();
+
+    if (ruleCount < 0)
+    {
+        qCritical() << "Failed to read rule count from database";
+        return false;
+    }
+
+    if (ruleCount == 0 && !bootstrap.rules.isEmpty())
+    {
+        qInfo() << "Database rules are empty. Seeding rules from bootstrap file.";
+
+        for (const ThresholdRule& rule : bootstrap.rules)
+        {
+            m_db.insertRule(rule);
+        }
+    }
+
+    // حالا کانفیگ نهایی را از دیتابیس می‌خوانیم.
+    m_config = bootstrap;
+
+    m_config.engineeringDecimals =
+        m_db.settingInt("engineering_decimals", bootstrap.engineeringDecimals);
+
+    m_config.batchFlushIntervalMs =
+        m_db.settingInt("historian.batch_flush_interval_ms", bootstrap.batchFlushIntervalMs);
+
+    m_config.batchMaxSize =
+        m_db.settingInt("historian.batch_max_size", bootstrap.batchMaxSize);
+
+    m_config.globalMinDeadband =
+        m_db.settingDouble("deadband.global_min_deadband", bootstrap.globalMinDeadband);
+
+    m_config.defaultAlarmHysteresis =
+        m_db.settingDouble("deadband.default_alarm_hysteresis", bootstrap.defaultAlarmHysteresis);
+
+    m_config.defaultAlarmOnDelayMs =
+        m_db.settingInt("deadband.default_alarm_on_delay_ms", bootstrap.defaultAlarmOnDelayMs);
+
+    m_config.defaultAlarmOffDelayMs =
+        m_db.settingInt("deadband.default_alarm_off_delay_ms", bootstrap.defaultAlarmOffDelayMs);
+
+    m_config.badQualityDelayMs =
+        m_db.settingInt("deadband.bad_quality_delay_ms", bootstrap.badQualityDelayMs);
+
+    m_config.defaultHeartbeatIntervalMs =
+        m_db.settingInt("deadband.default_heartbeat_interval_ms", bootstrap.defaultHeartbeatIntervalMs);
+
+    m_config.currentStateFlushIntervalMs =
+        m_db.settingInt("current_state.flush_interval_ms", bootstrap.currentStateFlushIntervalMs);
+
+    m_config.tags = m_db.loadTags();
+    m_config.rules = m_db.loadRules();
+
+    qInfo() << "Configuration loaded from database";
+    qInfo() << "Tags:" << m_config.tags.size();
+    qInfo() << "Threshold rules:" << m_config.rules.size();
 
     for (const TagDefinition& tag : m_config.tags)
     {
@@ -86,6 +163,7 @@ bool CoreApplication::initialize()
         m_config.rules,
         m_config
     );
+
     m_simulatorDriver = std::make_unique<SimulatorDriver>(
         m_bus,
         m_config.tags,
@@ -95,8 +173,6 @@ bool CoreApplication::initialize()
     m_simulatorDriver->start();
 
     qInfo() << "Tag Core initialized successfully";
-    qInfo() << "Tags:" << m_config.tags.size();
-    qInfo() << "Threshold rules:" << m_config.rules.size();
 
     return true;
 }

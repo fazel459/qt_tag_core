@@ -109,6 +109,24 @@ std::optional<AppConfig> ConfigLoader::load(const QString& path)
 
         tag.softwareFilter = obj.value("software_filter").toString("none");
 
+        if (obj.contains("software_filter_config"))
+        {
+            const QJsonValue filterConfigValue = obj.value("software_filter_config");
+
+            if (filterConfigValue.isString())
+            {
+                tag.softwareFilterConfig = filterConfigValue.toString("{}");
+            }
+            else if (filterConfigValue.isObject())
+            {
+                QJsonDocument filterConfigDoc(filterConfigValue.toObject());
+                tag.softwareFilterConfig = QString::fromUtf8(filterConfigDoc.toJson(QJsonDocument::Compact));
+            }
+            else
+            {
+                tag.softwareFilterConfig = "{}";
+            }
+        }
 
         tag.simProfile = obj.value("sim_profile").toString("sine");
 
