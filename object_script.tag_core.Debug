@@ -1,3 +1,6 @@
+debug/DriverFactory.o
+debug/DriverManager.o
+debug/ModbusTcpDriver.o
 debug/FilterProcessor.o
 debug/SoftwareFilterFactory.o
 debug/main.o

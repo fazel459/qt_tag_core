@@ -323,6 +323,44 @@ bool DbManager::migrate()
             ('current_state.flush_interval_ms', '500', 'Current state flush interval')
         ON CONFLICT (key) DO NOTHING;
         )"
+
+        R"(
+        CREATE TABLE IF NOT EXISTS drivers (
+            driver_id BIGSERIAL PRIMARY KEY,
+            name TEXT UNIQUE NOT NULL,
+            type TEXT NOT NULL,
+            connection_config TEXT DEFAULT '{}',
+            polling_interval_ms INT DEFAULT 1000,
+            enabled BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+        )",
+
+        R"(
+        ALTER TABLE tags
+            ADD COLUMN IF NOT EXISTS driver_id BIGINT REFERENCES drivers(driver_id),
+            ADD COLUMN IF NOT EXISTS address_config TEXT DEFAULT '{}';
+        )",
+
+        R"(
+        INSERT INTO drivers (name, type, connection_config, polling_interval_ms, enabled)
+        SELECT 'SIMULATOR', 'simulator', '{}', 1000, TRUE
+        WHERE NOT EXISTS (
+            SELECT 1 FROM drivers
+        );
+        )",
+
+        R"(
+        UPDATE tags
+        SET driver_id = (
+            SELECT driver_id
+            FROM drivers
+            ORDER BY driver_id
+            LIMIT 1
+        )
+        WHERE driver_id IS NULL;
+        )"
     };
 
     for (const QString& sql : statements)
@@ -364,7 +402,9 @@ bool DbManager::upsertTag(const TagDefinition& tag)
             software_filter_type,
             software_filter_config,
             sim_profile,
-            enabled,
+            enabled,                  
+            driver_id,
+            address_config,
             updated_at
         )
         VALUES (
@@ -388,6 +428,8 @@ bool DbManager::upsertTag(const TagDefinition& tag)
             :software_filter_config,
             :sim_profile,
             :enabled,
+            :driver_id,
+            :address_config,
             now()
         )
         ON CONFLICT (tag_id) DO UPDATE SET
@@ -410,6 +452,8 @@ bool DbManager::upsertTag(const TagDefinition& tag)
             software_filter_config = EXCLUDED.software_filter_config,
             sim_profile = EXCLUDED.sim_profile,
             enabled = EXCLUDED.enabled,
+            driver_id =EXCLUDED.driver_id,
+            address_config=EXCLUDED.address_config,
             updated_at = now();
     )");
 
@@ -458,6 +502,17 @@ bool DbManager::upsertTag(const TagDefinition& tag)
     query.bindValue(":software_filter_config", tag.softwareFilterConfig.isEmpty() ? "{}" : tag.softwareFilterConfig);
     query.bindValue(":sim_profile", tag.simProfile);
     query.bindValue(":enabled", tag.enabled);
+
+    if (tag.driverId > 0)
+    {
+        query.bindValue(":driver_id", tag.driverId);
+    }
+    else
+    {
+        query.bindValue(":driver_id", QVariant());
+    }
+
+    query.bindValue(":address_config", tag.addressConfig.isEmpty() ? QStringLiteral("{}") : tag.addressConfig);
 
     if (!query.exec())
     {
@@ -947,6 +1002,8 @@ QVector<TagDefinition> DbManager::loadTags()
             software_filter_type,
             software_filter_config,
             sim_profile,
+            driver_id,
+            address_config,
             enabled
         FROM tags
         ORDER BY tag_id;
@@ -989,6 +1046,9 @@ QVector<TagDefinition> DbManager::loadTags()
         tag.softwareFilterConfig = variantToString(field(query, "software_filter_config"), QStringLiteral("{}"));
 
         tag.simProfile = variantToString(field(query, "sim_profile"), QStringLiteral("sine"));
+
+        tag.driverId = variantToLongLong(field(query, "driver_id"), 0);
+        tag.addressConfig = variantToString(field(query, "address_config"), QStringLiteral("{}"));
 
         tag.enabled = variantToBool(field(query, "enabled"), true);
 
@@ -1245,4 +1305,45 @@ double DbManager::settingDouble(const QString& key, double defaultValue) const
     }
 
     return doubleValue;
+}
+
+QVector<DriverDefinition> DbManager::loadDrivers()
+{
+    QVector<DriverDefinition> drivers;
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        SELECT
+            driver_id,
+            name,
+            type,
+            connection_config,
+            polling_interval_ms,
+            enabled
+        FROM drivers
+        ORDER BY driver_id;
+    )");
+
+    if (!query.exec())
+    {
+        qWarning() << "Load drivers failed:" << query.lastError().text();
+        return drivers;
+    }
+
+    while (query.next())
+    {
+        DriverDefinition driver;
+
+        driver.driverId = variantToLongLong(field(query, "driver_id"), 0);
+        driver.name = variantToString(field(query, "name"), QString());
+        driver.type = variantToString(field(query, "type"), QString());
+        driver.connectionConfig = variantToString(field(query, "connection_config"), QStringLiteral("{}"));
+        driver.pollingIntervalMs = variantToInt(field(query, "polling_interval_ms"), 1000);
+        driver.enabled = variantToBool(field(query, "enabled"), true);
+
+        drivers.push_back(driver);
+    }
+
+    return drivers;
 }

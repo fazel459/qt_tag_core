@@ -43,6 +43,8 @@ public:
     int settingInt(const QString& key, int defaultValue) const;
     double settingDouble(const QString& key, double defaultValue) const;
 
+    QVector<DriverDefinition> loadDrivers();
+
 private:
     bool migrate();
 

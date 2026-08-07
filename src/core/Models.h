@@ -61,6 +61,9 @@ struct TagDefinition
     QString softwareFilterConfig = "{}";
     QString simProfile = "sine";
 
+    qint64 driverId = 0;
+    QString addressConfig = "{}";
+
     bool enabled = true;
 
 };
@@ -103,6 +106,16 @@ struct ThresholdRule
 
 };
 
+struct DriverDefinition
+{
+    qint64 driverId = 0;
+    QString name;
+    QString type;
+    QString connectionConfig = "{}";
+    int pollingIntervalMs = 1000;
+    bool enabled = true;
+};
+
 struct AppConfig
 {
     QString dbDriver = "auto";
@@ -131,5 +144,7 @@ struct AppConfig
 
     QVector<TagDefinition> tags;
     QVector<ThresholdRule> rules;
+    QVector<DriverDefinition> drivers;
     int engineeringDecimals = 4;
 };
+

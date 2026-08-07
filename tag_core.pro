@@ -1,4 +1,4 @@
-QT += core sql
+QT += core sql network
 QT -= gui
 
 CONFIG += c++17 console
@@ -10,6 +10,9 @@ TEMPLATE = app
 INCLUDEPATH += src
 
 SOURCES += \
+    src/drivers/DriverFactory.cpp \
+    src/drivers/DriverManager.cpp \
+    src/drivers/ModbusTcpDriver.cpp \
     src/filters/FilterProcessor.cpp \
     src/filters/SoftwareFilterFactory.cpp \
     src/main.cpp \
@@ -27,6 +30,11 @@ HEADERS += \
     src/core/Models.h \
     src/core/ConfigLoader.h \
     src/core/ValueUtils.h \
+    src/drivers/DriverFactory.h \
+    src/drivers/DriverManager.h \
+    src/drivers/ITagDriver.h \
+    src/drivers/ModbusTcpDriver.h \
+    src/drivers/SimulatorDriverAdapter.h \
     src/filters/FilterProcessor.h \
     src/filters/ISoftwareFilter.h \
     src/filters/SoftwareFilterFactory.h \

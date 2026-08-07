@@ -55,7 +55,18 @@ bool CoreApplication::initialize()
         return false;
     }
 
-    // اگر دیتابیس خالی بود، از فایل bootstrap/app.json seed می‌کنیم.
+    const QVector<DriverDefinition> initialDrivers = m_db.loadDrivers();
+
+    qint64 defaultDriverId = 0;
+
+    if (!initialDrivers.isEmpty())
+    {
+        defaultDriverId = initialDrivers.first().driverId;
+    }
+
+    qInfo() << "Initial drivers:" << initialDrivers.size()
+            << "defaultDriverId:" << defaultDriverId;
+
     const int tagCount = m_db.countTags();
 
     if (tagCount < 0)
@@ -68,8 +79,13 @@ bool CoreApplication::initialize()
     {
         qInfo() << "Database tags are empty. Seeding tags from bootstrap file.";
 
-        for (const TagDefinition& tag : bootstrap.tags)
+        for (TagDefinition tag : bootstrap.tags)
         {
+            if (tag.driverId == 0)
+            {
+                tag.driverId = defaultDriverId;
+            }
+
             m_db.upsertTag(tag);
         }
     }
@@ -92,7 +108,6 @@ bool CoreApplication::initialize()
         }
     }
 
-    // حالا کانفیگ نهایی را از دیتابیس می‌خوانیم.
     m_config = bootstrap;
 
     m_config.engineeringDecimals =
@@ -127,15 +142,12 @@ bool CoreApplication::initialize()
 
     m_config.tags = m_db.loadTags();
     m_config.rules = m_db.loadRules();
+    m_config.drivers = m_db.loadDrivers();
 
     qInfo() << "Configuration loaded from database";
     qInfo() << "Tags:" << m_config.tags.size();
     qInfo() << "Threshold rules:" << m_config.rules.size();
-
-    for (const TagDefinition& tag : m_config.tags)
-    {
-        m_db.upsertTag(tag);
-    }
+    qInfo() << "Drivers:" << m_config.drivers.size();
 
     m_historianWriter = std::make_unique<BatchHistorianWriter>(
         m_db,
@@ -166,13 +178,15 @@ bool CoreApplication::initialize()
 
     m_filterProcessor = std::make_unique<FilterProcessor>(m_bus, m_config);
 
-    m_simulatorDriver = std::make_unique<SimulatorDriver>(
-        m_bus,
-        m_config.tags
+    qInfo() << "Starting DriverManager...";
 
-    );
+    m_driverManager = std::make_unique<DriverManager>(m_bus, m_config);
 
-    m_simulatorDriver->start();
+    if (!m_driverManager->startAll())
+    {
+        qCritical() << "Failed to start DriverManager";
+        return false;
+    }
 
     qInfo() << "Tag Core initialized successfully";
 
