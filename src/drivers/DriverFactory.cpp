@@ -1,9 +1,10 @@
 #include "DriverFactory.h"
 
 #include <QDebug>
-
+#include "ModbusRtuDriver.h"
 #include "ModbusTcpDriver.h"
 #include "SimulatorDriverAdapter.h"
+#include "MqttDriver.h"
 
 ITagDriver* DriverFactory::create(
     const DriverDefinition& driver,
@@ -28,5 +29,14 @@ ITagDriver* DriverFactory::create(
 
     qWarning() << "Unknown driver type:" << driver.type;
 
+    if (driver.type == "modbus_rtu")
+    {
+        return new ModbusRtuDriver(bus, driver, tags, config);
+    }
+
+    if (driver.type == "mqtt")
+    {
+        return new MqttDriver(bus, driver, tags, config);
+    }
     return nullptr;
 }

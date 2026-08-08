@@ -225,6 +225,16 @@ struct AlarmNotification
     QDateTime timestamp;
 };
 
+struct ComputedTag
+{
+    qint64 computedTagId = 0;
+    qint64 tagId = 0;
+    QString expression;
+    QString updateMode = "on_change";
+    int updateIntervalMs = 1000;
+    bool enabled = true;
+};
+
 struct AppConfig
 {
     QString dbDriver = "auto";
@@ -261,5 +271,6 @@ struct AppConfig
     QVector<StuckValueRule> stuckValueRules;
     QVector<BooleanRule> booleanRules;
     QVector<NotificationRule> notificationRules;
+    QVector<ComputedTag> computedTags;
 };
 

@@ -15,6 +15,7 @@
 #include "../filters/FilterProcessor.h"
 #include "../drivers/DriverManager.h"
 #include "../notifications/NotificationManager.h"
+#include "../computed/ComputedTagEngine.h"
 
 class CoreApplication
 {
@@ -38,6 +39,7 @@ private:
     std::unique_ptr<FilterProcessor> m_filterProcessor;
     QVector<DriverDefinition> drivers;
     std::unique_ptr<NotificationManager> m_notificationManager;
+    std::unique_ptr<ComputedTagEngine> m_computedTagEngine;
 
 };
 

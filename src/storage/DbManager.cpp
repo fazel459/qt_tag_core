@@ -486,7 +486,23 @@ bool DbManager::migrate()
         CREATE INDEX IF NOT EXISTS idx_notification_log_alarm
             ON notification_log(alarm_id);
         )"
+        R"(
+        CREATE TABLE IF NOT EXISTS computed_tags (
+            computed_tag_id BIGSERIAL PRIMARY KEY,
+            tag_id BIGINT NOT NULL REFERENCES tags(tag_id),
+            expression TEXT NOT NULL,
+            update_mode TEXT DEFAULT 'on_change',
+            update_interval_ms INT DEFAULT 1000,
+            enabled BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+        )",
 
+        R"(
+        CREATE INDEX IF NOT EXISTS idx_computed_tags_tag
+            ON computed_tags(tag_id);
+        )"
     };
 
     for (const QString& sql : statements)
@@ -1831,6 +1847,49 @@ QVector<NotificationRule> DbManager::loadNotificationRules()
 
     return rules;
 }
+
+QVector<ComputedTag> DbManager::loadComputedTags()
+{
+    QVector<ComputedTag> computedTags;
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        SELECT
+            computed_tag_id,
+            tag_id,
+            expression,
+            update_mode,
+            update_interval_ms,
+            enabled
+        FROM computed_tags
+        WHERE enabled = TRUE
+        ORDER BY computed_tag_id;
+    )");
+
+    if (!query.exec())
+    {
+        qWarning() << "Load computed tags failed:" << query.lastError().text();
+        return computedTags;
+    }
+
+    while (query.next())
+    {
+        ComputedTag ct;
+
+        ct.computedTagId = variantToLongLong(field(query, "computed_tag_id"), 0);
+        ct.tagId = variantToLongLong(field(query, "tag_id"), 0);
+        ct.expression = variantToString(field(query, "expression"), QString());
+        ct.updateMode = variantToString(field(query, "update_mode"), QStringLiteral("on_change"));
+        ct.updateIntervalMs = variantToInt(field(query, "update_interval_ms"), 1000);
+        ct.enabled = variantToBool(field(query, "enabled"), true);
+
+        computedTags.push_back(ct);
+    }
+
+    return computedTags;
+}
+
 
 bool DbManager::logNotification(
     qint64 alarmId,

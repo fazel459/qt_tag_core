@@ -71,6 +71,9 @@ public:
     QVector<BooleanRule> loadBooleanRules();
 
     QVector<NotificationRule> loadNotificationRules();
+    QVector<ComputedTag> loadComputedTags();
+
+
     bool logNotification(
         qint64 alarmId,
         qint64 notificationRuleId,

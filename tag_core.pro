@@ -1,4 +1,4 @@
-QT += core sql network
+QT += core sql network serialport qml
 QT -= gui
 
 CONFIG += c++17 console
@@ -8,11 +8,15 @@ TARGET = tag_core
 TEMPLATE = app
 
 INCLUDEPATH += src
+include(src/qmqtt/qmqtt.pri)
 
 SOURCES += \
+    src/computed/ComputedTagEngine.cpp \
     src/drivers/DriverFactory.cpp \
     src/drivers/DriverManager.cpp \
+    src/drivers/ModbusRtuDriver.cpp \
     src/drivers/ModbusTcpDriver.cpp \
+    src/drivers/MqttDriver.cpp \
     src/filters/FilterProcessor.cpp \
     src/filters/SoftwareFilterFactory.cpp \
     src/main.cpp \
@@ -29,13 +33,17 @@ SOURCES += \
 
 HEADERS += \
     src/app/CoreApplication.h \
+    src/computed/ComputedTagEngine.h \
     src/core/Models.h \
     src/core/ConfigLoader.h \
     src/core/ValueUtils.h \
     src/drivers/DriverFactory.h \
     src/drivers/DriverManager.h \
     src/drivers/ITagDriver.h \
+    src/drivers/ModbusRtuDriver.h \
     src/drivers/ModbusTcpDriver.h \
+    src/drivers/ModbusTypes.h \
+    src/drivers/MqttDriver.h \
     src/drivers/SimulatorDriverAdapter.h \
     src/filters/FilterProcessor.h \
     src/filters/ISoftwareFilter.h \

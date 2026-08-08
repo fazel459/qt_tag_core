@@ -210,5 +210,27 @@ bool CoreApplication::initialize()
     qInfo() << "Notification rules:" << m_config.notificationRules.size();
 
 
+    m_computedTagEngine = std::make_unique<ComputedTagEngine>(
+        m_bus,
+        m_db,
+        m_config
+    );
+
+
+    //  only for write test
+    QTimer::singleShot(10000, [this]()
+    {
+        TagValue writeCommand;
+        writeCommand.tagId = 1002;
+        writeCommand.engineeringValue = 55.0;
+
+        m_bus.publish("commands/1002/write", writeCommand);
+    });
+
+    m_config.computedTags = m_db.loadComputedTags();
+
+    qInfo() << "Computed tags:" << m_config.computedTags.size();
+
+
     return true;
 }

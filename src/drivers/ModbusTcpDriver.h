@@ -1,5 +1,3 @@
-#ifndef MODBUSTCPDRIVER_H
-#define MODBUSTCPDRIVER_H
 #pragma once
 
 #include <QByteArray>
@@ -15,27 +13,7 @@
 #include "../tagbus/TagBus.h"
 
 #include "ITagDriver.h"
-
-struct ModbusTagConfig
-{
-    qint64 tagId = 0;
-    int unitId = 1;
-    int function = 3;
-    int address = -1;
-    QString dataType = "uint16";
-    QString wordOrder = "high_first";
-    bool valid = false;
-};
-
-struct ModbusPendingRequest
-{
-    quint16 transactionId = 0;
-    qint64 tagId = 0;
-    QString dataType;
-    QString wordOrder;
-    QDateTime sentAt;
-    bool valid = false;
-};
+#include "ModbusTypes.h"
 
 class ModbusTcpDriver : public QObject, public ITagDriver
 {
@@ -60,6 +38,8 @@ public:
 
     bool isConnected() const override;
 
+    void writeValue(qint64 tagId, double engineeringValue);
+
 private:
     void connectToDevice();
 
@@ -77,6 +57,10 @@ private:
 
     void publishGood(const ModbusTagConfig& cfg, double rawValue);
     void publishBad(qint64 tagId);
+
+    void sendWriteSingleCoil(const ModbusTagConfig& cfg, bool value);
+    void sendWriteSingleRegister(const ModbusTagConfig& cfg, quint16 value);
+    void sendWriteMultipleRegisters(const ModbusTagConfig& cfg, const QVector<quint16>& values);
 
     double decodeRegisters(const QByteArray& registers, const ModbusTagConfig& cfg) const;
 
@@ -114,7 +98,6 @@ private:
     int m_timeoutMs = 1000;
     int m_defaultUnitId = 1;
 
-    bool m_reconnectScheduled = false;
     bool m_debug = false;
+    bool m_reconnectScheduled = false;
 };
-#endif // MODBUSTCPDRIVER_H

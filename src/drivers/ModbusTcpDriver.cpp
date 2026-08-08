@@ -37,6 +37,18 @@ ModbusTcpDriver::ModbusTcpDriver(
     m_pollTimer.setInterval(m_driver.pollingIntervalMs);
     m_timeoutTimer.setInterval(200);
 
+    m_bus.subscribe("commands/#", [this](const BusMessage& message)
+    {
+        if (!message.topic.endsWith("/write"))
+        {
+            return;
+        }
+
+        const TagValue& command = message.value;
+
+        writeValue(command.tagId, command.engineeringValue);
+    });
+
     const QJsonDocument connectionDoc = QJsonDocument::fromJson(driver.connectionConfig.toUtf8());
 
     if (connectionDoc.isObject())
@@ -137,6 +149,191 @@ void ModbusTcpDriver::stop()
 bool ModbusTcpDriver::isConnected() const
 {
     return m_socket.state() == QAbstractSocket::ConnectedState;
+}
+
+void ModbusTcpDriver::writeValue(qint64 tagId, double engineeringValue)
+{
+    if (!isConnected())
+    {
+        qWarning() << "ModbusTcpDriver: cannot write, not connected. tagId=" << tagId;
+        return;
+    }
+
+    const ModbusTagConfig cfg = m_tagConfigs.value(tagId);
+
+    if (!cfg.valid)
+    {
+        qWarning() << "ModbusTcpDriver: invalid config for write. tagId=" << tagId;
+        return;
+    }
+
+    const TagDefinition tag = m_tagMap.value(tagId);
+
+    const double rawValue = ScalingEngine::reverseScale(tag, engineeringValue);
+
+    const QString dataType = cfg.dataType.trimmed().toLower();
+
+    if (dataType == "coil")
+    {
+        const bool boolValue = rawValue > 0.5;
+        sendWriteSingleCoil(cfg, boolValue);
+    }
+    else if (dataType == "int16" || dataType == "uint16")
+    {
+        const quint16 regValue = static_cast<quint16>(rawValue);
+        sendWriteSingleRegister(cfg, regValue);
+    }
+    else if (dataType == "int32" || dataType == "uint32" || dataType == "float32" || dataType == "float")
+    {
+        QVector<quint16> registers;
+
+        if (dataType == "float32" || dataType == "float")
+        {
+            const float floatValue = static_cast<float>(rawValue);
+            quint32 bits = 0;
+            std::memcpy(&bits, &floatValue, sizeof(bits));
+
+            const quint16 highWord = static_cast<quint16>(bits >> 16);
+            const quint16 lowWord = static_cast<quint16>(bits & 0xFFFF);
+
+            if (cfg.wordOrder.trimmed().toLower() == "low_first")
+            {
+                registers.append(lowWord);
+                registers.append(highWord);
+            }
+            else
+            {
+                registers.append(highWord);
+                registers.append(lowWord);
+            }
+        }
+        else
+        {
+            const quint32 intValue = static_cast<quint32>(rawValue);
+
+            const quint16 highWord = static_cast<quint16>(intValue >> 16);
+            const quint16 lowWord = static_cast<quint16>(intValue & 0xFFFF);
+
+            if (cfg.wordOrder.trimmed().toLower() == "low_first")
+            {
+                registers.append(lowWord);
+                registers.append(highWord);
+            }
+            else
+            {
+                registers.append(highWord);
+                registers.append(lowWord);
+            }
+        }
+
+        sendWriteMultipleRegisters(cfg, registers);
+    }
+    else
+    {
+        qWarning() << "ModbusTcpDriver: unsupported data type for write:" << dataType;
+    }
+}
+
+void ModbusTcpDriver::sendWriteSingleCoil(const ModbusTagConfig& cfg, bool value)
+{
+    ++m_transactionId;
+
+    if (m_transactionId == 0)
+    {
+        ++m_transactionId;
+    }
+
+    QByteArray frame;
+
+    QDataStream stream(&frame, QIODevice::WriteOnly);
+    stream.setByteOrder(QDataStream::BigEndian);
+
+    const quint16 length = 6;
+    const quint16 coilValue = value ? 0xFF00 : 0x0000;
+
+    stream << m_transactionId;
+    stream << static_cast<quint16>(0);
+    stream << length;
+    stream << static_cast<quint8>(cfg.unitId);
+    stream << static_cast<quint8>(0x05);
+    stream << static_cast<quint16>(cfg.address);
+    stream << coilValue;
+
+    m_socket.write(frame);
+
+    qInfo() << "ModbusTcpDriver: FC5 Write Single Coil:"
+            << "address=" << cfg.address
+            << "value=" << value;
+}
+
+void ModbusTcpDriver::sendWriteSingleRegister(const ModbusTagConfig& cfg, quint16 value)
+{
+    ++m_transactionId;
+
+    if (m_transactionId == 0)
+    {
+        ++m_transactionId;
+    }
+
+    QByteArray frame;
+
+    QDataStream stream(&frame, QIODevice::WriteOnly);
+    stream.setByteOrder(QDataStream::BigEndian);
+
+    const quint16 length = 6;
+
+    stream << m_transactionId;
+    stream << static_cast<quint16>(0);
+    stream << length;
+    stream << static_cast<quint8>(cfg.unitId);
+    stream << static_cast<quint8>(0x06);
+    stream << static_cast<quint16>(cfg.address);
+    stream << value;
+
+    m_socket.write(frame);
+
+    qInfo() << "ModbusTcpDriver: FC6 Write Single Register:"
+            << "address=" << cfg.address
+            << "value=" << value;
+}
+
+void ModbusTcpDriver::sendWriteMultipleRegisters(const ModbusTagConfig& cfg, const QVector<quint16>& values)
+{
+    ++m_transactionId;
+
+    if (m_transactionId == 0)
+    {
+        ++m_transactionId;
+    }
+
+    QByteArray frame;
+
+    QDataStream stream(&frame, QIODevice::WriteOnly);
+    stream.setByteOrder(QDataStream::BigEndian);
+
+    const quint16 quantity = static_cast<quint16>(values.size());
+    const quint8 byteCount = static_cast<quint8>(quantity * 2);
+    const quint16 length = 7 + byteCount;
+
+    stream << m_transactionId;
+    stream << static_cast<quint16>(0);
+    stream << length;
+    stream << static_cast<quint8>(cfg.unitId);
+    stream << static_cast<quint8>(0x10);
+    stream << static_cast<quint16>(cfg.address);
+    stream << quantity;
+    stream << byteCount;
+
+    for (const quint16& value : values)
+    {
+        stream << value;
+    }
+
+    m_socket.write(frame);
+
+    qInfo() << "ModbusTcpDriver: FC16 Write Multiple Registers:"
+            << "address=" << cfg.address
+            << "quantity=" << quantity;
 }
 
 void ModbusTcpDriver::connectToDevice()
@@ -595,6 +792,11 @@ ModbusTagConfig ModbusTcpDriver::parseTagConfig(const TagDefinition& tag) const
 
     cfg.dataType = obj.value("data_type").toString("uint16");
     cfg.wordOrder = obj.value("word_order").toString("high_first");
+
+    if (cfg.dataType == "coil")
+    {
+        cfg.function = 5;
+    }
 
     cfg.valid = true;
 
