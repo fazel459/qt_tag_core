@@ -175,6 +175,12 @@ bool CoreApplication::initialize()
         m_config
     );
 
+    m_notificationManager = std::make_unique<NotificationManager>(
+        m_bus,
+        m_db,
+        m_config
+    );
+
     m_filterProcessor = std::make_unique<FilterProcessor>(m_bus, m_config);
 
     qInfo() << "Starting DriverManager...";
@@ -197,6 +203,12 @@ bool CoreApplication::initialize()
     qInfo() << "Stuck Value rules:" << m_config.stuckValueRules.size();
     qInfo() << "Boolean rules:" << m_config.booleanRules.size();
     qInfo() << "Tag Core initialized successfully";
+
+
+    m_config.notificationRules = m_db.loadNotificationRules();
+
+    qInfo() << "Notification rules:" << m_config.notificationRules.size();
+
 
     return true;
 }

@@ -6,6 +6,8 @@ debug/SoftwareFilterFactory.o
 debug/main.o
 debug/CoreApplication.o
 debug/ConfigLoader.o
+debug/NotificationManager.o
+debug/WebhookNotifier.o
 debug/BatchHistorianWriter.o
 debug/CurrentStateWriter.o
 debug/DbManager.o

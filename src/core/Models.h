@@ -199,6 +199,32 @@ struct BooleanRule
     QString severity = "medium";
 };
 
+struct NotificationRule
+{
+    qint64 notificationRuleId = 0;
+    QString name;
+    QString severityFilter;
+    QString alarmTypeFilter;
+    QString channel;
+    QString channelConfig = "{}";
+    int throttleMs = 60000;
+    bool enabled = true;
+};
+
+struct AlarmNotification
+{
+    qint64 alarmId = 0;
+    qint64 tagId = 0;
+    QString tagName;
+    QString alarmType;
+    QString severity;
+    QString state;
+    double value = 0.0;
+    double threshold = 0.0;
+    QString message;
+    QDateTime timestamp;
+};
+
 struct AppConfig
 {
     QString dbDriver = "auto";
@@ -234,5 +260,6 @@ struct AppConfig
     QVector<RateOfChangeRule> rateOfChangeRules;
     QVector<StuckValueRule> stuckValueRules;
     QVector<BooleanRule> booleanRules;
+    QVector<NotificationRule> notificationRules;
 };
 

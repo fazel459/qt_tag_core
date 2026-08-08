@@ -6,6 +6,8 @@ release/SoftwareFilterFactory.o
 release/main.o
 release/CoreApplication.o
 release/ConfigLoader.o
+release/NotificationManager.o
+release/WebhookNotifier.o
 release/BatchHistorianWriter.o
 release/CurrentStateWriter.o
 release/DbManager.o

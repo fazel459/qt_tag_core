@@ -91,6 +91,15 @@ private:
 
     double effectiveHysteresis(qint64 tagId, double ruleHysteresis) const;
     int effectiveDelay(int ruleDelayMs, int defaultDelayMs) const;
+    void publishAlarmEvent(
+        qint64 tagId,
+        const QString& alarmType,
+        const QString& severity,
+        const QString& state,
+        double value,
+        double threshold,
+        const QString& message
+    );
 
     TagBus& m_bus;
     DbManager& m_db;

@@ -70,6 +70,15 @@ public:
     QVector<StuckValueRule> loadStuckValueRules();
     QVector<BooleanRule> loadBooleanRules();
 
+    QVector<NotificationRule> loadNotificationRules();
+    bool logNotification(
+        qint64 alarmId,
+        qint64 notificationRuleId,
+        const QString& channel,
+        const QString& status,
+        const QString& message
+    );
+
 private:
     bool migrate();
 

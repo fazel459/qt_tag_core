@@ -18,6 +18,8 @@ SOURCES += \
     src/main.cpp \
     src/app/CoreApplication.cpp \
     src/core/ConfigLoader.cpp \
+    src/notifications/NotificationManager.cpp \
+    src/notifications/WebhookNotifier.cpp \
     src/storage/BatchHistorianWriter.cpp \
     src/storage/CurrentStateWriter.cpp \
     src/storage/DbManager.cpp \
@@ -39,6 +41,8 @@ HEADERS += \
     src/filters/ISoftwareFilter.h \
     src/filters/SoftwareFilterFactory.h \
     src/filters/SoftwareFilters.h \
+    src/notifications/NotificationManager.h \
+    src/notifications/WebhookNotifier.h \
     src/storage/BatchHistorianWriter.h \
     src/storage/CurrentStateWriter.h \
     src/storage/StorageExceptionFilter.h \

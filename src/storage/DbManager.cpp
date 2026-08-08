@@ -455,6 +455,37 @@ bool DbManager::migrate()
             ADD COLUMN IF NOT EXISTS clamp_enabled BOOLEAN DEFAULT TRUE;
         )"
 
+        R"(
+        CREATE TABLE IF NOT EXISTS notification_rules (
+            notification_rule_id BIGSERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            severity_filter TEXT,
+            alarm_type_filter TEXT,
+            channel TEXT NOT NULL,
+            channel_config TEXT DEFAULT '{}',
+            throttle_ms INT DEFAULT 60000,
+            enabled BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+        )",
+
+        R"(
+        CREATE TABLE IF NOT EXISTS notification_log (
+            notification_id BIGSERIAL PRIMARY KEY,
+            alarm_id BIGINT,
+            notification_rule_id BIGINT,
+            channel TEXT,
+            status TEXT,
+            message TEXT,
+            sent_at TIMESTAMPTZ DEFAULT now()
+        );
+        )",
+
+        R"(
+        CREATE INDEX IF NOT EXISTS idx_notification_log_alarm
+            ON notification_log(alarm_id);
+        )"
 
     };
 
@@ -1753,4 +1784,94 @@ QVector<BooleanRule> DbManager::loadBooleanRules()
     }
 
     return rules;
+}
+
+QVector<NotificationRule> DbManager::loadNotificationRules()
+{
+    QVector<NotificationRule> rules;
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        SELECT
+            notification_rule_id,
+            name,
+            severity_filter,
+            alarm_type_filter,
+            channel,
+            channel_config,
+            throttle_ms,
+            enabled
+        FROM notification_rules
+        WHERE enabled = TRUE
+        ORDER BY notification_rule_id;
+    )");
+
+    if (!query.exec())
+    {
+        qWarning() << "Load notification rules failed:" << query.lastError().text();
+        return rules;
+    }
+
+    while (query.next())
+    {
+        NotificationRule rule;
+
+        rule.notificationRuleId = variantToLongLong(field(query, "notification_rule_id"), 0);
+        rule.name = variantToString(field(query, "name"), QString());
+        rule.severityFilter = variantToString(field(query, "severity_filter"), QString());
+        rule.alarmTypeFilter = variantToString(field(query, "alarm_type_filter"), QString());
+        rule.channel = variantToString(field(query, "channel"), QString());
+        rule.channelConfig = variantToString(field(query, "channel_config"), QStringLiteral("{}"));
+        rule.throttleMs = variantToInt(field(query, "throttle_ms"), 60000);
+        rule.enabled = variantToBool(field(query, "enabled"), true);
+
+        rules.push_back(rule);
+    }
+
+    return rules;
+}
+
+bool DbManager::logNotification(
+    qint64 alarmId,
+    qint64 notificationRuleId,
+    const QString& channel,
+    const QString& status,
+    const QString& message
+)
+{
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        INSERT INTO notification_log (
+            alarm_id,
+            notification_rule_id,
+            channel,
+            status,
+            message,
+            sent_at
+        )
+        VALUES (
+            :alarm_id,
+            :notification_rule_id,
+            :channel,
+            :status,
+            :message,
+            now()
+        );
+    )");
+
+    query.bindValue(":alarm_id", alarmId);
+    query.bindValue(":notification_rule_id", notificationRuleId);
+    query.bindValue(":channel", channel);
+    query.bindValue(":status", status);
+    query.bindValue(":message", message);
+
+    if (!query.exec())
+    {
+        qWarning() << "Log notification failed:" << query.lastError().text();
+        return false;
+    }
+
+    return true;
 }

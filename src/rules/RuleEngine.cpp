@@ -234,6 +234,15 @@ void RuleEngine::evaluateHighLevel(
                     setpoint,
                     message
                 );
+                publishAlarmEvent(
+                    value.tagId,
+                    alarmType,
+                    alarmSeverityToString(severity),
+                    "raised",
+                    value.engineeringValue,
+                    setpoint,
+                    message
+                );
             }
         }
         else
@@ -259,6 +268,15 @@ void RuleEngine::evaluateHighLevel(
                 levelState.pendingSince = QDateTime();
 
                 m_db.clearAlarmByTagAndType(value.tagId, alarmType);
+                publishAlarmEvent(
+                    value.tagId,
+                    alarmType,
+                    alarmSeverityToString(severity),
+                    "cleared",
+                    value.engineeringValue,
+                    setpoint,
+                    "Alarm cleared"
+                );
             }
         }
         else
@@ -315,6 +333,15 @@ void RuleEngine::evaluateLowLevel(
                     setpoint,
                     message
                 );
+                publishAlarmEvent(
+                    value.tagId,
+                    "bad_quality",
+                    alarmSeverityToString(AlarmSeverity::High),
+                    "raised",
+                    value.engineeringValue,
+                    0.0,
+                    "Tag quality is Bad"
+                );
             }
         }
         else
@@ -340,6 +367,15 @@ void RuleEngine::evaluateLowLevel(
                 levelState.pendingSince = QDateTime();
 
                 m_db.clearAlarmByTagAndType(value.tagId, alarmType);
+                publishAlarmEvent(
+                    value.tagId,
+                    "bad_quality",
+                    alarmSeverityToString(AlarmSeverity::High),
+                    "cleared",
+                    value.engineeringValue,
+                    0.0,
+                    "Quality restored"
+                );
             }
         }
         else
@@ -625,4 +661,29 @@ int RuleEngine::effectiveDelay(int ruleDelayMs, int defaultDelayMs) const
     }
 
     return defaultDelayMs;
+}
+
+void RuleEngine::publishAlarmEvent(
+    qint64 tagId,
+    const QString& alarmType,
+    const QString& severity,
+    const QString& state,
+    double value,
+    double threshold,
+    const QString& message
+)
+{
+    TagValue eventValue;
+
+    eventValue.tagId = tagId;
+    eventValue.tagName = alarmType;
+    eventValue.timestamp = QDateTime::currentDateTimeUtc();
+    eventValue.rawValue = value;
+    eventValue.engineeringValue = threshold;
+    eventValue.quality = Quality::Good;
+    eventValue.source = SourceKind::Calculated;
+
+    const QString topic = QStringLiteral("alarms/%1/%2").arg(tagId).arg(state);
+
+    m_bus.publish(topic, eventValue);
 }

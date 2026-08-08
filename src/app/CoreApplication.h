@@ -14,6 +14,7 @@
 #include "../tagbus/TagBus.h"
 #include "../filters/FilterProcessor.h"
 #include "../drivers/DriverManager.h"
+#include "../notifications/NotificationManager.h"
 
 class CoreApplication
 {
@@ -36,10 +37,7 @@ private:
     std::unique_ptr<DriverManager> m_driverManager;
     std::unique_ptr<FilterProcessor> m_filterProcessor;
     QVector<DriverDefinition> drivers;
-//    QVector<RangeViolationRule> rangeViolationRules;
-//    QVector<RateOfChangeRule> rateOfChangeRules;
-//    QVector<StuckValueRule> stuckValueRules;
-//    QVector<BooleanRule> booleanRules;
+    std::unique_ptr<NotificationManager> m_notificationManager;
 
 };
 
