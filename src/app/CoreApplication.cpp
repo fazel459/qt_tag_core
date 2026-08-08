@@ -172,7 +172,6 @@ bool CoreApplication::initialize()
     m_ruleEngine = std::make_unique<RuleEngine>(
         m_bus,
         m_db,
-        m_config.rules,
         m_config
     );
 
@@ -188,6 +187,15 @@ bool CoreApplication::initialize()
         return false;
     }
 
+    m_config.rangeViolationRules = m_db.loadRangeViolationRules();
+    m_config.rateOfChangeRules = m_db.loadRateOfChangeRules();
+    m_config.stuckValueRules = m_db.loadStuckValueRules();
+    m_config.booleanRules = m_db.loadBooleanRules();
+
+    qInfo() << "Range Violation rules:" << m_config.rangeViolationRules.size();
+    qInfo() << "Rate of Change rules:" << m_config.rateOfChangeRules.size();
+    qInfo() << "Stuck Value rules:" << m_config.stuckValueRules.size();
+    qInfo() << "Boolean rules:" << m_config.booleanRules.size();
     qInfo() << "Tag Core initialized successfully";
 
     return true;

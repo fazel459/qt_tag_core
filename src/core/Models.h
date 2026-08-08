@@ -65,7 +65,7 @@ struct TagDefinition
     QString addressConfig = "{}";
 
     bool enabled = true;
-
+    bool clampEnabled = true;
 };
 
 struct TagValue
@@ -86,24 +86,26 @@ struct TagValue
 
 struct ThresholdRule
 {
-    qint64 tagId = 0;
     qint64 ruleId = 0;
+    qint64 tagId = 0;
 
+    bool hasLowLow = false;
     bool hasLow = false;
     bool hasHigh = false;
+    bool hasHighHigh = false;
 
+    double lowLow = 0.0;
     double low = 0.0;
     double high = 0.0;
+    double highHigh = 0.0;
 
-    // اگر منفی باشد، از مقدار پیش‌فرض استفاده می‌شود.
-    double highHysteresis = -1.0;
+    double lowLowHysteresis = -1.0;
     double lowHysteresis = -1.0;
+    double highHysteresis = -1.0;
+    double highHighHysteresis = -1.0;
 
     int onDelayMs = -1;
     int offDelayMs = -1;
-
-
-
 };
 
 struct DriverDefinition
@@ -114,6 +116,87 @@ struct DriverDefinition
     QString connectionConfig = "{}";
     int pollingIntervalMs = 1000;
     bool enabled = true;
+};
+
+
+enum class AlarmSeverity
+{
+    Info,
+    Low,
+    Medium,
+    High,
+    Critical
+};
+
+inline QString alarmSeverityToString(AlarmSeverity severity)
+{
+    switch (severity)
+    {
+        case AlarmSeverity::Info:     return QStringLiteral("info");
+        case AlarmSeverity::Low:      return QStringLiteral("low");
+        case AlarmSeverity::Medium:   return QStringLiteral("medium");
+        case AlarmSeverity::High:     return QStringLiteral("high");
+        case AlarmSeverity::Critical: return QStringLiteral("critical");
+    }
+    return QStringLiteral("info");
+}
+
+inline AlarmSeverity stringToAlarmSeverity(const QString& str)
+{
+    const QString s = str.trimmed().toLower();
+
+    if (s == "critical") return AlarmSeverity::Critical;
+    if (s == "high")     return AlarmSeverity::High;
+    if (s == "medium")   return AlarmSeverity::Medium;
+    if (s == "low")      return AlarmSeverity::Low;
+
+    return AlarmSeverity::Info;
+}
+
+struct RangeViolationRule
+{
+    qint64 ruleId = 0;
+    qint64 tagId = 0;
+
+    double minValue = 0.0;
+    double maxValue = 100.0;
+
+    QString severity = "high";
+};
+
+struct RateOfChangeRule
+{
+    qint64 ruleId = 0;
+    qint64 tagId = 0;
+
+    double maxRatePerSecond = 10.0;
+    int windowMs = 5000;
+
+    QString severity = "high";
+};
+
+struct StuckValueRule
+{
+    qint64 ruleId = 0;
+    qint64 tagId = 0;
+
+    int stuckDurationMs = 60000;
+    double epsilon = 0.01;
+
+    QString severity = "medium";
+};
+
+struct BooleanRule
+{
+    qint64 ruleId = 0;
+    qint64 tagId = 0;
+
+    bool alarmOnTrue = false;
+    bool alarmOnFalse = false;
+
+    int durationMs = 1000;
+
+    QString severity = "medium";
 };
 
 struct AppConfig
@@ -146,5 +229,10 @@ struct AppConfig
     QVector<ThresholdRule> rules;
     QVector<DriverDefinition> drivers;
     int engineeringDecimals = 4;
+
+    QVector<RangeViolationRule> rangeViolationRules;
+    QVector<RateOfChangeRule> rateOfChangeRules;
+    QVector<StuckValueRule> stuckValueRules;
+    QVector<BooleanRule> booleanRules;
 };
 

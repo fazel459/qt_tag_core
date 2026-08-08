@@ -38,6 +38,11 @@ public:
             result = tag.engMin;
         }
 
-        return qBound(tag.engMin, result, tag.engMax);
+        if (tag.clampEnabled)
+        {
+            return qBound(tag.engMin, result, tag.engMax);
+        }
+
+        return result;
     }
 };

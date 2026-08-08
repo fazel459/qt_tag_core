@@ -45,6 +45,31 @@ public:
 
     QVector<DriverDefinition> loadDrivers();
 
+    qint64 raiseAlarm(
+        qint64 tagId,
+        const QString& alarmType,
+        const QString& severity,
+        double value,
+        double threshold,
+        const QString& message
+    );
+
+    bool clearAlarmByTagAndType(qint64 tagId, const QString& alarmType);
+
+    bool acknowledgeAlarm(qint64 alarmId, const QString& userName);
+
+    bool addAlarmEvent(
+        qint64 alarmId,
+        const QString& eventType,
+        const QString& eventData = QString(),
+        const QString& userName = QString()
+    );
+
+    QVector<RangeViolationRule> loadRangeViolationRules();
+    QVector<RateOfChangeRule> loadRateOfChangeRules();
+    QVector<StuckValueRule> loadStuckValueRules();
+    QVector<BooleanRule> loadBooleanRules();
+
 private:
     bool migrate();
 

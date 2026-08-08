@@ -36,6 +36,10 @@ private:
     std::unique_ptr<DriverManager> m_driverManager;
     std::unique_ptr<FilterProcessor> m_filterProcessor;
     QVector<DriverDefinition> drivers;
+//    QVector<RangeViolationRule> rangeViolationRules;
+//    QVector<RateOfChangeRule> rateOfChangeRules;
+//    QVector<StuckValueRule> stuckValueRules;
+//    QVector<BooleanRule> booleanRules;
 
 };
 

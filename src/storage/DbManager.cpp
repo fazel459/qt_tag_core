@@ -361,6 +361,101 @@ bool DbManager::migrate()
         )
         WHERE driver_id IS NULL;
         )"
+
+
+        R"(
+        ALTER TABLE alarms
+            ADD COLUMN IF NOT EXISTS priority TEXT DEFAULT 'medium',
+            ADD COLUMN IF NOT EXISTS alarm_type TEXT DEFAULT 'threshold';
+        )",
+
+        R"(
+        CREATE TABLE IF NOT EXISTS alarm_events (
+            event_id BIGSERIAL PRIMARY KEY,
+            alarm_id BIGINT REFERENCES alarms(alarm_id),
+            event_type TEXT NOT NULL,
+            event_time TIMESTAMPTZ DEFAULT now(),
+            event_data TEXT,
+            user_name TEXT
+        );
+        )",
+
+        R"(
+        CREATE INDEX IF NOT EXISTS idx_alarm_events_alarm_id
+            ON alarm_events(alarm_id);
+        )",
+
+        R"(
+        CREATE INDEX IF NOT EXISTS idx_alarms_tag_state
+            ON alarms(tag_id, state);
+        )"
+
+        R"(
+        ALTER TABLE threshold_rules
+            ADD COLUMN IF NOT EXISTS lowlow DOUBLE PRECISION,
+            ADD COLUMN IF NOT EXISTS highhigh DOUBLE PRECISION,
+            ADD COLUMN IF NOT EXISTS lowlow_hysteresis DOUBLE PRECISION,
+            ADD COLUMN IF NOT EXISTS highhigh_hysteresis DOUBLE PRECISION;
+        )"
+        R"(
+        CREATE TABLE IF NOT EXISTS range_violation_rules (
+            rule_id BIGSERIAL PRIMARY KEY,
+            tag_id BIGINT NOT NULL REFERENCES tags(tag_id),
+            min_value DOUBLE PRECISION,
+            max_value DOUBLE PRECISION,
+            severity TEXT DEFAULT 'high',
+            enabled BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+        )",
+
+        R"(
+        CREATE TABLE IF NOT EXISTS rate_of_change_rules (
+            rule_id BIGSERIAL PRIMARY KEY,
+            tag_id BIGINT NOT NULL REFERENCES tags(tag_id),
+            max_rate_per_second DOUBLE PRECISION NOT NULL,
+            window_ms INT DEFAULT 5000,
+            severity TEXT DEFAULT 'high',
+            enabled BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+        )",
+
+        R"(
+        CREATE TABLE IF NOT EXISTS stuck_value_rules (
+            rule_id BIGSERIAL PRIMARY KEY,
+            tag_id BIGINT NOT NULL REFERENCES tags(tag_id),
+            stuck_duration_ms INT DEFAULT 60000,
+            epsilon DOUBLE PRECISION DEFAULT 0.01,
+            severity TEXT DEFAULT 'medium',
+            enabled BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+        )",
+
+        R"(
+        CREATE TABLE IF NOT EXISTS boolean_rules (
+            rule_id BIGSERIAL PRIMARY KEY,
+            tag_id BIGINT NOT NULL REFERENCES tags(tag_id),
+            alarm_on_true BOOLEAN DEFAULT FALSE,
+            alarm_on_false BOOLEAN DEFAULT FALSE,
+            duration_ms INT DEFAULT 1000,
+            severity TEXT DEFAULT 'medium',
+            enabled BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+        )"
+
+        R"(
+        ALTER TABLE tags
+            ADD COLUMN IF NOT EXISTS clamp_enabled BOOLEAN DEFAULT TRUE;
+        )"
+
+
     };
 
     for (const QString& sql : statements)
@@ -405,7 +500,8 @@ bool DbManager::upsertTag(const TagDefinition& tag)
             enabled,                  
             driver_id,
             address_config,
-            updated_at
+            updated_at,
+            clamp_enabled
         )
         VALUES (
             :tag_id,
@@ -430,6 +526,7 @@ bool DbManager::upsertTag(const TagDefinition& tag)
             :enabled,
             :driver_id,
             :address_config,
+            :clamp_enabled,
             now()
         )
         ON CONFLICT (tag_id) DO UPDATE SET
@@ -454,6 +551,7 @@ bool DbManager::upsertTag(const TagDefinition& tag)
             enabled = EXCLUDED.enabled,
             driver_id =EXCLUDED.driver_id,
             address_config=EXCLUDED.address_config,
+            clamp_enabled=EXCLUDED.clamp_enabled,
             updated_at = now();
     )");
 
@@ -470,6 +568,7 @@ bool DbManager::upsertTag(const TagDefinition& tag)
     query.bindValue(":scaling_slope", tag.slope);
     query.bindValue(":scaling_offset", tag.offset);
     query.bindValue(":deadband", tag.deadband);
+    query.bindValue(":clamp_enabled", tag.clampEnabled);
 
     if (tag.storageDeadband >= 0.0)
     {
@@ -1052,6 +1151,7 @@ QVector<TagDefinition> DbManager::loadTags()
 
         tag.enabled = variantToBool(field(query, "enabled"), true);
 
+        tag.clampEnabled = variantToBool(field(query, "clamp_enabled"), true);
         tags.push_back(tag);
     }
 
@@ -1070,8 +1170,12 @@ QVector<ThresholdRule> DbManager::loadRules()
             tag_id,
             low,
             high,
+            lowlow,
+            highhigh,
             high_hysteresis,
             low_hysteresis,
+            lowlow_hysteresis,
+            highhigh_hysteresis,
             on_delay_ms,
             off_delay_ms
         FROM threshold_rules
@@ -1093,7 +1197,6 @@ QVector<ThresholdRule> DbManager::loadRules()
         rule.tagId = variantToLongLong(field(query, "tag_id"), 0);
 
         const QVariant lowValue = field(query, "low");
-
         if (lowValue.isValid() && !lowValue.isNull())
         {
             rule.hasLow = true;
@@ -1101,15 +1204,30 @@ QVector<ThresholdRule> DbManager::loadRules()
         }
 
         const QVariant highValue = field(query, "high");
-
         if (highValue.isValid() && !highValue.isNull())
         {
             rule.hasHigh = true;
             rule.high = variantToDouble(highValue, 0.0);
         }
 
+        const QVariant lowLowValue = field(query, "lowlow");
+        if (lowLowValue.isValid() && !lowLowValue.isNull())
+        {
+            rule.hasLowLow = true;
+            rule.lowLow = variantToDouble(lowLowValue, 0.0);
+        }
+
+        const QVariant highHighValue = field(query, "highhigh");
+        if (highHighValue.isValid() && !highHighValue.isNull())
+        {
+            rule.hasHighHigh = true;
+            rule.highHigh = variantToDouble(highHighValue, 0.0);
+        }
+
         rule.highHysteresis = variantToDouble(field(query, "high_hysteresis"), -1.0);
         rule.lowHysteresis = variantToDouble(field(query, "low_hysteresis"), -1.0);
+        rule.lowLowHysteresis = variantToDouble(field(query, "lowlow_hysteresis"), -1.0);
+        rule.highHighHysteresis = variantToDouble(field(query, "highhigh_hysteresis"), -1.0);
 
         rule.onDelayMs = variantToInt(field(query, "on_delay_ms"), -1);
         rule.offDelayMs = variantToInt(field(query, "off_delay_ms"), -1);
@@ -1129,8 +1247,12 @@ bool DbManager::insertRule(const ThresholdRule& rule)
             tag_id,
             low,
             high,
+            lowlow,
+            highhigh,
             high_hysteresis,
             low_hysteresis,
+            lowlow_hysteresis,
+            highhigh_hysteresis,
             on_delay_ms,
             off_delay_ms,
             enabled,
@@ -1140,8 +1262,12 @@ bool DbManager::insertRule(const ThresholdRule& rule)
             :tag_id,
             :low,
             :high,
+            :lowlow,
+            :highhigh,
             :high_hysteresis,
             :low_hysteresis,
+            :lowlow_hysteresis,
+            :highhigh_hysteresis,
             :on_delay_ms,
             :off_delay_ms,
             TRUE,
@@ -1151,59 +1277,18 @@ bool DbManager::insertRule(const ThresholdRule& rule)
 
     query.bindValue(":tag_id", rule.tagId);
 
-    if (rule.hasLow)
-    {
-        query.bindValue(":low", rule.low);
-    }
-    else
-    {
-        query.bindValue(":low", QVariant());
-    }
+    query.bindValue(":low", rule.hasLow ? QVariant(rule.low) : QVariant());
+    query.bindValue(":high", rule.hasHigh ? QVariant(rule.high) : QVariant());
+    query.bindValue(":lowlow", rule.hasLowLow ? QVariant(rule.lowLow) : QVariant());
+    query.bindValue(":highhigh", rule.hasHighHigh ? QVariant(rule.highHigh) : QVariant());
 
-    if (rule.hasHigh)
-    {
-        query.bindValue(":high", rule.high);
-    }
-    else
-    {
-        query.bindValue(":high", QVariant());
-    }
+    query.bindValue(":high_hysteresis", rule.highHysteresis >= 0.0 ? QVariant(rule.highHysteresis) : QVariant());
+    query.bindValue(":low_hysteresis", rule.lowHysteresis >= 0.0 ? QVariant(rule.lowHysteresis) : QVariant());
+    query.bindValue(":lowlow_hysteresis", rule.lowLowHysteresis >= 0.0 ? QVariant(rule.lowLowHysteresis) : QVariant());
+    query.bindValue(":highhigh_hysteresis", rule.highHighHysteresis >= 0.0 ? QVariant(rule.highHighHysteresis) : QVariant());
 
-    if (rule.highHysteresis >= 0.0)
-    {
-        query.bindValue(":high_hysteresis", rule.highHysteresis);
-    }
-    else
-    {
-        query.bindValue(":high_hysteresis", QVariant());
-    }
-
-    if (rule.lowHysteresis >= 0.0)
-    {
-        query.bindValue(":low_hysteresis", rule.lowHysteresis);
-    }
-    else
-    {
-        query.bindValue(":low_hysteresis", QVariant());
-    }
-
-    if (rule.onDelayMs >= 0)
-    {
-        query.bindValue(":on_delay_ms", rule.onDelayMs);
-    }
-    else
-    {
-        query.bindValue(":on_delay_ms", QVariant());
-    }
-
-    if (rule.offDelayMs >= 0)
-    {
-        query.bindValue(":off_delay_ms", rule.offDelayMs);
-    }
-    else
-    {
-        query.bindValue(":off_delay_ms", QVariant());
-    }
+    query.bindValue(":on_delay_ms", rule.onDelayMs >= 0 ? QVariant(rule.onDelayMs) : QVariant());
+    query.bindValue(":off_delay_ms", rule.offDelayMs >= 0 ? QVariant(rule.offDelayMs) : QVariant());
 
     if (!query.exec())
     {
@@ -1346,4 +1431,326 @@ QVector<DriverDefinition> DbManager::loadDrivers()
     }
 
     return drivers;
+}
+
+qint64 DbManager::raiseAlarm(
+    qint64 tagId,
+    const QString& alarmType,
+    const QString& severity,
+    double value,
+    double threshold,
+    const QString& message
+)
+{
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        INSERT INTO alarms (
+            tag_id,
+            rule_type,
+            alarm_type,
+            severity,
+            priority,
+            state,
+            value,
+            threshold,
+            message,
+            active_time
+        )
+        VALUES (
+            :tag_id,
+            :rule_type,
+            :alarm_type,
+            :severity,
+            :priority,
+            'active',
+            :value,
+            :threshold,
+            :message,
+            now()
+        )
+        RETURNING alarm_id;
+    )");
+
+    query.bindValue(":tag_id", tagId);
+    query.bindValue(":rule_type", alarmType);
+    query.bindValue(":alarm_type", alarmType);
+    query.bindValue(":severity", severity);
+    query.bindValue(":priority", severity);
+    query.bindValue(":value", value);
+    query.bindValue(":threshold", threshold);
+    query.bindValue(":message", message);
+
+    if (!query.exec())
+    {
+        qWarning() << "Raise alarm failed:" << query.lastError().text();
+        return -1;
+    }
+
+    qint64 alarmId = -1;
+
+    if (query.next())
+    {
+        alarmId = query.value(0).toLongLong();
+    }
+
+    if (alarmId > 0)
+    {
+        addAlarmEvent(alarmId, "active", message);
+    }
+
+    qInfo() << "ALARM RAISED:"
+            << "tagId=" << tagId
+            << "type=" << alarmType
+            << "severity=" << severity
+            << "value=" << value
+            << "threshold=" << threshold;
+
+    return alarmId;
+}
+
+bool DbManager::clearAlarmByTagAndType(qint64 tagId, const QString& alarmType)
+{
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        UPDATE alarms
+        SET state = 'cleared',
+            clear_time = now()
+        WHERE tag_id = :tag_id
+          AND alarm_type = :alarm_type
+          AND state = 'active'
+        RETURNING alarm_id;
+    )");
+
+    query.bindValue(":tag_id", tagId);
+    query.bindValue(":alarm_type", alarmType);
+
+    if (!query.exec())
+    {
+        qWarning() << "Clear alarm failed:" << query.lastError().text();
+        return false;
+    }
+
+    while (query.next())
+    {
+        const qint64 alarmId = query.value(0).toLongLong();
+        addAlarmEvent(alarmId, "cleared");
+    }
+
+    qInfo() << "ALARM CLEARED:"
+            << "tagId=" << tagId
+            << "type=" << alarmType;
+
+    return true;
+}
+
+bool DbManager::acknowledgeAlarm(qint64 alarmId, const QString& userName)
+{
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        UPDATE alarms
+        SET ack_time = now(),
+            ack_user = :user_name
+        WHERE alarm_id = :alarm_id;
+    )");
+
+    query.bindValue(":alarm_id", alarmId);
+    query.bindValue(":user_name", userName);
+
+    if (!query.exec())
+    {
+        qWarning() << "Acknowledge alarm failed:" << query.lastError().text();
+        return false;
+    }
+
+    addAlarmEvent(alarmId, "acknowledged", QString(), userName);
+
+    qInfo() << "ALARM ACKNOWLEDGED:"
+            << "alarmId=" << alarmId
+            << "user=" << userName;
+
+    return true;
+}
+
+bool DbManager::addAlarmEvent(
+    qint64 alarmId,
+    const QString& eventType,
+    const QString& eventData,
+    const QString& userName
+)
+{
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        INSERT INTO alarm_events (
+            alarm_id,
+            event_type,
+            event_data,
+            user_name,
+            event_time
+        )
+        VALUES (
+            :alarm_id,
+            :event_type,
+            :event_data,
+            :user_name,
+            now()
+        );
+    )");
+
+    query.bindValue(":alarm_id", alarmId);
+    query.bindValue(":event_type", eventType);
+    query.bindValue(":event_data", eventData);
+    query.bindValue(":user_name", userName);
+
+    if (!query.exec())
+    {
+        qWarning() << "Add alarm event failed:" << query.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+QVector<RangeViolationRule> DbManager::loadRangeViolationRules()
+{
+    QVector<RangeViolationRule> rules;
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        SELECT rule_id, tag_id, min_value, max_value, severity
+        FROM range_violation_rules
+        WHERE enabled = TRUE
+        ORDER BY tag_id;
+    )");
+
+    if (!query.exec())
+    {
+        qWarning() << "Load range violation rules failed:" << query.lastError().text();
+        return rules;
+    }
+
+    while (query.next())
+    {
+        RangeViolationRule rule;
+
+        rule.ruleId = variantToLongLong(field(query, "rule_id"), 0);
+        rule.tagId = variantToLongLong(field(query, "tag_id"), 0);
+        rule.minValue = variantToDouble(field(query, "min_value"), 0.0);
+        rule.maxValue = variantToDouble(field(query, "max_value"), 100.0);
+        rule.severity = variantToString(field(query, "severity"), QStringLiteral("high"));
+
+        rules.push_back(rule);
+    }
+
+    return rules;
+}
+
+QVector<RateOfChangeRule> DbManager::loadRateOfChangeRules()
+{
+    QVector<RateOfChangeRule> rules;
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        SELECT rule_id, tag_id, max_rate_per_second, window_ms, severity
+        FROM rate_of_change_rules
+        WHERE enabled = TRUE
+        ORDER BY tag_id;
+    )");
+
+    if (!query.exec())
+    {
+        qWarning() << "Load rate of change rules failed:" << query.lastError().text();
+        return rules;
+    }
+
+    while (query.next())
+    {
+        RateOfChangeRule rule;
+
+        rule.ruleId = variantToLongLong(field(query, "rule_id"), 0);
+        rule.tagId = variantToLongLong(field(query, "tag_id"), 0);
+        rule.maxRatePerSecond = variantToDouble(field(query, "max_rate_per_second"), 10.0);
+        rule.windowMs = variantToInt(field(query, "window_ms"), 5000);
+        rule.severity = variantToString(field(query, "severity"), QStringLiteral("high"));
+
+        rules.push_back(rule);
+    }
+
+    return rules;
+}
+
+QVector<StuckValueRule> DbManager::loadStuckValueRules()
+{
+    QVector<StuckValueRule> rules;
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        SELECT rule_id, tag_id, stuck_duration_ms, epsilon, severity
+        FROM stuck_value_rules
+        WHERE enabled = TRUE
+        ORDER BY tag_id;
+    )");
+
+    if (!query.exec())
+    {
+        qWarning() << "Load stuck value rules failed:" << query.lastError().text();
+        return rules;
+    }
+
+    while (query.next())
+    {
+        StuckValueRule rule;
+
+        rule.ruleId = variantToLongLong(field(query, "rule_id"), 0);
+        rule.tagId = variantToLongLong(field(query, "tag_id"), 0);
+        rule.stuckDurationMs = variantToInt(field(query, "stuck_duration_ms"), 60000);
+        rule.epsilon = variantToDouble(field(query, "epsilon"), 0.01);
+        rule.severity = variantToString(field(query, "severity"), QStringLiteral("medium"));
+
+        rules.push_back(rule);
+    }
+
+    return rules;
+}
+
+QVector<BooleanRule> DbManager::loadBooleanRules()
+{
+    QVector<BooleanRule> rules;
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        SELECT rule_id, tag_id, alarm_on_true, alarm_on_false, duration_ms, severity
+        FROM boolean_rules
+        WHERE enabled = TRUE
+        ORDER BY tag_id;
+    )");
+
+    if (!query.exec())
+    {
+        qWarning() << "Load boolean rules failed:" << query.lastError().text();
+        return rules;
+    }
+
+    while (query.next())
+    {
+        BooleanRule rule;
+
+        rule.ruleId = variantToLongLong(field(query, "rule_id"), 0);
+        rule.tagId = variantToLongLong(field(query, "tag_id"), 0);
+        rule.alarmOnTrue = variantToBool(field(query, "alarm_on_true"), false);
+        rule.alarmOnFalse = variantToBool(field(query, "alarm_on_false"), false);
+        rule.durationMs = variantToInt(field(query, "duration_ms"), 1000);
+        rule.severity = variantToString(field(query, "severity"), QStringLiteral("medium"));
+
+        rules.push_back(rule);
+    }
+
+    return rules;
 }
