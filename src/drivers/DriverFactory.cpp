@@ -27,7 +27,7 @@ ITagDriver* DriverFactory::create(
         return new ModbusTcpDriver(bus, driver, tags, config);
     }
 
-    qWarning() << "Unknown driver type:" << driver.type;
+
 
     if (driver.type == "modbus_rtu")
     {
@@ -38,5 +38,8 @@ ITagDriver* DriverFactory::create(
     {
         return new MqttDriver(bus, driver, tags, config);
     }
+
+
+        qWarning() << "Unknown driver type:" << driver.type;
     return nullptr;
 }

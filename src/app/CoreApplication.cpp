@@ -216,6 +216,7 @@ bool CoreApplication::initialize()
         m_config
     );
 
+    m_historianManager = std::make_unique<HistorianManager>(m_db);
 
     //  only for write test
     QTimer::singleShot(10000, [this]()

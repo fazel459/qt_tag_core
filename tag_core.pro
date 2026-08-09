@@ -29,6 +29,7 @@ SOURCES += \
     src/storage/DbManager.cpp \
     src/drivers/SimulatorDriver.cpp \
     src/rules/RuleEngine.cpp \
+    src/storage/HistorianManager.cpp \
     src/storage/StorageExceptionFilter.cpp
 
 HEADERS += \
@@ -53,6 +54,7 @@ HEADERS += \
     src/notifications/WebhookNotifier.h \
     src/storage/BatchHistorianWriter.h \
     src/storage/CurrentStateWriter.h \
+    src/storage/HistorianManager.h \
     src/storage/StorageExceptionFilter.h \
     src/tagbus/TagBus.h \
     src/storage/DbManager.h \

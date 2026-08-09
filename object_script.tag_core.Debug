@@ -26,6 +26,7 @@ debug/CurrentStateWriter.o
 debug/DbManager.o
 debug/SimulatorDriver.o
 debug/RuleEngine.o
+debug/HistorianManager.o
 debug/StorageExceptionFilter.o
 debug/moc_qmqtt_client.o
 debug/moc_qmqtt_network_p.o

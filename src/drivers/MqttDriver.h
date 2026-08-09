@@ -43,6 +43,7 @@ private:
 
     void onConnected();
     void onDisconnected();
+//    void onMessageReceived(const QMQTT::Message& message);
     void onMessageReceived(const QMQTT::Message& message);
 
     void subscribeToTopics();

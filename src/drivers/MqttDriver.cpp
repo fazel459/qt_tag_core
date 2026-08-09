@@ -51,6 +51,7 @@ MqttDriver::MqttDriver(
             if (!topic.isEmpty())
             {
                 m_topicToTagId.insert(topic, tag.tagId);
+                qInfo()<<"topic: "<<topic<<"tgid: "<< tag.tagId;
             }
         }
     }
@@ -60,6 +61,7 @@ MqttDriver::MqttDriver(
             << "host:" << m_host
             << "port:" << m_port
             << "tags:" << m_topicToTagId.size();
+//            << "topic:" << m_topicToTagId[0];
 }
 
 MqttDriver::~MqttDriver()
@@ -75,7 +77,23 @@ MqttDriver::~MqttDriver()
 
 bool MqttDriver::start()
 {
-    m_client = new QMQTT::Client(QHostAddress(m_host), static_cast<quint16>(m_port), this);
+    qInfo() << "MqttDriver: creating client for"
+            << m_host << ":" << m_port;
+
+    QHostAddress hostAddress;
+
+    if (m_host == "localhost" || m_host == "127.0.0.1")
+    {
+        hostAddress = QHostAddress::LocalHost;
+    }
+    else
+    {
+        hostAddress = QHostAddress(m_host);
+    }
+
+    qInfo() << "MqttDriver: resolved host:" << hostAddress.toString();
+
+    m_client = new QMQTT::Client(hostAddress, static_cast<quint16>(m_port), this);
 
     if (!m_username.isEmpty())
     {
@@ -90,14 +108,40 @@ bool MqttDriver::start()
     m_client->setClientId(m_clientId);
     m_client->setKeepAlive(60);
 
-    QObject::connect(m_client, &QMQTT::Client::connected, this, &MqttDriver::onConnected);
-    QObject::connect(m_client, &QMQTT::Client::disconnected, this, &MqttDriver::onDisconnected);
-    QObject::connect(m_client, &QMQTT::Client::received, this, &MqttDriver::onMessageReceived);
+    // استفاده از lambda به جای member function
+    QObject::connect(m_client, &QMQTT::Client::connected, this, [this]()
+    {
+        qInfo() << "MqttDriver: CONNECTED (lambda)";
+        onConnected();
+    });
 
-    connectToBroker();
+    QObject::connect(m_client, &QMQTT::Client::disconnected, this, [this]()
+    {
+        qInfo() << "MqttDriver: DISCONNECTED (lambda)";
+        onDisconnected();
+    });
+
+    QObject::connect(m_client, &QMQTT::Client::received, this, [this](const QMQTT::Message& message)
+    {
+        qInfo() << "MqttDriver: MESSAGE RECEIVED (lambda):"
+                << "topic=" << message.topic();
+        onMessageReceived(message);
+    });
+
+    QObject::connect(m_client, &QMQTT::Client::error, this, [](QMQTT::ClientError error)
+    {
+        qWarning() << "MqttDriver: connection error:" << error;
+    });
+
+    qInfo() << "MqttDriver: lambda signals connected, now calling connectToHost";
+
+    m_client->connectToHost();
+
+    qInfo() << "MqttDriver: connectToHost() called";
 
     return true;
 }
+
 
 void MqttDriver::stop()
 {
@@ -117,6 +161,7 @@ void MqttDriver::connectToBroker()
 {
     if (m_client == nullptr)
     {
+        qWarning() << "MqttDriver: client is null";
         return;
     }
 
@@ -124,13 +169,14 @@ void MqttDriver::connectToBroker()
             << m_host << ":" << m_port;
 
     m_client->connectToHost();
+    qInfo() << "MqttDriver: connectToHost() called";
 }
 
 void MqttDriver::onConnected()
 {
     m_connected = true;
 
-    qInfo() << "MqttDriver: connected to broker:"
+    qInfo() << "MqttDriver: CONNECTED to broker:"
             << m_host << ":" << m_port;
 
     subscribeToTopics();
@@ -154,9 +200,11 @@ void MqttDriver::subscribeToTopics()
     {
         const QString& topic = it.key();
 
+        qInfo() << "MqttDriver: subscribing to topic:" << topic;
+
         m_client->subscribe(topic, 1);
 
-        qInfo() << "MqttDriver: subscribed to topic:" << topic;
+        qInfo() << "MqttDriver: subscribe called for topic:" << topic;
     }
 }
 
@@ -166,6 +214,9 @@ void MqttDriver::onMessageReceived(const QMQTT::Message& message)
     const QByteArray payload = message.payload();
 
     const TagDefinition tag = findTagByTopic(topic);
+
+    qInfo() << "MqttDriver: received topic:" << message.topic();
+    qInfo() << "MqttDriver: expected topics:" << m_topicToTagId.keys();
 
     if (tag.tagId == 0)
     {

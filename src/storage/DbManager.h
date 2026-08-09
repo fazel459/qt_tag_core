@@ -82,6 +82,8 @@ public:
         const QString& message
     );
 
+
+    QSqlDatabase database() const;
 private:
     bool migrate();
 

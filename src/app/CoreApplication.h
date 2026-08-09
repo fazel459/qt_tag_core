@@ -16,6 +16,7 @@
 #include "../drivers/DriverManager.h"
 #include "../notifications/NotificationManager.h"
 #include "../computed/ComputedTagEngine.h"
+#include "../storage/HistorianManager.h"
 
 class CoreApplication
 {
@@ -40,7 +41,7 @@ private:
     QVector<DriverDefinition> drivers;
     std::unique_ptr<NotificationManager> m_notificationManager;
     std::unique_ptr<ComputedTagEngine> m_computedTagEngine;
-
+    std::unique_ptr<HistorianManager> m_historianManager;
 };
 
 

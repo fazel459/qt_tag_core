@@ -503,6 +503,192 @@ bool DbManager::migrate()
         CREATE INDEX IF NOT EXISTS idx_computed_tags_tag
             ON computed_tags(tag_id);
         )"
+        R"(
+        CREATE MATERIALIZED VIEW IF NOT EXISTS tag_values_1min
+        WITH (timescaledb.continuous) AS
+        SELECT
+            time_bucket(INTERVAL '1 minute', time) AS bucket,
+            tag_id,
+            AVG(eng_value) AS avg_value,
+            MIN(eng_value) AS min_value,
+            MAX(eng_value) AS max_value,
+            FIRST(eng_value, time) AS first_value,
+            LAST(eng_value, time) AS last_value,
+            COUNT(*) AS sample_count
+        FROM tag_values_raw
+        GROUP BY bucket, tag_id
+        WITH NO DATA;
+        )",
+
+        R"(
+        CREATE MATERIALIZED VIEW IF NOT EXISTS tag_values_5min
+        WITH (timescaledb.continuous) AS
+        SELECT
+            time_bucket(INTERVAL '5 minutes', time) AS bucket,
+            tag_id,
+            AVG(eng_value) AS avg_value,
+            MIN(eng_value) AS min_value,
+            MAX(eng_value) AS max_value,
+            FIRST(eng_value, time) AS first_value,
+            LAST(eng_value, time) AS last_value,
+            COUNT(*) AS sample_count
+        FROM tag_values_raw
+        GROUP BY bucket, tag_id
+        WITH NO DATA;
+        )",
+
+        R"(
+        CREATE MATERIALIZED VIEW IF NOT EXISTS tag_values_1hour
+        WITH (timescaledb.continuous) AS
+        SELECT
+            time_bucket(INTERVAL '1 hour', time) AS bucket,
+            tag_id,
+            AVG(eng_value) AS avg_value,
+            MIN(eng_value) AS min_value,
+            MAX(eng_value) AS max_value,
+            FIRST(eng_value, time) AS first_value,
+            LAST(eng_value, time) AS last_value,
+            COUNT(*) AS sample_count
+        FROM tag_values_raw
+        GROUP BY bucket, tag_id
+        WITH NO DATA;
+        )",
+
+        R"(
+        CREATE MATERIALIZED VIEW IF NOT EXISTS tag_values_1day
+        WITH (timescaledb.continuous) AS
+        SELECT
+            time_bucket(INTERVAL '1 day', time) AS bucket,
+            tag_id,
+            AVG(eng_value) AS avg_value,
+            MIN(eng_value) AS min_value,
+            MAX(eng_value) AS max_value,
+            FIRST(eng_value, time) AS first_value,
+            LAST(eng_value, time) AS last_value,
+            COUNT(*) AS sample_count
+        FROM tag_values_raw
+        GROUP BY bucket, tag_id
+        WITH NO DATA;
+        )"
+        R"(
+        SELECT add_continuous_aggregate_policy('tag_values_1min',
+            start_offset => INTERVAL '3 minutes',
+            end_offset => INTERVAL '1 minute',
+            schedule_interval => INTERVAL '1 minute',
+            if_not_exists => TRUE
+        );
+        )",
+
+        R"(
+        SELECT add_continuous_aggregate_policy('tag_values_5min',
+            start_offset => INTERVAL '15 minutes',
+            end_offset => INTERVAL '5 minutes',
+            schedule_interval => INTERVAL '5 minutes',
+            if_not_exists => TRUE
+        );
+        )",
+
+        R"(
+        SELECT add_continuous_aggregate_policy('tag_values_1hour',
+            start_offset => INTERVAL '3 hours',
+            end_offset => INTERVAL '1 hour',
+            schedule_interval => INTERVAL '1 hour',
+            if_not_exists => TRUE
+        );
+        )",
+
+        R"(
+        SELECT add_continuous_aggregate_policy('tag_values_1day',
+            start_offset => INTERVAL '3 days',
+            end_offset => INTERVAL '1 day',
+            schedule_interval => INTERVAL '1 day',
+            if_not_exists => TRUE
+        );
+        )"
+        R"(
+        ALTER TABLE tag_values_raw SET (
+            timescaledb.compress,
+            timescaledb.compress_segmentby = 'tag_id',
+            timescaledb.compress_orderby = 'time DESC'
+        );
+        )",
+
+        R"(
+        SELECT add_compression_policy('tag_values_raw',
+            compress_after => INTERVAL '7 days',
+            if_not_exists => TRUE
+        );
+        )",
+
+        R"(
+        ALTER MATERIALIZED VIEW tag_values_1min SET (
+            timescaledb.compress,
+            timescaledb.compress_segmentby = 'tag_id'
+        );
+        )",
+
+        R"(
+        SELECT add_compression_policy('tag_values_1min',
+            compress_after => INTERVAL '30 days',
+            if_not_exists => TRUE
+        );
+        )",
+
+        R"(
+        ALTER MATERIALIZED VIEW tag_values_5min SET (
+            timescaledb.compress,
+            timescaledb.compress_segmentby = 'tag_id'
+        );
+        )",
+
+        R"(
+        SELECT add_compression_policy('tag_values_5min',
+            compress_after => INTERVAL '90 days',
+            if_not_exists => TRUE
+        );
+        )",
+
+        R"(
+        ALTER MATERIALIZED VIEW tag_values_1hour SET (
+            timescaledb.compress,
+            timescaledb.compress_segmentby = 'tag_id'
+        );
+        )",
+
+        R"(
+        SELECT add_compression_policy('tag_values_1hour',
+            compress_after => INTERVAL '1 year',
+            if_not_exists => TRUE
+        );
+        )"
+        R"(
+        SELECT add_retention_policy('tag_values_raw',
+            drop_after => INTERVAL '30 days',
+            if_not_exists => TRUE
+        );
+        )",
+
+        R"(
+        SELECT add_retention_policy('tag_values_1min',
+            drop_after => INTERVAL '90 days',
+            if_not_exists => TRUE
+        );
+        )",
+
+        R"(
+        SELECT add_retention_policy('tag_values_5min',
+            drop_after => INTERVAL '1 year',
+            if_not_exists => TRUE
+        );
+        )",
+
+        R"(
+        SELECT add_retention_policy('tag_values_1hour',
+            drop_after => INTERVAL '5 years',
+            if_not_exists => TRUE
+        );
+        )"
+
     };
 
     for (const QString& sql : statements)
@@ -1933,4 +2119,10 @@ bool DbManager::logNotification(
     }
 
     return true;
+}
+
+
+QSqlDatabase DbManager::database() const
+{
+    return m_db;
 }
