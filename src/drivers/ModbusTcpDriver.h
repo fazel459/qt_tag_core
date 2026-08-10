@@ -113,4 +113,5 @@ private:
 
     bool m_debug = false;
     bool m_reconnectScheduled = false;
+    int m_interRequestDelayMs = 50;
 };

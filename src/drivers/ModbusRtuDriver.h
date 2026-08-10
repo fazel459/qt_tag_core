@@ -107,4 +107,5 @@ private:
     ModbusCardManager* m_cardManager;
     QQueue<SensorCard> m_cardPollQueue;
     SensorCard m_currentCard;
+    int m_interRequestDelayMs = 50;
 };

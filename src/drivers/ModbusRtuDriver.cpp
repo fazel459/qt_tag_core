@@ -52,6 +52,7 @@ ModbusRtuDriver::ModbusRtuDriver(
         m_parity = connectionObj.value("parity").toString("none").toLower();
         m_timeoutMs = connectionObj.value("timeout_ms").toInt(1000);
         m_defaultUnitId = connectionObj.value("default_unit_id").toInt(1);
+        m_interRequestDelayMs = connectionObj.value("inter_request_delay_ms").toInt(50);
     }
 
     for (const TagDefinition& tag : tags)
@@ -364,7 +365,7 @@ void ModbusRtuDriver::processFrame(const QByteArray& frame)
 
     const uchar* bytes = reinterpret_cast<const uchar*>(receivedData.constData());
 
-    const quint8 slaveAddress = bytes[0];
+//    const quint8 slaveAddress = bytes[0];
     const quint8 functionCode = bytes[1];
 
     // بررسی Exception Response
@@ -429,7 +430,13 @@ void ModbusRtuDriver::processFrame(const QByteArray& frame)
         m_waitingResponse = false;
         m_pending.valid = false;
 
-        pollCards();
+        QTimer::singleShot(m_interRequestDelayMs, [this]()
+        {
+            if (!m_waitingResponse)
+            {
+                pollCards();
+            }
+        });
         return;
     }
 
@@ -480,7 +487,13 @@ void ModbusRtuDriver::processFrame(const QByteArray& frame)
         publishGood(cfg, rawValue);
     }
 
-    sendNextRequest();
+    QTimer::singleShot(m_interRequestDelayMs, [this]()
+    {
+        if (!m_waitingResponse)
+        {
+            sendNextRequest();
+        }
+    });
 }
 
 void ModbusRtuDriver::publishGood(const ModbusTagConfig& cfg, double rawValue)

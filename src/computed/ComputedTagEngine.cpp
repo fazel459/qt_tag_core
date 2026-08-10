@@ -93,9 +93,9 @@ void ComputedTagEngine::onTagUpdate(const TagValue& value)
         }
     }
 
-    qInfo() << "ComputedTagEngine: tag update:"
-            << "tagId=" << value.tagId
-            << "value=" << value.engineeringValue;
+//    qInfo() << "ComputedTagEngine: tag update:"
+//            << "tagId=" << value.tagId
+//            << "value=" << value.engineeringValue;
 }
 
 void ComputedTagEngine::evaluateAllComputedTags()

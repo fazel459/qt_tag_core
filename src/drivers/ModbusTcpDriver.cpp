@@ -63,6 +63,7 @@ ModbusTcpDriver::ModbusTcpDriver(
         m_timeoutMs = connectionObj.value("timeout_ms").toInt(1000);
         m_defaultUnitId = connectionObj.value("default_unit_id").toInt(1);
         m_debug = connectionObj.value("debug").toBool(false);
+        m_interRequestDelayMs = connectionObj.value("inter_request_delay_ms").toInt(50);
     }
 
     for (const TagDefinition& tag : tags)
@@ -530,11 +531,11 @@ void ModbusTcpDriver::sendCardReadRequest(const SensorCard& card)
 
     m_waitingResponse = true;
 
-    qInfo() << "ModbusTcpDriver: card read request:"
-            << "card=" << card.cardIndex
-            << "startAddress=" << card.startAddress
-            << "totalRegisters=" << card.totalRegisters
-            << "sensors=" << card.sensors.size();
+//    qInfo() << "ModbusTcpDriver: card read request:"
+//            << "card=" << card.cardIndex
+//            << "startAddress=" << card.startAddress
+//            << "totalRegisters=" << card.totalRegisters
+//            << "sensors=" << card.sensors.size();
 }
 
 void ModbusTcpDriver::processCardResponse(const QByteArray& registers, const SensorCard& card)
@@ -567,9 +568,9 @@ void ModbusTcpDriver::processCardResponse(const QByteArray& registers, const Sen
         offset += byteCount;
     }
 
-    qInfo() << "ModbusTcpDriver: card response processed:"
-            << "card=" << card.cardIndex
-            << "sensors=" << card.sensors.size();
+//    qInfo() << "ModbusTcpDriver: card response processed:"
+//            << "card=" << card.cardIndex
+//            << "sensors=" << card.sensors.size();
 }
 
 
@@ -653,17 +654,17 @@ void ModbusTcpDriver::processFrame(const QByteArray& frame)
         return;
     }
 
-    if (m_debug)
-    {
-        qDebug() << "ModbusTcpDriver: processFrame:" << frame.toHex();
-    }
+//    if (m_debug)
+//    {
+//        qDebug() << "ModbusTcpDriver: processFrame:" << frame.toHex();
+//    }
 
     const uchar* bytes = reinterpret_cast<const uchar*>(frame.constData());
 
     const quint16 transactionId = static_cast<quint16>((bytes[0] << 8) | bytes[1]);
     const quint16 protocolId = static_cast<quint16>((bytes[2] << 8) | bytes[3]);
-    const quint16 length = static_cast<quint16>((bytes[4] << 8) | bytes[5]);
-    const quint8 unitId = bytes[6];
+//    const quint16 length = static_cast<quint16>((bytes[4] << 8) | bytes[5]);
+//    const quint8 unitId = bytes[6];
     const quint8 functionCode = bytes[7];
 
     if (protocolId != 0)
@@ -719,7 +720,13 @@ void ModbusTcpDriver::processFrame(const QByteArray& frame)
         m_waitingResponse = false;
         m_pending.valid = false;
 
-        sendNextRequest();
+        QTimer::singleShot(m_interRequestDelayMs, [this]()
+        {
+            if (!m_waitingResponse)
+            {
+                sendNextRequest();
+            }
+        });
         return;
     }
 
@@ -750,13 +757,13 @@ void ModbusTcpDriver::processFrame(const QByteArray& frame)
 
         const QByteArray registers = frame.mid(9, byteCount);
 
-        if (m_debug)
-        {
-            qDebug() << "ModbusTcpDriver: card response:"
-                     << "card=" << m_currentCard.cardIndex
-                     << "byteCount=" << byteCount
-                     << "registers=" << registers.toHex();
-        }
+//        if (m_debug)
+//        {
+//            qDebug() << "ModbusTcpDriver: card response:"
+//                     << "card=" << m_currentCard.cardIndex
+//                     << "byteCount=" << byteCount
+//                     << "registers=" << registers.toHex();
+//        }
 
         processCardResponse(registers, m_currentCard);
 
@@ -764,8 +771,14 @@ void ModbusTcpDriver::processFrame(const QByteArray& frame)
         m_waitingResponse = false;
         m_pending.valid = false;
 
-        // ادامه polling کارت‌ها
-        pollCards();
+        // ادامه polling کارت‌ها با delay
+        QTimer::singleShot(m_interRequestDelayMs, [this]()
+        {
+            if (!m_waitingResponse)
+            {
+                pollCards();
+            }
+        });
         return;
     }
 
@@ -816,7 +829,14 @@ void ModbusTcpDriver::processFrame(const QByteArray& frame)
         publishGood(cfg, rawValue);
     }
 
-    sendNextRequest();
+    // ادامه polling با delay
+    QTimer::singleShot(m_interRequestDelayMs, [this]()
+    {
+        if (!m_waitingResponse)
+        {
+            sendNextRequest();
+        }
+    });
 }
 
 void ModbusTcpDriver::publishGood(const ModbusTagConfig& cfg, double rawValue)
