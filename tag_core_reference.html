@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tag Core - SCADA/Historian Core Documentation</title>
+    <style>
+        :root {
+            --primary: #1a237e;
+            --secondary: #303f9f;
+            --accent: #ff6f00;
+            --success: #2e7d32;
+            --warning: #f57f17;
+            --danger: #c62828;
+            --bg: #f5f5f5;
+            --card-bg: #ffffff;
+            --text: #212121;
+            --text-light: #757575;
+            --border: #e0e0e0;
+            --code-bg: #263238;
+            --code-text: #aed581;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .nav {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .nav a {
+            display: block;
+            padding: 8px 16px;
+            background: var(--bg);
+            border-radius: 4px;
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .nav a:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .section h2 {
+            color: var(--primary);
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--accent);
+        }
+
+        .section h3 {
+            color: var(--secondary);
+            font-size: 1.4em;
+            margin: 20px 0 10px;
+        }
+
+        .section h4 {
+            color: var(--text);
+            font-size: 1.2em;
+            margin: 15px 0 8px;
+        }
+
+        .card {
+            background: var(--bg);
+            border-radius: 6px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        .card.warning {
+            border-left-color: var(--warning);
+        }
+
+        .card.success {
+            border-left-color: var(--success);
+        }
+
+        .card.danger {
+            border-left-color: var(--danger);
+        }
+
+        .card.info {
+            border-left-color: var(--secondary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            text-align: right;
+            font-weight: 500;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:nth-child(even) {
+            background: var(--bg);
+        }
+
+        tr:hover {
+            background: #e8eaf6;
+        }
+
+        code {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            direction: ltr;
+            display: inline-block;
+        }
+
+        pre {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            direction: ltr;
+            text-align: left;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+            margin-left: 5px;
+        }
+
+        .badge.success { background: #c8e6c9; color: var(--success); }
+        .badge.warning { background: #fff9c4; color: var(--warning); }
+        .badge.danger { background: #ffcdd2; color: var(--danger); }
+        .badge.info { background: #bbdefb; color: var(--primary); }
+        .badge.pending { background: #e0e0e0; color: var(--text-light); }
+
+        .arch-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .arch-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .arch-box {
+            background: linear-gradient(135deg, #e8eaf6, #c5cae9);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px 25px;
+            text-align: center;
+            min-width: 150px;
+            font-weight: 500;
+        }
+
+        .arch-box.driver { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border-color: var(--success); }
+        .arch-box.process { background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-color: var(--accent); }
+        .arch-box.storage { background: linear-gradient(135deg, #fce4ec, #f8bbd0); border-color: var(--danger); }
+        .arch-box.api { background: linear-gradient(135deg, #e1f5fe, #b3e5fc); border-color: #0277bd; }
+
+        .arch-arrow {
+            text-align: center;
+            font-size: 2em;
+            color: var(--text-light);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 15px 0;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            padding-right: 25px;
+            position: relative;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            right: 0;
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .feature-list li.pending:before {
+            content: "⏳";
+            color: var(--warning);
+        }
+
+        .toc {
+            background: var(--bg);
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .toc h3 {
+            margin-bottom: 10px;
+        }
+
+        .toc ol {
+            padding-right: 20px;
+        }
+
+        .toc a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-light);
+            font-size: 0.9em;
+        }
+
+        .method-signature {
+            background: #f5f5f5;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 10px;
+            margin: 5px 0;
+            font-family: 'Consolas', monospace;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 5px;
+        }
+
+        .status-complete { background: var(--success); }
+        .status-partial { background: var(--warning); }
+        .status-pending { background: var(--danger); }
+
+        @media print {
+            .nav { display: none; }
+            .section { page-break-inside: avoid; }
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .arch-row { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🏭 Tag Core</h1>
+    <p>SCADA / Historian Core Engine - Documentation Reference</p>
+    <p>Qt 5.14.2 | MinGW 7.3.0 | PostgreSQL + TimescaleDB | Windows</p>
+</div>
+
+<div class="container">
+
+    <!-- Navigation -->
+    <div class="nav">
+        <ul>
+            <li><a href="#overview">نمای کلی</a></li>
+            <li><a href="#architecture">معماری</a></li>
+            <li><a href="#database-setup">راه‌اندازی دیتابیس</a></li>
+            <li><a href="#core-classes">کلاس‌های اصلی</a></li>
+            <li><a href="#drivers">درایورها</a></li>
+            <li><a href="#processing">خط پردازش</a></li>
+            <li><a href="#rule-engine">موتور آلارم</a></li>
+            <li><a href="#storage">ذخیره‌سازی</a></li>
+            <li><a href="#notification">اعلان‌ها</a></li>
+            <li><a href="#computed">تگ‌های محاسباتی</a></li>
+            <li><a href="#historian">Historian</a></li>
+            <li><a href="#config">پیکربندی</a></li>
+            <li><a href="#troubleshooting">عیب‌یابی</a></li>
+        </ul>
+    </div>
+
+    <!-- Overview Section -->
+    <div class="section" id="overview">
+        <h2>📋 نمای کلی پروژه</h2>
+        
+        <div class="card info">
+            <h4>Tag Core چیست؟</h4>
+            <p>
+                Tag Core یک موتور SCADA/Historian صنعتی است که برای جمع‌آوری، پردازش، ذخیره‌سازی و مدیریت داده‌های سنسورها طراحی شده است.
+                این سیستم از پروتکل‌های صنعتی Modbus TCP/RTU، MQTT و OPC UA پشتیبانی می‌کند.
+            </p>
+        </div>
+
+        <h3>ویژگی‌های اصلی</h3>
+        <div class="grid-2">
+            <div class="card success">
+                <h4>✅ پیاده‌سازی شده</h4>
+                <ul class="feature-list">
+                    <li>TagBus (Pub/Sub Engine)</li>
+                    <li>Driver Framework (Modbus TCP/RTU, MQTT, Simulator)</li>
+                    <li>Software Filter Chain (7 نوع فیلتر)</li>
+                    <li>Rule Engine (9 نوع آلارم)</li>
+                    <li>Notification / Webhook</li>
+                    <li>Computed Tags</li>
+                    <li>Historian با Downsampling</li>
+                    <li>Archive Manager</li>
+                    <li>Batch Read (کارت‌های 16 سنسوره)</li>
+                </ul>
+            </div>
+            <div class="card warning">
+                <h4>⏳ در دست توسعه</h4>
+                <ul class="feature-list">
+                    <li class="pending">OPC UA Driver (نیاز به build کتابخانه)</li>
+                    <li class="pending">API Layer (REST + WebSocket)</li>
+                    <li class="pending">UI / Tag Management</li>
+                    <li class="pending">Alarm Shelving / Suppression</li>
+                    <li class="pending">DNP3 Driver</li>
+                    <li class="pending">Report Generation</li>
+                    <li class="pending">Web Dashboard</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>آمار پروژه</h3>
+        <table>
+            <tr><th>پارامتر</th><th>مقدار</th></tr>
+            <tr><td>زبان برنامه‌نویسی</td><td>C++ (Qt 5.14.2)</td></tr>
+            <tr><td>کامپایلر</td><td>MinGW 7.3.0 64-bit</td></tr>
+            <tr><td>سیستم‌عامل</td><td>Windows</td></tr>
+            <tr><td>دیتابیس</td><td>PostgreSQL + TimescaleDB</td></tr>
+            <tr><td>تعداد کلاس‌ها</td><td>~40</td></tr>
+            <tr><td>تعداد فایل‌ها</td><td>~60</td></tr>
+            <tr><td>پروتکل‌های پشتیبانی شده</td><td>Modbus TCP/RTU, MQTT, OPC UA (به‌زودی)</td></tr>
+        </table>
+    </div>
+
+    <!-- Architecture Section -->
+    <div class="section" id="architecture">
+        <h2>🏗️ معماری سیستم</h2>
+
+        <h3>دیاگرام کلی</h3>
+        <div class="arch-diagram">
+            <div class="arch-row">
+                <div class="arch-box driver">SimulatorDriver</div>
+                <div class="arch-box driver">ModbusTcpDriver</div>
+                <div class="arch-box driver">ModbusRtuDriver</div>
+                <div class="arch-box driver">MqttDriver</div>
+                <div class="arch-box driver">OpcUaDriver (TBD)</div>
+            </div>
+            <div class="arch-arrow">↓ raw</div>
+            <div class="arch-row">
+                <div class="arch-box process">FilterProcessor</div>
+                <div class="arch-box process">ScalingEngine</div>
+                <div class="arch-box process">Rounding</div>
+            </div>
+            <div class="arch-arrow">↓ update</div>
+            <div class="arch-row">
+                <div class="arch-box storage">CurrentStateWriter</div>
+                <div class="arch-box storage">StorageExceptionFilter</div>
+                <div class="arch-box storage">RuleEngine</div>
+                <div class="arch-box storage">RealtimeCache</div>
+            </div>
+            <div class="arch-arrow">↓</div>
+            <div class="arch-row">
+                <div class="arch-box storage">BatchHistorianWriter</div>
+                <div class="arch-box storage">AlarmManager</div>
+                <div class="arch-box storage">NotificationManager</div>
+            </div>
+            <div class="arch-arrow">↓</div>
+            <div class="arch-row">
+                <div class="arch-box">PostgreSQL + TimescaleDB</div>
+                <div class="arch-box">ArchiveManager</div>
+                <div class="arch-box api">API Layer (TBD)</div>
+            </div>
+        </div>
+
+        <h3>جریان داده</h3>
+        <pre>
+Driver → tags/{id}/raw → FilterProcessor → tags/{id}/update
+    → CurrentStateWriter → tag_current_state
+    → StorageExceptionFilter → BatchHistorianWriter → tag_values_raw
+    → RuleEngine → alarms / alarm_events
+    → RealtimeCache → in-memory cache
+        </pre>
+
+        <h3>موضوعات TagBus</h3>
+        <table>
+            <tr><th>Topic</th><th>توضیح</th><th>ناشر</th><th>مشترکین</th></tr>
+            <tr><td><code>tags/{id}/raw</code></td><td>داده خام از درایور</td><td>Drivers</td><td>FilterProcessor</td></tr>
+            <tr><td><code>tags/{id}/update</code></td><td>داده فیلتر شده</td><td>FilterProcessor</td><td>Storage, Rules, Cache</td></tr>
+            <tr><td><code>alarms/{id}/raised</code></td><td>آلارم فعال شد</td><td>RuleEngine</td><td>NotificationManager</td></tr>
+            <tr><td><code>alarms/{id}/cleared</code></td><td>آلارم پاک شد</td><td>RuleEngine</td><td>NotificationManager</td></tr>
+            <tr><td><code>commands/{id}/write</code></td><td>فرمان نوشتن</td><td>API (TBD)</td><td>Drivers</td></tr>
+        </table>
+    </div>
+
+    <!-- Database Setup Section -->
+    <div class="section" id="database-setup">
+        <h2>🗄️ راه‌اندازی دیتابیس</h2>
+
+        <h3>پیش‌نیازها</h3>
+        <div class="card info">
+            <ul>
+                <li>PostgreSQL 14 یا بالاتر</li>
+                <li>TimescaleDB Extension</li>
+                <li>Qt SQL Driver: QPSQL</li>
+            </ul>
+        </div>
+
+        <h3>مرحله 1: نصب PostgreSQL</h3>
+        <pre>
+# دانلود و نصب PostgreSQL از:
+https://www.postgresql.org/download/windows/
+
+# در حین نصب:
+- Port: 5432
+- Superuser: postgres
+- Password: (یک رمز عبور قوی انتخاب کنید)
+        </pre>
+
+        <h3>مرحله 2: نصب TimescaleDB</h3>
+        <pre>
+# دانلود TimescaleDB از:
+https://docs.timescale.com/self-hosted/latest/install/installation-windows/
+
+# پس از نصب، در psql:
+# اضافه کردن به postgresql.conf:
+shared_preload_libraries = 'timescaledb'
+
+# ری‌استارت PostgreSQL
+        </pre>
+
+        <h3>مرحله 3: ایجاد دیتابیس</h3>
+        <pre>
+-- اتصال به psql
+psql -U postgres
+
+-- ایجاد دیتابیس
+CREATE DATABASE tagsdb;
+
+-- اتصال به دیتابیس
+\c tagsdb
+
+-- فعال‌سازی TimescaleDB
+CREATE EXTENSION IF NOT EXISTS timescaledb;
+        </pre>
+
+        <h3>مرحله 4: تنظیمات bootstrap.json</h3>
+        <pre>
+{
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "database_name": "tagsdb",
+        "username": "postgres",
+        "password": "your_password"
+    }
+}
+        </pre>
+
+        <h3>مرحله 5: جداول خودکار</h3>
+        <p>
+            هنگام اولین اجرا، DbManager به صورت خودکار جداول زیر را می‌سازد:
+        </p>
+        <table>
+            <tr><th>جدول</th><th>نوع</th><th>توضیح</th></tr>
+            <tr><td><code>tags</code></td><td>Table</td><td>تعریف تگ‌ها</td></tr>
+            <tr><td><code>tag_values_raw</code></td><td>Hypertable</td><td>داده‌های خام</td></tr>
+            <tr><td><code>tag_current_state</code></td><td>Table</td><td>آخرین وضعیت تگ‌ها</td></tr>
+            <tr><td><code>alarms</code></td><td>Table</td><td>آلارم‌ها</td></tr>
+            <tr><td><code>alarm_events</code></td><td>Table</td><td>رویدادهای آلارم</td></tr>
+            <tr><td><code>threshold_rules</code></td><td>Table</td><td>قوانین آستانه</td></tr>
+            <tr><td><code>range_violation_rules</code></td><td>Table</td><td>قوانین محدوده</td></tr>
+            <tr><td><code>rate_of_change_rules</code></td><td>Table</td><td>قوانین نرخ تغییر</td></tr>
+            <tr><td><code>stuck_value_rules</code></td><td>Table</td><td>قوانین مقدار چسبیده</td></tr>
+            <tr><td><code>boolean_rules</code></td><td>Table</td><td>قوانین بولی</td></tr>
+            <tr><td><code>drivers</code></td><td>Table</td><td>درایورها</td></tr>
+            <tr><td><code>computed_tags</code></td><td>Table</td><td>تگ‌های محاسباتی</td></tr>
+            <tr><td><code>notification_rules</code></td><td>Table</td><td>قوانین اعلان</td></tr>
+            <tr><td><code>notification_log</code></td><td>Table</td><td>لاگ اعلان‌ها</td></tr>
+            <tr><td><code>archive_log</code></td><td>Table</td><td>لاگ آرشیو</td></tr>
+            <tr><td><code>system_settings</code></td><td>Table</td><td>تنظیمات سیستم</td></tr>
+            <tr><td><code>tag_values_1min</code></td><td>Continuous Aggregate</td><td>داده‌های 1 دقیقه‌ای</td></tr>
+            <tr><td><code>tag_values_5min</code></td><td>Continuous Aggregate</td><td>داده‌های 5 دقیقه‌ای</td></tr>
+            <tr><td><code>tag_values_1hour</code></td><td>Continuous Aggregate</td><td>داده‌های 1 ساعته</td></tr>
+            <tr><td><code>tag_values_1day</code></td><td>Continuous Aggregate</td><td>داده‌های 1 روزه</td></tr>
+        </table>
+
+        <h3>مرحله 6: تنظیمات TimescaleDB</h3>
+        <pre>
+-- تنظیمات پیشنهادی در postgresql.conf:
+shared_buffers = '2GB'
+effective_cache_size = '6GB'
+maintenance_work_mem = '512MB'
+work_mem = '64MB'
+max_connections = 100
+
+-- تنظیمات TimescaleDB:
+timescaledb.max_background_workers = 8
+        </pre>
+
+        <h3>مرحله 7: ایجاد کاربر (اختیاری)</h3>
+        <pre>
+-- ایجاد کاربر جدید
+CREATE USER tagcore WITH PASSWORD 'your_password';
+
+-- اعطای دسترسی‌ها
+GRANT ALL PRIVILEGES ON DATABASE tagsdb TO tagcore;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO tagcore;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO tagcore;
+        </pre>
+
+        <h3>بررسی صحت نصب</h3>
+        <pre>
+-- بررسی نسخه TimescaleDB
+SELECT extversion FROM pg_extension WHERE extname = 'timescaledb';
+
+-- بررسی hypertable ها
+SELECT hypertable_name FROM timescaledb_information.hypertables;
+
+-- بررسی continuous aggregates
+SELECT view_name FROM timescaledb_information.continuous_aggregates;
+        </pre>
+    </div>
+
+    <!-- Core Classes Section -->
+    <div class="section" id="core-classes">
+        <h2>🔧 کلاس‌های اصلی</h2>
+
+        <h3>TagBus</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/tagbus/TagBus.h</code></p>
+            <p><strong>نقش:</strong> موتور Pub/Sub برای ارتباط بین اجزای سیستم</p>
+            
+            <h4>متدها</h4>
+            <div class="method-signature">void publish(const QString& topic, const TagValue& value)</div>
+            <p>انتشار یک مقدار روی یک موضوع</p>
+            
+            <div class="method-signature">void subscribe(const QString& topicPattern, std::function&lt;void(const BusMessage&amp;)&gt; callback)</div>
+            <p>اشتراک در یک موضوع با پشتیبانی از wildcard (#)</p>
+        </div>
+
+        <h3>DbManager</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/storage/DbManager.h</code></p>
+            <p><strong>نقش:</strong> مدیریت ارتباط با دیتابیس و migration خودکار</p>
+            
+            <h4>متدهای اصلی</h4>
+            <div class="method-signature">bool initialize(const AppConfig& bootstrapConfig)</div>
+            <p>مقداردهی اولیه و ایجاد جداول</p>
+            
+            <div class="method-signature">QVector&lt;TagDefinition&gt; loadTags()</div>
+            <p>بارگذاری تگ‌ها از دیتابیس</p>
+            
+            <div class="method-signature">QVector&lt;DriverDefinition&gt; loadDrivers()</div>
+            <p>بارگذاری درایورها از دیتابیس</p>
+            
+            <div class="method-signature">bool insertTagValue(const TagValue& value)</div>
+            <p>درج مقدار تگ در tag_values_raw</p>
+            
+            <div class="method-signature">qint64 raiseAlarm(qint64 tagId, const QString& alarmType, const QString& severity, double value, double threshold, const QString& message)</div>
+            <p>ثبت آلارم جدید</p>
+            
+            <div class="method-signature">bool clearAlarmByTagAndType(qint64 tagId, const QString& alarmType)</div>
+            <p>پاک کردن آلارم</p>
+            
+            <div class="method-signature">QSqlDatabase database() const</div>
+            <p>دریافت شیء دیتابیس</p>
+        </div>
+
+        <h3>ConfigLoader</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/core/ConfigLoader.h</code></p>
+            <p><strong>نقش:</strong> خواندن فایل bootstrap.json</p>
+            
+            <h4>متدها</h4>
+            <div class="method-signature">static std::optional&lt;AppConfig&gt; load(const QString& filePath)</div>
+            <p>خواندن و parse فایل کانفیگ</p>
+        </div>
+
+        <h3>Models</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/core/Models.h</code></p>
+            <p><strong>نقش:</strong> تعریف ساختارهای داده</p>
+            
+            <h4>ساختارهای اصلی</h4>
+            <table>
+                <tr><th>ساختار</th><th>توضیح</th><th>فیلدهای کلیدی</th></tr>
+                <tr><td><code>TagDefinition</code></td><td>تعریف تگ</td><td>tagId, tagName, scalingType, engMin, engMax, deadband</td></tr>
+                <tr><td><code>TagValue</code></td><td>مقدار تگ</td><td>tagId, rawValue, engineeringValue, quality, timestamp</td></tr>
+                <tr><td><code>ThresholdRule</code></td><td>قانون آستانه</td><td>tagId, low, high, lowLow, highHigh, hysteresis</td></tr>
+                <tr><td><code>DriverDefinition</code></td><td>تعریف درایور</td><td>driverId, name, type, connectionConfig</td></tr>
+                <tr><td><code>ComputedTag</code></td><td>تگ محاسباتی</td><td>tagId, expression, updateMode</td></tr>
+                <tr><td><code>NotificationRule</code></td><td>قانون اعلان</td><td>channel, severityFilter, throttleMs</td></tr>
+                <tr><td><code>AlarmNotification</code></td><td>اعلان آلارم</td><td>alarmId, tagId, severity, state</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Drivers Section -->
+    <div class="section" id="drivers">
+        <h2>🔌 درایورها</h2>
+
+        <h3>ITagDriver (Interface)</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/drivers/ITagDriver.h</code></p>
+            
+            <h4>متدها</h4>
+            <div class="method-signature">virtual QString driverType() const = 0</div>
+            <div class="method-signature">virtual bool start() = 0</div>
+            <div class="method-signature">virtual void stop() = 0</div>
+            <div class="method-signature">virtual bool isConnected() const = 0</div>
+        </div>
+
+        <h3>DriverManager</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/drivers/DriverManager.h</code></p>
+            <p><strong>نقش:</strong> مدیریت چرخه حیات درایورها</p>
+            
+            <h4>متدها</h4>
+            <div class="method-signature">bool startAll()</div>
+            <div class="method-signature">void stopAll()</div>
+        </div>
+
+        <h3>ModbusTcpDriver</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/drivers/ModbusTcpDriver.h</code></p>
+            <p><strong>نقش:</strong> ارتباط با دستگاه‌های Modbus TCP</p>
+            
+            <h4>Function Codes پشتیبانی شده</h4>
+            <table>
+                <tr><th>FC</th><th>نام</th><th>نوع</th><th>وضعیت</th></tr>
+                <tr><td>3</td><td>Read Holding Registers</td><td>Read</td><td><span class="badge success">✅</span></td></tr>
+                <tr><td>4</td><td>Read Input Registers</td><td>Read</td><td><span class="badge success">✅</span></td></tr>
+                <tr><td>5</td><td>Write Single Coil</td><td>Write</td><td><span class="badge success">✅</span></td></tr>
+                <tr><td>6</td><td>Write Single Register</td><td>Write</td><td><span class="badge success">✅</span></td></tr>
+                <tr><td>16</td><td>Write Multiple Registers</td><td>Write</td><td><span class="badge success">✅</span></td></tr>
+            </table>
+            
+            <h4>متدها</h4>
+            <div class="method-signature">void writeValue(qint64 tagId, double engineeringValue)</div>
+            <div class="method-signature">void pollCards()</div>
+            <div class="method-signature">void sendCardReadRequest(const SensorCard& card)</div>
+            <div class="method-signature">void processCardResponse(const QByteArray& registers, const SensorCard& card)</div>
+        </div>
+
+        <h3>ModbusRtuDriver</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/drivers/ModbusRtuDriver.h</code></p>
+            <p><strong>نقش:</strong> ارتباط با دستگاه‌های Modbus RTU از طریق پورت سریال</p>
+            
+            <h4>تنظیمات</h4>
+            <table>
+                <tr><th>پارامتر</th><th>پیش‌فرض</th><th>توضیح</th></tr>
+                <tr><td>port</td><td>COM1</td><td>نام پورت سریال</td></tr>
+                <tr><td>baud_rate</td><td>9600</td><td>نرخ ارسال</td></tr>
+                <tr><td>data_bits</td><td>8</td><td>تعداد بیت داده</td></tr>
+                <tr><td>stop_bits</td><td>1</td><td>تعداد بیت توقف</td></tr>
+                <tr><td>parity</td><td>none</td><td>بررسی زوجیت</td></tr>
+            </table>
+        </div>
+
+        <h3>MqttDriver</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/drivers/MqttDriver.h</code></p>
+            <p><strong>نقش:</strong> دریافت داده از MQTT Broker</p>
+            
+            <h4>تنظیمات</h4>
+            <table>
+                <tr><th>پارامتر</th><th>پیش‌فرض</th><th>توضیح</th></tr>
+                <tr><td>host</td><td>localhost</td><td>آدرس Broker</td></tr>
+                <tr><td>port</td><td>1883</td><td>پورت Broker</td></tr>
+                <tr><td>client_id</td><td>tag_core_client</td><td>شناسه کلاینت</td></tr>
+                <tr><td>username</td><td>-</td><td>نام کاربری (اختیاری)</td></tr>
+                <tr><td>password</td><td>-</td><td>رمز عبور (اختیاری)</td></tr>
+            </table>
+            
+            <h4>نکته مهم</h4>
+            <div class="card warning">
+                <p>سیگنال‌های qmqtt باید با lambda متصل شوند، نه member function (به دلیل multiple inheritance).</p>
+            </div>
+        </div>
+
+        <h3>ModbusCardManager</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/drivers/ModbusCardManager.h</code></p>
+            <p><strong>نقش:</strong> گروه‌بندی تگ‌ها بر اساس کارت‌های 16 سنسوره</p>
+            
+            <h4>ساختار کارت</h4>
+            <pre>
+Card 0:  Address 0-15   (16 sensors)
+Card 1:  Address 16-31  (16 sensors)
+Card 2:  Address 32-47  (16 sensors)
+...
+            </pre>
+            
+            <h4>متدها</h4>
+            <div class="method-signature">void buildCards(const QVector&lt;TagDefinition&gt;& tags)</div>
+            <div class="method-signature">const QVector&lt;SensorCard&gt;& cards() const</div>
+            <div class="method-signature">const SensorInfo* findSensor(qint64 tagId) const</div>
+        </div>
+
+        <h3>SimulatorDriver</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/drivers/SimulatorDriver.h</code></p>
+            <p><strong>نقش:</strong> شبیه‌سازی داده برای تست</p>
+            
+            <h4>پروفایل‌ها</h4>
+            <table>
+                <tr><th>پروفایل</th><th>توضیح</th></tr>
+                <tr><td>sine</td><td>موج سینوسی</td></tr>
+                <tr><td>bad_quality</td><td>کیفیت بد متناوب</td></tr>
+                <tr><td>stuck</td><td>مقدار ثابت</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Processing Pipeline Section -->
+    <div class="section" id="processing">
+        <h2>⚙️ خط پردازش</h2>
+
+        <h3>FilterProcessor</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/filters/FilterProcessor.h</code></p>
+            <p><strong>نقش:</strong> اعمال فیلترهای نرم‌افزاری و rounding</p>
+        </div>
+
+        <h3>فیلترهای نرم‌افزاری</h3>
+        <table>
+            <tr><th>فیلتر</th><th>توضیح</th><th>پارامترها</th></tr>
+            <tr><td><code>none</code></td><td>بدون فیلتر</td><td>-</td></tr>
+            <tr><td><code>moving_average</code></td><td>میانگین متحرک</td><td>window</td></tr>
+            <tr><td><code>exponential_average</code></td><td>میانگین نمایی</td><td>alpha</td></tr>
+            <tr><td><code>median</code></td><td>میانه</td><td>window</td></tr>
+            <tr><td><code>debounce</code></td><td>حذف لرزش</td><td>debounce_ms, epsilon</td></tr>
+            <tr><td><code>outlier_rejection</code></td><td>رد مقادیر پرت</td><td>max_delta, accept_after_n_outliers</td></tr>
+            <tr><td><code>rate_limiter</code></td><td>محدودکننده نرخ</td><td>max_rate_per_second</td></tr>
+        </table>
+
+        <h3>ScalingEngine</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/scaling/ScalingEngine.h</code></p>
+            
+            <h4>متدها</h4>
+            <div class="method-signature">static double scale(const TagDefinition& tag, double raw)</div>
+            <div class="method-signature">static double reverseScale(const TagDefinition& tag, double engValue)</div>
+        </div>
+
+        <h3>StorageExceptionFilter</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/storage/StorageExceptionFilter.h</code></p>
+            <p><strong>نقش:</strong> کاهش حجم ذخیره‌سازی با deadband و exception reporting</p>
+        </div>
+    </div>
+
+    <!-- Rule Engine Section -->
+    <div class="section" id="rule-engine">
+        <h2>🚨 موتور آلارم</h2>
+
+        <h3>انواع آلارم</h3>
+        <table>
+            <tr><th>نوع</th><th>alarm_type</th><th>Severity پیش‌فرض</th><th>توضیح</th></tr>
+            <tr><td>HighHigh</td><td>threshold_highhigh</td><td>critical</td><td>بیش از آستانه بحرانی</td></tr>
+            <tr><td>High</td><td>threshold_high</td><td>high</td><td>بیش از آستانه بالا</td></tr>
+            <tr><td>Low</td><td>threshold_low</td><td>high</td><td>کمتر از آستانه پایین</td></tr>
+            <tr><td>LowLow</td><td>threshold_lowlow</td><td>critical</td><td>کمتر از آستانه بحرانی</td></tr>
+            <tr><td>Range Violation</td><td>range_violation</td><td>high</td><td>خارج از محدوده مجاز</td></tr>
+            <tr><td>Rate of Change</td><td>rate_of_change</td><td>high</td><td>نرخ تغییر بیش از حد</td></tr>
+            <tr><td>Stuck Value</td><td>stuck_value</td><td>medium</td><td>مقدار تغییر نمی‌کند</td></tr>
+            <tr><td>Boolean State</td><td>boolean_state</td><td>medium</td><td>وضعیت بولی غیرمنتظره</td></tr>
+            <tr><td>Bad Quality</td><td>bad_quality</td><td>high</td><td>کیفیت داده بد</td></tr>
+        </table>
+
+        <h3>Severity Levels</h3>
+        <table>
+            <tr><th>سطح</th><th>رنگ</th><th>اولویت</th></tr>
+            <tr><td><span class="badge danger">critical</span></td><td>قرمز</td><td>بالاترین</td></tr>
+            <tr><td><span class="badge warning">high</span></td><td>نارنجی</td><td>بالا</td></tr>
+            <tr><td><span class="badge info">medium</span></td><td>زرد</td><td>متوسط</td></tr>
+            <tr><td><span class="badge success">low</span></td><td>آبی</td><td>پایین</td></tr>
+            <tr><td><span class="badge pending">info</span></td><td>خاکستری</td><td>اطلاع‌رسانی</td></tr>
+        </table>
+    </div>
+
+    <!-- Storage Section -->
+    <div class="section" id="storage">
+        <h2>💾 ذخیره‌سازی</h2>
+
+        <h3>جداول اصلی</h3>
+        <table>
+            <tr><th>جدول</th><th>نوع</th><th>Retention</th><th>Compression</th></tr>
+            <tr><td>tag_values_raw</td><td>Hypertable</td><td>30 روز</td><td>7 روز بعد</td></tr>
+            <tr><td>tag_values_1min</td><td>Continuous Aggregate</td><td>90 روز</td><td>30 روز بعد</td></tr>
+            <tr><td>tag_values_5min</td><td>Continuous Aggregate</td><td>1 سال</td><td>90 روز بعد</td></tr>
+            <tr><td>tag_values_1hour</td><td>Continuous Aggregate</td><td>5 سال</td><td>1 سال بعد</td></tr>
+            <tr><td>tag_values_1day</td><td>Continuous Aggregate</td><td>برای همیشه</td><td>-</td></tr>
+        </table>
+
+        <h3>ArchiveManager</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/storage/ArchiveManager.h</code></p>
+            <p><strong>نقش:</strong> آرشیو خودکار داده‌ها بر اساس حجم</p>
+            
+            <h4>متدها</h4>
+            <div class="method-signature">void checkAndArchive()</div>
+            <div class="method-signature">bool archiveTable(const QString& tableName, const QDateTime& endTime)</div>
+            <div class="method-signature">bool restoreArchive(const QString& filePath, const QString& tableName)</div>
+        </div>
+    </div>
+
+    <!-- Notification Section -->
+    <div class="section" id="notification">
+        <h2>📢 اعلان‌ها</h2>
+
+        <h3>کانال‌های اعلان</h3>
+        <table>
+            <tr><th>کانال</th><th>وضعیت</th><th>توضیح</th></tr>
+            <tr><td>webhook</td><td><span class="badge success">✅</span></td><td>HTTP POST به آدرس مشخص</td></tr>
+            <tr><td>log</td><td><span class="badge success">✅</span></td><td>نوشتن در لاگ</td></tr>
+            <tr><td>sound</td><td><span class="badge pending">⏳</span></td><td>پخش صدا (placeholder)</td></tr>
+            <tr><td>email</td><td><span class="badge pending">⏳</span></td><td>ارسال ایمیل</td></tr>
+        </table>
+    </div>
+
+    <!-- Computed Tags Section -->
+    <div class="section" id="computed">
+        <h2>🧮 تگ‌های محاسباتی</h2>
+
+        <h3>مثال‌ها</h3>
+        <pre>
+-- جمع دو تگ
+'SIM.UNIT02.PUMP101.FIC-101.PV + SIM.UNIT02.PUMP101.TIT-101.PV'
+
+-- میانگین
+'(Tag1 + Tag2 + Tag3) / 3'
+
+-- تفاضل
+'Tag1 - Tag2'
+
+-- توابع JavaScript
+'Math.max(Tag1, Tag2)'
+'Tag1 == 1 && Tag2 == 1 ? 1 : 0'
+        </pre>
+    </div>
+
+    <!-- Historian Section -->
+    <div class="section" id="historian">
+        <h2>📊 Historian</h2>
+
+        <h3>HistorianManager</h3>
+        <div class="card">
+            <p><strong>فایل:</strong> <code>src/storage/HistorianManager.h</code></p>
+            
+            <h4>متدها</h4>
+            <div class="method-signature">QVector&lt;AggregatePoint&gt; query1Min(qint64 tagId, const QDateTime& start, const QDateTime& end)</div>
+            <div class="method-signature">QVector&lt;AggregatePoint&gt; query5Min(qint64 tagId, const QDateTime& start, const QDateTime& end)</div>
+            <div class="method-signature">QVector&lt;AggregatePoint&gt; query1Hour(qint64 tagId, const QDateTime& start, const QDateTime& end)</div>
+            <div class="method-signature">QVector&lt;AggregatePoint&gt; query1Day(qint64 tagId, const QDateTime& start, const QDateTime& end)</div>
+            <div class="method-signature">void refreshContinuousAggregates()</div>
+        </div>
+    </div>
+
+    <!-- Configuration Section -->
+    <div class="section" id="config">
+        <h2>⚙️ پیکربندی</h2>
+
+        <h3>system_settings</h3>
+        <table>
+            <tr><th>کلید</th><th>پیش‌فرض</th><th>توضیح</th></tr>
+            <tr><td>engineering_decimals</td><td>4</td><td>تعداد اعشار</td></tr>
+            <tr><td>historian.batch_flush_interval_ms</td><td>500</td><td>فاصله flush</td></tr>
+            <tr><td>historian.batch_max_size</td><td>1000</td><td>حداکثر اندازه batch</td></tr>
+            <tr><td>deadband.global_min_deadband</td><td>0.01</td><td>حداقل deadband</td></tr>
+            <tr><td>deadband.default_alarm_hysteresis</td><td>0.5</td><td>hysteresis پیش‌فرض</td></tr>
+            <tr><td>deadband.bad_quality_delay_ms</td><td>3000</td><td>تأخیر کیفیت بد</td></tr>
+        </table>
+    </div>
+
+    <!-- Troubleshooting Section -->
+    <div class="section" id="troubleshooting">
+        <h2>🔍 عیب‌یابی</h2>
+
+        <h3>مشکلات رایج</h3>
+        <table>
+            <tr><th>مشکل</th><th>علت</th><th>راه‌حل</th></tr>
+            <tr>
+                <td>خطای <code>offset</code> در PostgreSQL</td>
+                <td>offset کلمه کلیدی است</td>
+                <td>استفاده از <code>scaling_offset</code></td>
+            </tr>
+            <tr>
+                <td><code>QVariant::toDouble(default)</code> خطا می‌دهد</td>
+                <td>Qt 5.14 این متد را ندارد</td>
+                <td>استفاده از helper functions</td>
+            </tr>
+            <tr>
+                <td><code>Qt::SkipEmptyParts</code> موجود نیست</td>
+                <td>Qt 5.14 از <code>QString::SkipEmptyParts</code> استفاده می‌کند</td>
+                <td>تغییر به <code>QString::SkipEmptyParts</code></td>
+            </tr>
+            <tr>
+                <td><code>QNetworkRequest</code> خطا می‌دهد</td>
+                <td>Most Vexing Parse</td>
+                <td>استفاده از <code>QUrl requestUrl(url)</code></td>
+            </tr>
+            <tr>
+                <td>MQTT متصل نمی‌شود</td>
+                <td><code>QHostAddress("localhost")</code> resolve نمی‌شود</td>
+                <td>استفاده از <code>QHostAddress::LocalHost</code></td>
+            </tr>
+            <tr>
+                <td>MQTT پیام دریافت نمی‌کند</td>
+                <td>Multiple inheritance problem</td>
+                <td>استفاده از lambda برای سیگنال‌ها</td>
+            </tr>
+            <tr>
+                <td><code>QVector::dequeue</code> خطا می‌دهد</td>
+                <td>QVector متد dequeue ندارد</td>
+                <td>استفاده از <code>QQueue</code></td>
+            </tr>
+            <tr>
+                <td><code>QSqlError</code> incomplete type</td>
+                <td>include موجود نیست</td>
+                <td>اضافه کردن <code>#include &lt;QSqlError&gt;</code></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Tag Core Documentation | Generated: 2024</p>
+        <p>Qt 5.14.2 | MinGW 7.3.0 | PostgreSQL + TimescaleDB | Windows</p>
+    </div>
+
+</div>
+
+</body>
+</html>
