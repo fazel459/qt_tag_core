@@ -14,6 +14,7 @@
 
 #include "ITagDriver.h"
 #include "ModbusTypes.h"
+#include "ModbusCardManager.h"
 
 class ModbusTcpDriver : public QObject, public ITagDriver
 {
@@ -67,6 +68,18 @@ private:
     ModbusTagConfig parseTagConfig(const TagDefinition& tag) const;
 
     int registerCount(const QString& dataType) const;
+
+private:
+
+    void buildCardGroups();
+    void pollCards();
+    void sendCardReadRequest(const SensorCard& card);
+    void processCardResponse(const QByteArray& registers, const SensorCard& card);
+
+    ModbusCardManager* m_cardManager;
+     QQueue<SensorCard> m_cardPollQueue;
+    SensorCard m_currentCard;
+    bool m_pollingCards = false;
 
     TagBus& m_bus;
 

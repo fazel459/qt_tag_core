@@ -11,6 +11,7 @@ debug/qmqtt_ssl_socket.o
 debug/ComputedTagEngine.o
 debug/DriverFactory.o
 debug/DriverManager.o
+debug/ModbusCardManager.o
 debug/ModbusRtuDriver.o
 debug/ModbusTcpDriver.o
 debug/MqttDriver.o
@@ -21,6 +22,7 @@ debug/CoreApplication.o
 debug/ConfigLoader.o
 debug/NotificationManager.o
 debug/WebhookNotifier.o
+debug/ArchiveManager.o
 debug/BatchHistorianWriter.o
 debug/CurrentStateWriter.o
 debug/DbManager.o

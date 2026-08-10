@@ -14,6 +14,7 @@ SOURCES += \
     src/computed/ComputedTagEngine.cpp \
     src/drivers/DriverFactory.cpp \
     src/drivers/DriverManager.cpp \
+    src/drivers/ModbusCardManager.cpp \
     src/drivers/ModbusRtuDriver.cpp \
     src/drivers/ModbusTcpDriver.cpp \
     src/drivers/MqttDriver.cpp \
@@ -24,6 +25,7 @@ SOURCES += \
     src/core/ConfigLoader.cpp \
     src/notifications/NotificationManager.cpp \
     src/notifications/WebhookNotifier.cpp \
+    src/storage/ArchiveManager.cpp \
     src/storage/BatchHistorianWriter.cpp \
     src/storage/CurrentStateWriter.cpp \
     src/storage/DbManager.cpp \
@@ -41,6 +43,7 @@ HEADERS += \
     src/drivers/DriverFactory.h \
     src/drivers/DriverManager.h \
     src/drivers/ITagDriver.h \
+    src/drivers/ModbusCardManager.h \
     src/drivers/ModbusRtuDriver.h \
     src/drivers/ModbusTcpDriver.h \
     src/drivers/ModbusTypes.h \
@@ -52,6 +55,7 @@ HEADERS += \
     src/filters/SoftwareFilters.h \
     src/notifications/NotificationManager.h \
     src/notifications/WebhookNotifier.h \
+    src/storage/ArchiveManager.h \
     src/storage/BatchHistorianWriter.h \
     src/storage/CurrentStateWriter.h \
     src/storage/HistorianManager.h \

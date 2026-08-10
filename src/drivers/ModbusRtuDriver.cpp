@@ -29,6 +29,8 @@ ModbusRtuDriver::ModbusRtuDriver(
     m_pollTimer.setParent(this);
     m_timeoutTimer.setParent(this);
 
+
+
     if (m_driver.pollingIntervalMs <= 0)
     {
         m_driver.pollingIntervalMs = 1000;
@@ -83,16 +85,25 @@ ModbusRtuDriver::ModbusRtuDriver(
         onTimeoutTimer();
     });
 
+    m_cardManager = new ModbusCardManager();
+    m_cardManager->buildCards(m_tags);
+
     qInfo() << "ModbusRtuDriver created:"
             << driver.name
             << "port:" << m_portName
             << "baudRate:" << m_baudRate
-            << "tags:" << m_tagConfigs.size();
+            << "tags:" << m_tagConfigs.size()
+            << "cards:" << m_cardManager->cardCount();
 }
 
 ModbusRtuDriver::~ModbusRtuDriver()
 {
     stop();
+    if (m_cardManager != nullptr)
+    {
+        delete m_cardManager;
+        m_cardManager = nullptr;
+    }
 }
 
 bool ModbusRtuDriver::start()
@@ -186,17 +197,24 @@ void ModbusRtuDriver::onReadyRead()
 {
     m_readBuffer.append(m_serialPort.readAll());
 
-    if (m_readBuffer.size() < 4)
+    while (true)
     {
-        return;
-    }
+        const int expectedSize = expectedResponseSize(m_readBuffer);
 
-    const int expectedSize = 4;
+        if (expectedSize < 0)
+        {
+            // هنوز داده کافی نداریم
+            break;
+        }
 
-    if (m_readBuffer.size() >= expectedSize)
-    {
-        const QByteArray frame = m_readBuffer;
-        m_readBuffer.clear();
+        if (m_readBuffer.size() < expectedSize)
+        {
+            // هنوز فریم کامل نشده
+            break;
+        }
+
+        const QByteArray frame = m_readBuffer.left(expectedSize);
+        m_readBuffer.remove(0, expectedSize);
 
         processFrame(frame);
     }
@@ -214,15 +232,24 @@ void ModbusRtuDriver::onPollTimer()
         return;
     }
 
-    if (m_pollQueue.isEmpty())
+    if (m_cardManager != nullptr && m_cardManager->cardCount() > 0)
     {
-        for (const ModbusTagConfig& cfg : m_tagConfigs)
-        {
-            m_pollQueue.enqueue(cfg);
-        }
+        // Batch Read برای کارت‌ها
+        pollCards();
     }
+    else
+    {
+        // روش قدیمی: خواندن تگ‌ها یکی‌یکی
+        if (m_pollQueue.isEmpty())
+        {
+            for (const ModbusTagConfig& cfg : m_tagConfigs)
+            {
+                m_pollQueue.enqueue(cfg);
+            }
+        }
 
-    sendNextRequest();
+        sendNextRequest();
+    }
 }
 
 void ModbusRtuDriver::onTimeoutTimer()
@@ -304,8 +331,9 @@ void ModbusRtuDriver::sendReadRequest(const ModbusTagConfig& cfg)
 
 void ModbusRtuDriver::processFrame(const QByteArray& frame)
 {
-    if (frame.size() < 4)
+    if (frame.size() < 5)
     {
+        qWarning() << "ModbusRtuDriver: frame too small:" << frame.size();
         return;
     }
 
@@ -323,7 +351,9 @@ void ModbusRtuDriver::processFrame(const QByteArray& frame)
 
     if (receivedCrc != calculatedCrc)
     {
-        qWarning() << "ModbusRtuDriver: CRC mismatch";
+        qWarning() << "ModbusRtuDriver: CRC mismatch:"
+                   << "received=" << receivedCrc
+                   << "calculated=" << calculatedCrc;
         return;
     }
 
@@ -332,45 +362,117 @@ void ModbusRtuDriver::processFrame(const QByteArray& frame)
         return;
     }
 
-    const qint64 tagId = m_pending.tagId;
-
-    m_waitingResponse = false;
-    m_pending.valid = false;
-
     const uchar* bytes = reinterpret_cast<const uchar*>(receivedData.constData());
 
+    const quint8 slaveAddress = bytes[0];
     const quint8 functionCode = bytes[1];
 
+    // بررسی Exception Response
     if ((functionCode & 0x80) != 0)
     {
         const quint8 exceptionCode = bytes[2];
 
-        qWarning() << "ModbusRtuDriver: exception for tagId:" << tagId
-                   << "exceptionCode:" << exceptionCode;
+        qWarning() << "ModbusRtuDriver: exception response:"
+                   << "functionCode=" << functionCode
+                   << "exceptionCode=" << exceptionCode;
 
-        publishBad(tagId);
+        if (m_currentCard.valid)
+        {
+            for (const SensorInfo& sensor : m_currentCard.sensors)
+            {
+                publishBad(sensor.tagId);
+            }
+
+            m_currentCard.valid = false;
+        }
+        else
+        {
+            publishBad(m_pending.tagId);
+        }
+
+        m_waitingResponse = false;
+        m_pending.valid = false;
 
         sendNextRequest();
         return;
     }
 
+    // بررسی Card Response
+    if (m_currentCard.valid && m_currentCard.cardIndex == m_pending.tagId)
+    {
+        const quint8 byteCount = bytes[2];
+
+        if (receivedData.size() < 3 + byteCount)
+        {
+            qWarning() << "ModbusRtuDriver: card frame incomplete:"
+                       << "expected=" << (3 + byteCount)
+                       << "actual=" << receivedData.size();
+
+            for (const SensorInfo& sensor : m_currentCard.sensors)
+            {
+                publishBad(sensor.tagId);
+            }
+
+            m_currentCard.valid = false;
+            m_waitingResponse = false;
+            m_pending.valid = false;
+
+            sendNextRequest();
+            return;
+        }
+
+        const QByteArray registers = receivedData.mid(3, byteCount);
+
+        processCardResponse(registers, m_currentCard);
+
+        m_currentCard.valid = false;
+        m_waitingResponse = false;
+        m_pending.valid = false;
+
+        pollCards();
+        return;
+    }
+
+    // Response معمولی (یک تگ)
     const quint8 byteCount = bytes[2];
 
     if (receivedData.size() < 3 + byteCount)
     {
-        publishBad(tagId);
+        qWarning() << "ModbusRtuDriver: frame incomplete:"
+                   << "expected=" << (3 + byteCount)
+                   << "actual=" << receivedData.size();
+
+        publishBad(m_pending.tagId);
+
+        m_waitingResponse = false;
+        m_pending.valid = false;
+
         sendNextRequest();
         return;
     }
 
     const QByteArray registers = receivedData.mid(3, byteCount);
 
+    const qint64 tagId = m_pending.tagId;
+
+    m_waitingResponse = false;
+    m_pending.valid = false;
+
     const ModbusTagConfig cfg = m_tagConfigs.value(tagId);
+
+    if (!cfg.valid)
+    {
+        qWarning() << "ModbusRtuDriver: invalid config for tagId:" << tagId;
+        publishBad(tagId);
+        sendNextRequest();
+        return;
+    }
 
     const double rawValue = decodeRegisters(registers, cfg);
 
     if (std::isnan(rawValue))
     {
+        qWarning() << "ModbusRtuDriver: decode failed for tagId:" << tagId;
         publishBad(tagId);
     }
     else
@@ -575,4 +677,131 @@ quint16 ModbusRtuDriver::calculateCRC(const QByteArray& data)
     }
 
     return crc;
+}
+
+void ModbusRtuDriver::buildCardGroups()
+{
+    if (m_cardManager != nullptr)
+    {
+        m_cardManager->buildCards(m_tags);
+    }
+}
+
+void ModbusRtuDriver::pollCards()
+{
+    if (m_cardPollQueue.isEmpty())
+    {
+        const QVector<SensorCard>& cards = m_cardManager->cards();
+
+        for (const SensorCard& card : cards)
+        {
+            m_cardPollQueue.enqueue(card);
+        }
+    }
+
+    if (m_cardPollQueue.isEmpty())
+    {
+        return;
+    }
+
+    const SensorCard card = m_cardPollQueue.dequeue();
+
+    sendCardReadRequest(card);
+}
+
+void ModbusRtuDriver::sendCardReadRequest(const SensorCard& card)
+{
+    QByteArray frame;
+
+    frame.append(static_cast<char>(card.unitId));
+    frame.append(static_cast<char>(card.function));
+    frame.append(static_cast<char>((card.startAddress >> 8) & 0xFF));
+    frame.append(static_cast<char>(card.startAddress & 0xFF));
+    frame.append(static_cast<char>((card.totalRegisters >> 8) & 0xFF));
+    frame.append(static_cast<char>(card.totalRegisters & 0xFF));
+
+    const quint16 crc = calculateCRC(frame);
+
+    frame.append(static_cast<char>(crc & 0xFF));
+    frame.append(static_cast<char>((crc >> 8) & 0xFF));
+
+    m_serialPort.write(frame);
+
+    m_currentCard = card;
+
+    m_pending.transactionId = 0;
+    m_pending.tagId = card.cardIndex;
+    m_pending.sentAt = QDateTime::currentDateTimeUtc();
+    m_pending.valid = true;
+
+    m_waitingResponse = true;
+
+    qInfo() << "ModbusRtuDriver: card read request:"
+            << "card=" << card.cardIndex
+            << "startAddress=" << card.startAddress
+            << "totalRegisters=" << card.totalRegisters
+            << "sensors=" << card.sensors.size();
+}
+
+void ModbusRtuDriver::processCardResponse(const QByteArray& registers, const SensorCard& card)
+{
+    int offset = 0;
+
+    for (const SensorInfo& sensor : card.sensors)
+    {
+        const int byteCount = sensor.registerCount * 2;
+
+        const QByteArray sensorRegisters = registers.mid(offset, byteCount);
+
+        ModbusTagConfig cfg;
+        cfg.tagId = sensor.tagId;
+        cfg.dataType = sensor.dataType;
+        cfg.wordOrder = sensor.wordOrder;
+
+        const double rawValue = decodeRegisters(sensorRegisters, cfg);
+
+        if (std::isnan(rawValue))
+        {
+            publishBad(sensor.tagId);
+        }
+        else
+        {
+            publishGood(cfg, rawValue);
+        }
+
+        offset += byteCount;
+    }
+
+    qInfo() << "ModbusRtuDriver: card response processed:"
+            << "card=" << card.cardIndex
+            << "sensors=" << card.sensors.size();
+}
+
+int ModbusRtuDriver::expectedResponseSize(const QByteArray& buffer) const
+{
+    if (buffer.size() < 2)
+    {
+        return -1;
+    }
+
+    const uchar* bytes = reinterpret_cast<const uchar*>(buffer.constData());
+
+    const quint8 functionCode = bytes[1];
+
+    // Exception Response: 5 bytes
+    if ((functionCode & 0x80) != 0)
+    {
+        return 5;
+    }
+
+    // Read Response: نیاز به byte count داریم
+    if (buffer.size() < 3)
+    {
+        return -1;
+    }
+
+    const quint8 byteCount = bytes[2];
+
+    // 1 (address) + 1 (function) + 1 (byte count) + byteCount + 2 (CRC)
+    return 5 + byteCount;
 }

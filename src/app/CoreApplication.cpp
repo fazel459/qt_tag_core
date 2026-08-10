@@ -231,7 +231,16 @@ bool CoreApplication::initialize()
     m_config.computedTags = m_db.loadComputedTags();
 
     qInfo() << "Computed tags:" << m_config.computedTags.size();
+    const QString archivePath = "C:/tag_archive";
+    const qint64 maxArchiveSizeBytes = 100LL * 1024LL * 1024LL;  // 100 MB
+    const int archiveCheckIntervalMs = 3600000;  // 1 ساعت
 
+    m_archiveManager = std::make_unique<ArchiveManager>(
+        m_db,
+        archivePath,
+        maxArchiveSizeBytes,
+        archiveCheckIntervalMs
+    );
 
     return true;
 }

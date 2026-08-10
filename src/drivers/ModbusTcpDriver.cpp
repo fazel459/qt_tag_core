@@ -29,6 +29,9 @@ ModbusTcpDriver::ModbusTcpDriver(
     m_pollTimer.setParent(this);
     m_timeoutTimer.setParent(this);
 
+    m_cardManager = new ModbusCardManager();
+    m_cardManager->buildCards(m_tags);
+
     if (m_driver.pollingIntervalMs <= 0)
     {
         m_driver.pollingIntervalMs = 1000;
@@ -421,15 +424,24 @@ void ModbusTcpDriver::onPollTimer()
         return;
     }
 
-    if (m_pollQueue.isEmpty())
+    if (m_cardManager->cardCount() > 0)
     {
-        for (const ModbusTagConfig& cfg : m_tagConfigs)
-        {
-            m_pollQueue.enqueue(cfg);
-        }
+        // Batch Read برای کارت‌ها
+        pollCards();
     }
+    else
+    {
+        // روش قدیمی: خواندن تگ‌ها یکی‌یکی
+        if (m_pollQueue.isEmpty())
+        {
+            for (const ModbusTagConfig& cfg : m_tagConfigs)
+            {
+                m_pollQueue.enqueue(cfg);
+            }
+        }
 
-    sendNextRequest();
+        sendNextRequest();
+    }
 }
 
 void ModbusTcpDriver::onTimeoutTimer()
@@ -461,6 +473,105 @@ void ModbusTcpDriver::onTimeoutTimer()
         sendNextRequest();
     }
 }
+
+void ModbusTcpDriver::pollCards()
+{
+    if (m_cardPollQueue.isEmpty())
+    {
+        const QVector<SensorCard>& cards = m_cardManager->cards();
+
+        for (const SensorCard& card : cards)
+        {
+            m_cardPollQueue.enqueue(card);
+        }
+    }
+
+    if (m_cardPollQueue.isEmpty())
+    {
+        return;
+    }
+
+    const SensorCard card = m_cardPollQueue.dequeue();
+
+    sendCardReadRequest(card);
+}
+
+void ModbusTcpDriver::sendCardReadRequest(const SensorCard& card)
+{
+    ++m_transactionId;
+
+    if (m_transactionId == 0)
+    {
+        ++m_transactionId;
+    }
+
+    QByteArray frame;
+    QDataStream stream(&frame, QIODevice::WriteOnly);
+    stream.setByteOrder(QDataStream::BigEndian);
+
+    const quint16 length = 6;
+
+    stream << m_transactionId;
+    stream << static_cast<quint16>(0);
+    stream << length;
+    stream << static_cast<quint8>(card.unitId);
+    stream << static_cast<quint8>(card.function);
+    stream << static_cast<quint16>(card.startAddress);
+    stream << static_cast<quint16>(card.totalRegisters);
+
+    m_socket.write(frame);
+
+    m_currentCard = card;
+
+    m_pending.transactionId = m_transactionId;
+    m_pending.tagId = card.cardIndex;  // برای تشخیص، tagId را cardIndex می‌گذاریم
+    m_pending.sentAt = QDateTime::currentDateTimeUtc();
+    m_pending.valid = true;
+
+    m_waitingResponse = true;
+
+    qInfo() << "ModbusTcpDriver: card read request:"
+            << "card=" << card.cardIndex
+            << "startAddress=" << card.startAddress
+            << "totalRegisters=" << card.totalRegisters
+            << "sensors=" << card.sensors.size();
+}
+
+void ModbusTcpDriver::processCardResponse(const QByteArray& registers, const SensorCard& card)
+{
+    int offset = 0;
+
+    for (const SensorInfo& sensor : card.sensors)
+    {
+        const int byteCount = sensor.registerCount * 2;
+
+        const QByteArray sensorRegisters = registers.mid(offset, byteCount);
+
+        // ساخت ModbusTagConfig برای decode
+        ModbusTagConfig cfg;
+        cfg.tagId = sensor.tagId;
+        cfg.dataType = sensor.dataType;
+        cfg.wordOrder = sensor.wordOrder;
+
+        const double rawValue = decodeRegisters(sensorRegisters, cfg);
+
+        if (std::isnan(rawValue))
+        {
+            publishBad(sensor.tagId);
+        }
+        else
+        {
+            publishGood(cfg, rawValue);
+        }
+
+        offset += byteCount;
+    }
+
+    qInfo() << "ModbusTcpDriver: card response processed:"
+            << "card=" << card.cardIndex
+            << "sensors=" << card.sensors.size();
+}
+
 
 void ModbusTcpDriver::sendNextRequest()
 {
@@ -538,79 +649,166 @@ void ModbusTcpDriver::processFrame(const QByteArray& frame)
 {
     if (frame.size() < 9)
     {
+        qWarning() << "ModbusTcpDriver: frame too small:" << frame.size();
         return;
     }
+
     if (m_debug)
     {
-        qDebug() << "Modbus Frame:" << frame.toHex();
+        qDebug() << "ModbusTcpDriver: processFrame:" << frame.toHex();
     }
+
     const uchar* bytes = reinterpret_cast<const uchar*>(frame.constData());
 
     const quint16 transactionId = static_cast<quint16>((bytes[0] << 8) | bytes[1]);
     const quint16 protocolId = static_cast<quint16>((bytes[2] << 8) | bytes[3]);
+    const quint16 length = static_cast<quint16>((bytes[4] << 8) | bytes[5]);
+    const quint8 unitId = bytes[6];
     const quint8 functionCode = bytes[7];
-    if (m_debug)
-    {
-        qDebug() << "Modbus response:"
-                 << "transactionId=" << transactionId
-                 << "functionCode=" << functionCode
-                 << "frameSize=" << frame.size();
-    }
+
     if (protocolId != 0)
     {
+        qWarning() << "ModbusTcpDriver: invalid protocol ID:" << protocolId;
         return;
     }
 
     if (!m_waitingResponse || !m_pending.valid)
     {
-        qWarning() << "Ignoring Modbus response because not waiting or pending invalid:"
-                   << "responseTransactionId=" << transactionId;
+        if (m_debug)
+        {
+            qDebug() << "ModbusTcpDriver: ignoring response (not waiting or pending invalid)";
+        }
         return;
     }
 
     if (transactionId != m_pending.transactionId)
     {
-        qWarning() << "Modbus transaction mismatch:"
-                   << "responseTransactionId=" << transactionId
-                   << "pendingTransactionId=" << m_pending.transactionId;
+        if (m_debug)
+        {
+            qDebug() << "ModbusTcpDriver: transaction mismatch:"
+                     << "response=" << transactionId
+                     << "pending=" << m_pending.transactionId;
+        }
         return;
     }
 
-    const qint64 tagId = m_pending.tagId;
-
-    m_waitingResponse = false;
-    m_pending.valid = false;
-
+    // بررسی Exception Response
     if ((functionCode & 0x80) != 0)
     {
         const quint8 exceptionCode = bytes[8];
 
-        qWarning() << "Modbus exception for tagId:" << tagId
-                   << "exceptionCode:" << exceptionCode;
+        qWarning() << "ModbusTcpDriver: exception response:"
+                   << "functionCode=" << functionCode
+                   << "exceptionCode=" << exceptionCode;
 
-        publishBad(tagId);
+        // اگر card response بود، همه سنسورهای کارت را bad کن
+        if (m_currentCard.valid)
+        {
+            for (const SensorInfo& sensor : m_currentCard.sensors)
+            {
+                publishBad(sensor.tagId);
+            }
+
+            m_currentCard.valid = false;
+        }
+        else
+        {
+            publishBad(m_pending.tagId);
+        }
+
+        m_waitingResponse = false;
+        m_pending.valid = false;
 
         sendNextRequest();
         return;
     }
 
+    // بررسی اینکه آیا این یک Card Response است
+    if (m_currentCard.valid && m_currentCard.cardIndex == m_pending.tagId)
+    {
+        // Card Response
+        const quint8 byteCount = bytes[8];
+
+        if (frame.size() < 9 + byteCount)
+        {
+            qWarning() << "ModbusTcpDriver: card frame incomplete:"
+                       << "expected=" << (9 + byteCount)
+                       << "actual=" << frame.size();
+
+            for (const SensorInfo& sensor : m_currentCard.sensors)
+            {
+                publishBad(sensor.tagId);
+            }
+
+            m_currentCard.valid = false;
+            m_waitingResponse = false;
+            m_pending.valid = false;
+
+            sendNextRequest();
+            return;
+        }
+
+        const QByteArray registers = frame.mid(9, byteCount);
+
+        if (m_debug)
+        {
+            qDebug() << "ModbusTcpDriver: card response:"
+                     << "card=" << m_currentCard.cardIndex
+                     << "byteCount=" << byteCount
+                     << "registers=" << registers.toHex();
+        }
+
+        processCardResponse(registers, m_currentCard);
+
+        m_currentCard.valid = false;
+        m_waitingResponse = false;
+        m_pending.valid = false;
+
+        // ادامه polling کارت‌ها
+        pollCards();
+        return;
+    }
+
+    // Response معمولی (یک تگ)
     const quint8 byteCount = bytes[8];
 
     if (frame.size() < 9 + byteCount)
     {
-        publishBad(tagId);
+        qWarning() << "ModbusTcpDriver: frame incomplete:"
+                   << "expected=" << (9 + byteCount)
+                   << "actual=" << frame.size();
+
+        publishBad(m_pending.tagId);
+
+        m_waitingResponse = false;
+        m_pending.valid = false;
+
         sendNextRequest();
         return;
     }
 
     const QByteArray registers = frame.mid(9, byteCount);
 
+    const qint64 tagId = m_pending.tagId;
+
+    m_waitingResponse = false;
+    m_pending.valid = false;
+
     const ModbusTagConfig cfg = m_tagConfigs.value(tagId);
+
+    if (!cfg.valid)
+    {
+        qWarning() << "ModbusTcpDriver: invalid config for tagId:" << tagId;
+        publishBad(tagId);
+        sendNextRequest();
+        return;
+    }
 
     const double rawValue = decodeRegisters(registers, cfg);
 
     if (std::isnan(rawValue))
     {
+        qWarning() << "ModbusTcpDriver: decode failed for tagId:" << tagId;
         publishBad(tagId);
     }
     else

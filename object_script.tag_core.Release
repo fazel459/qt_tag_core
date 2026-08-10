@@ -11,6 +11,7 @@ release/qmqtt_ssl_socket.o
 release/ComputedTagEngine.o
 release/DriverFactory.o
 release/DriverManager.o
+release/ModbusCardManager.o
 release/ModbusRtuDriver.o
 release/ModbusTcpDriver.o
 release/MqttDriver.o
@@ -21,6 +22,7 @@ release/CoreApplication.o
 release/ConfigLoader.o
 release/NotificationManager.o
 release/WebhookNotifier.o
+release/ArchiveManager.o
 release/BatchHistorianWriter.o
 release/CurrentStateWriter.o
 release/DbManager.o

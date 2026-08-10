@@ -688,6 +688,19 @@ bool DbManager::migrate()
             if_not_exists => TRUE
         );
         )"
+        R"(
+        CREATE TABLE IF NOT EXISTS archive_log (
+            archive_id BIGSERIAL PRIMARY KEY,
+            table_name TEXT NOT NULL,
+            file_path TEXT NOT NULL,
+            start_time TIMESTAMPTZ,
+            end_time TIMESTAMPTZ,
+            record_count BIGINT DEFAULT 0,
+            file_size_bytes BIGINT DEFAULT 0,
+            status TEXT DEFAULT 'completed',
+            created_at TIMESTAMPTZ DEFAULT now()
+        );
+        )"
 
     };
 

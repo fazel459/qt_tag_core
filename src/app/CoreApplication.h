@@ -17,7 +17,7 @@
 #include "../notifications/NotificationManager.h"
 #include "../computed/ComputedTagEngine.h"
 #include "../storage/HistorianManager.h"
-
+#include "../storage/ArchiveManager.h"
 class CoreApplication
 {
 public:
@@ -42,6 +42,7 @@ private:
     std::unique_ptr<NotificationManager> m_notificationManager;
     std::unique_ptr<ComputedTagEngine> m_computedTagEngine;
     std::unique_ptr<HistorianManager> m_historianManager;
+    std::unique_ptr<ArchiveManager> m_archiveManager;
 };
 
 

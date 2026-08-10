@@ -13,6 +13,7 @@
 #include "../tagbus/TagBus.h"
 
 #include "ITagDriver.h"
+#include "ModbusCardManager.h"
 #include "ModbusTypes.h"
 
 class ModbusRtuDriver : public QObject, public ITagDriver
@@ -61,6 +62,14 @@ private:
 
     static quint16 calculateCRC(const QByteArray& data);
 
+    // Card-based Batch Read
+    void buildCardGroups();
+    void pollCards();
+    void sendCardReadRequest(const SensorCard& card);
+    void processCardResponse(const QByteArray& registers, const SensorCard& card);
+
+    int expectedResponseSize(const QByteArray& buffer) const;
+
     TagBus& m_bus;
 
     DriverDefinition m_driver;
@@ -93,4 +102,9 @@ private:
     int m_defaultUnitId = 1;
 
     bool m_reconnectScheduled = false;
+
+    // Card-based Batch Read
+    ModbusCardManager* m_cardManager;
+    QQueue<SensorCard> m_cardPollQueue;
+    SensorCard m_currentCard;
 };
