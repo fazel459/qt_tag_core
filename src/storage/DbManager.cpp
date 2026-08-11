@@ -702,12 +702,28 @@ bool DbManager::migrate()
         );
         )",
 
+//        R"(
+//            INSERT INTO system_settings (key, value_text, updated_at) VALUES
+//            ('api.auth.enabled', 'false', now()),
+//            ('api.auth.keys', 'dev-key-123', now())
+//            ON CONFLICT (key) DO NOTHING;
+//        );
+//        )",
+
         R"(
-            INSERT INTO system_settings (key, value_text, updated_at) VALUES
-            ('api.auth.enabled', 'false', now()),
-            ('api.auth.keys', 'dev-key-123', now())
-            ON CONFLICT (key) DO NOTHING;
+            CREATE TABLE IF NOT EXISTS dashboards (
+                dashboard_id BIGSERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                owner TEXT DEFAULT 'system',
+                dashboard_type TEXT DEFAULT 'simple',
+                is_public BOOLEAN DEFAULT true,
+                created_at TIMESTAMPTZ DEFAULT now(),
+                updated_at TIMESTAMPTZ DEFAULT now()
         );
+        CREATE INDEX IF NOT EXISTS idx_dashboards_owner ON dashboards(owner);
+        CREATE INDEX IF NOT EXISTS idx_dashboards_type ON dashboards(dashboard_type);
+        CREATE INDEX IF NOT EXISTS idx_dashboards_is_public ON dashboards(is_public);
         )",
     };
 
@@ -2378,4 +2394,152 @@ QVector<QJsonObject> DbManager::queryTagHistory(
 
     return results;
 }
+
+QVector<DashboardDefinition> DbManager::loadDashboards()
+{
+    QVector<DashboardDefinition> dashboards;
+
+    QSqlQuery query(m_db);
+    query.prepare(R"(
+        SELECT dashboard_id, name, description, owner, dashboard_type,
+               is_public, created_at, updated_at
+        FROM dashboards
+        ORDER BY dashboard_id
+    )");
+
+    if (!query.exec()) {
+        qWarning() << "Load dashboards failed:" << query.lastError().text();
+        return dashboards;
+    }
+
+    while (query.next()) {
+        DashboardDefinition d;
+        d.dashboardId = query.value(0).toLongLong();
+        d.name = query.value(1).toString();
+        d.description = query.value(2).toString();
+        d.owner = query.value(3).toString();
+        d.dashboardType = query.value(4).toString();
+        d.isPublic = query.value(5).toBool();
+        d.createdAt = query.value(6).toDateTime();
+        d.updatedAt = query.value(7).toDateTime();
+        dashboards.append(d);
+    }
+
+    return dashboards;
+}
+
+DashboardDefinition DbManager::loadDashboard(qint64 dashboardId)
+{
+    DashboardDefinition d;
+
+    QSqlQuery query(m_db);
+    query.prepare(R"(
+        SELECT dashboard_id, name, description, owner, dashboard_type,
+               is_public, created_at, updated_at
+        FROM dashboards
+        WHERE dashboard_id = :id
+    )");
+    query.bindValue(":id", dashboardId);
+
+    if (!query.exec()) {
+        qWarning() << "Load dashboard failed:" << query.lastError().text();
+        return d;
+    }
+
+    if (query.next()) {
+        d.dashboardId = query.value(0).toLongLong();
+        d.name = query.value(1).toString();
+        d.description = query.value(2).toString();
+        d.owner = query.value(3).toString();
+        d.dashboardType = query.value(4).toString();
+        d.isPublic = query.value(5).toBool();
+        d.createdAt = query.value(6).toDateTime();
+        d.updatedAt = query.value(7).toDateTime();
+    }
+
+    return d;
+}
+
+qint64 DbManager::insertDashboard(const DashboardDefinition& dashboard)
+{
+    QSqlQuery query(m_db);
+    query.prepare(R"(
+        INSERT INTO dashboards (name, description, owner, dashboard_type, is_public)
+        VALUES (:name, :description, :owner, :dashboard_type, :is_public)
+        RETURNING dashboard_id
+    )");
+
+    query.bindValue(":name", dashboard.name);
+    query.bindValue(":description", dashboard.description);
+    query.bindValue(":owner", dashboard.owner.isEmpty() ? "system" : dashboard.owner);
+    query.bindValue(":dashboard_type", dashboard.dashboardType.isEmpty() ? "simple" : dashboard.dashboardType);
+    query.bindValue(":is_public", dashboard.isPublic);
+
+    if (!query.exec()) {
+        qWarning() << "Insert dashboard failed:" << query.lastError().text();
+        return -1;
+    }
+
+    if (query.next()) {
+        const qint64 newId = query.value(0).toLongLong();
+        qInfo() << "Dashboard created:" << newId << dashboard.name;
+        return newId;
+    }
+
+    return -1;
+}
+
+bool DbManager::updateDashboard(const DashboardDefinition& dashboard)
+{
+    QSqlQuery query(m_db);
+    query.prepare(R"(
+        UPDATE dashboards
+        SET name = :name,
+            description = :description,
+            owner = :owner,
+            dashboard_type = :dashboard_type,
+            is_public = :is_public,
+            updated_at = now()
+        WHERE dashboard_id = :id
+    )");
+
+    query.bindValue(":name", dashboard.name);
+    query.bindValue(":description", dashboard.description);
+    query.bindValue(":owner", dashboard.owner);
+    query.bindValue(":dashboard_type", dashboard.dashboardType);
+    query.bindValue(":is_public", dashboard.isPublic);
+    query.bindValue(":id", dashboard.dashboardId);
+
+    if (!query.exec()) {
+        qWarning() << "Update dashboard failed:" << query.lastError().text();
+        return false;
+    }
+
+    return query.numRowsAffected() > 0;
+}
+
+bool DbManager::deleteDashboard(qint64 dashboardId)
+{
+    QSqlQuery query(m_db);
+    query.prepare("DELETE FROM dashboards WHERE dashboard_id = :id");
+    query.bindValue(":id", dashboardId);
+
+    if (!query.exec()) {
+        qWarning() << "Delete dashboard failed:" << query.lastError().text();
+        return false;
+    }
+
+    return query.numRowsAffected() > 0;
+}
+
+bool DbManager::touchDashboard(qint64 dashboardId)
+{
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE dashboards SET updated_at = now() WHERE dashboard_id = :id");
+    query.bindValue(":id", dashboardId);
+    return query.exec();
+}
+
+
+
 

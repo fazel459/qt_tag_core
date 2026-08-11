@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QStringList>
 #include <QJsonArray>
+#include <QJsonDocument>
 
 QString CoreApplication::findConfigFile()
 {
@@ -88,6 +89,8 @@ bool CoreApplication::initialize()
         qCritical() << "Failed to initialize database";
         return false;
     }
+
+
 
     const QVector<DriverDefinition> initialDrivers = m_db.loadDrivers();
 
@@ -182,6 +185,9 @@ bool CoreApplication::initialize()
     qInfo() << "Tags:" << m_config.tags.size();
     qInfo() << "Threshold rules:" << m_config.rules.size();
     qInfo() << "Drivers:" << m_config.drivers.size();
+
+    const QString dashboardsPath = QCoreApplication::applicationDirPath() + "/dashboards";
+    m_dashboardManager = std::make_unique<DashboardManager>(m_db, dashboardsPath);
 
     m_historianWriter = std::make_unique<BatchHistorianWriter>(
         m_db,
@@ -330,7 +336,7 @@ void CoreApplication::startApiLayer()
 
     // ✅ REST API Server
     m_httpServer = new HttpServer(this);
-    m_restApiHandler = new RestApiHandler(m_db, this);
+    m_restApiHandler = new RestApiHandler(m_db, m_dashboardManager.get(), this);
     configureApiAuth();
 
     m_httpServer->setRequestHandler(
@@ -396,6 +402,10 @@ void CoreApplication::setupCommandHandler()
 
             if (op == "list_drivers") {
                 return handleListDriversCommand(payload);
+            }
+
+            if (op == "load_dashboard") {
+                return handleLoadDashboardCommand(payload);
             }
 
             QJsonObject result;
@@ -695,4 +705,51 @@ QJsonObject CoreApplication::handleListDriversCommand(const QJsonObject& payload
 
     return result;
 }
+
+QJsonObject CoreApplication::handleLoadDashboardCommand(const QJsonObject& payload)
+{
+    QJsonObject result;
+
+    if (!payload.contains("dashboard_id")) {
+        result.insert("ok", false);
+        result.insert("error", "Missing 'dashboard_id' field");
+        return result;
+    }
+
+    const qint64 dashboardId = payload.value("dashboard_id").toVariant().toLongLong();
+    const DashboardDefinition dashboard = m_db.loadDashboard(dashboardId);
+
+    if (dashboard.dashboardId == 0) {
+        result.insert("ok", false);
+        result.insert("error", "Dashboard not found");
+        return result;
+    }
+
+    // Parse config برای استخراج tag_ids
+    QJsonArray tagIdsArray;
+    QJsonDocument configDoc = QJsonDocument::fromJson(dashboard.config.toUtf8());
+    if (configDoc.isObject()) {
+        QJsonObject configObj = configDoc.object();
+        if (configObj.contains("tag_ids")) {
+            tagIdsArray = configObj.value("tag_ids").toArray();
+        }
+    }
+
+    result.insert("ok", true);
+    QJsonObject data;
+    data.insert("dashboard_id", dashboard.dashboardId);
+    data.insert("name", dashboard.name);
+    data.insert("description", dashboard.description);
+    data.insert("tag_ids", tagIdsArray);
+
+    // config کامل را هم برگردان
+    if (configDoc.isObject()) {
+        data.insert("config", configDoc.object());
+    }
+
+    result.insert("data", data);
+
+    return result;
+}
+
 

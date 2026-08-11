@@ -100,6 +100,12 @@ public:
         int limit = 1000
     );
 
+    QVector<DashboardDefinition> loadDashboards();
+    DashboardDefinition loadDashboard(qint64 dashboardId);
+    qint64 insertDashboard(const DashboardDefinition& dashboard);
+    bool updateDashboard(const DashboardDefinition& dashboard);
+    bool deleteDashboard(qint64 dashboardId);
+    bool touchDashboard(qint64 dashboardId);
 private:
     bool migrate();
 

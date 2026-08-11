@@ -7,9 +7,10 @@
 #include <QDateTime>
 
 
-RestApiHandler::RestApiHandler(DbManager& db, QObject *parent)
+RestApiHandler::RestApiHandler(DbManager& db, DashboardManager* dashboardManager, QObject *parent)
     : QObject(parent)
     , m_db(db)
+    , m_dashboardManager(dashboardManager)
 {
 }
 
@@ -125,6 +126,61 @@ HttpResponse RestApiHandler::handleRequest(const HttpRequest& request)
         }
         return HttpResponse::badRequest("Method not allowed");
     }
+
+    // Dashboards collection
+    if (path == "/api/v1/dashboards") {
+        if (request.method == "GET") {
+            return handleGetDashboards(request);
+        } else if (request.method == "POST") {
+            return handleCreateDashboard(request);
+        }
+        return HttpResponse::badRequest("Method not allowed");
+    }
+
+    // Dashboards individual + sub-resources
+    if (path.startsWith("/api/v1/dashboards/")) {
+
+        // /api/v1/dashboards/{id}/content
+        if (path.endsWith("/content")) {
+            qint64 dashboardId = 0;
+            if (parseIdFromPath(path, dashboardId, "/api/v1/dashboards/", "/content")) {
+                if (request.method == "GET") {
+                    return handleGetDashboardContent(request, dashboardId);
+                } else if (request.method == "PUT") {
+                    return handlePutDashboardContent(request, dashboardId);
+                }
+                return HttpResponse::badRequest("Method not allowed");
+            }
+            return HttpResponse::badRequest("Invalid dashboard id");
+        }
+
+        // /api/v1/dashboards/{id}/resources
+        if (path.endsWith("/resources")) {
+            qint64 dashboardId = 0;
+            if (parseIdFromPath(path, dashboardId, "/api/v1/dashboards/", "/resources")) {
+                if (request.method == "GET") {
+                    return handleGetResources(request, dashboardId);
+                }
+                return HttpResponse::badRequest("Method not allowed");
+            }
+            return HttpResponse::badRequest("Invalid dashboard id");
+        }
+
+        // /api/v1/dashboards/{id}
+        qint64 dashboardId = 0;
+        if (parseIdFromPath(path, dashboardId, "/api/v1/dashboards/")) {
+            if (request.method == "GET") {
+                return handleGetDashboard(request, dashboardId);
+            } else if (request.method == "PUT") {
+                return handleUpdateDashboard(request, dashboardId);
+            } else if (request.method == "DELETE") {
+                return handleDeleteDashboard(request, dashboardId);
+            }
+            return HttpResponse::badRequest("Method not allowed");
+        }
+        return HttpResponse::badRequest("Invalid dashboard id");
+    }
+
 
     return HttpResponse::notFound("Endpoint not found: " + path);
 }
@@ -575,3 +631,276 @@ bool RestApiHandler::jsonToTag(const QJsonObject& json, TagDefinition& tag, bool
 
     return true;
 }
+
+HttpResponse RestApiHandler::handleGetDashboards(const HttpRequest& request)
+{
+    Q_UNUSED(request)
+
+    if (!m_dashboardManager) {
+        return HttpResponse::serverError("DashboardManager not initialized");
+    }
+
+    QJsonObject result;
+    QJsonArray dashboards;
+
+    const QVector<DashboardDefinition> dashboardList = m_dashboardManager->listDashboards();
+
+    for (const DashboardDefinition& d : dashboardList) {
+        dashboards.append(dashboardToJson(d));
+    }
+
+    result.insert("dashboards", dashboards);
+    result.insert("count", dashboards.size());
+
+    return HttpResponse::ok(result);
+}
+
+HttpResponse RestApiHandler::handleGetDashboard(const HttpRequest& request, qint64 dashboardId)
+{
+    Q_UNUSED(request)
+
+    if (!m_dashboardManager) {
+        return HttpResponse::serverError("DashboardManager not initialized");
+    }
+
+    const DashboardDefinition d = m_dashboardManager->getDashboard(dashboardId);
+
+    if (d.dashboardId == 0) {
+        return HttpResponse::notFound("Dashboard not found");
+    }
+
+    return HttpResponse::ok(dashboardToJson(d));
+}
+
+HttpResponse RestApiHandler::handleCreateDashboard(const HttpRequest& request)
+{
+    if (!m_dashboardManager) {
+        return HttpResponse::serverError("DashboardManager not initialized");
+    }
+
+    if (request.jsonBody.isEmpty()) {
+        return HttpResponse::badRequest("Request body is required");
+    }
+
+    DashboardDefinition dashboard;
+    if (!jsonToDashboard(request.jsonBody, dashboard, false)) {
+        return HttpResponse::badRequest("Invalid dashboard definition");
+    }
+
+    if (dashboard.name.isEmpty()) {
+        return HttpResponse::badRequest("name is required");
+    }
+
+    // اعتبارسنجی dashboard_type
+    QStringList validTypes = {"simple", "qml", "html"};
+    if (!validTypes.contains(dashboard.dashboardType)) {
+        return HttpResponse::badRequest("Invalid dashboard_type. Must be: simple, qml, html");
+    }
+
+    const qint64 newId = m_dashboardManager->createDashboard(dashboard);
+
+    if (newId > 0) {
+        QJsonObject result;
+        result.insert("created", true);
+        result.insert("dashboard_id", newId);
+        result.insert("dashboard_type", dashboard.dashboardType);
+        return HttpResponse::created(result);
+    }
+
+    return HttpResponse::serverError("Failed to create dashboard");
+}
+
+HttpResponse RestApiHandler::handleUpdateDashboard(const HttpRequest& request, qint64 dashboardId)
+{
+    if (!m_dashboardManager) {
+        return HttpResponse::serverError("DashboardManager not initialized");
+    }
+
+    if (request.jsonBody.isEmpty()) {
+        return HttpResponse::badRequest("Request body is required");
+    }
+
+    DashboardDefinition existing = m_dashboardManager->getDashboard(dashboardId);
+    if (existing.dashboardId == 0) {
+        return HttpResponse::notFound("Dashboard not found");
+    }
+
+    if (!jsonToDashboard(request.jsonBody, existing, true)) {
+        return HttpResponse::badRequest("Invalid dashboard definition");
+    }
+
+    existing.dashboardId = dashboardId;
+
+    if (m_dashboardManager->updateDashboard(existing)) {
+        QJsonObject result;
+        result.insert("updated", true);
+        result.insert("dashboard_id", dashboardId);
+        return HttpResponse::ok(result);
+    }
+
+    return HttpResponse::serverError("Failed to update dashboard");
+}
+
+HttpResponse RestApiHandler::handleDeleteDashboard(const HttpRequest& request, qint64 dashboardId)
+{
+    Q_UNUSED(request)
+
+    if (!m_dashboardManager) {
+        return HttpResponse::serverError("DashboardManager not initialized");
+    }
+
+    if (m_dashboardManager->deleteDashboard(dashboardId)) {
+        QJsonObject result;
+        result.insert("deleted", true);
+        result.insert("dashboard_id", dashboardId);
+        return HttpResponse::ok(result);
+    }
+
+    return HttpResponse::notFound("Dashboard not found or delete failed");
+}
+
+HttpResponse RestApiHandler::handleGetDashboardContent(const HttpRequest& request, qint64 dashboardId)
+{
+    Q_UNUSED(request)
+
+    if (!m_dashboardManager) {
+        return HttpResponse::serverError("DashboardManager not initialized");
+    }
+
+    DashboardDefinition dashboard = m_dashboardManager->getDashboard(dashboardId);
+    if (dashboard.dashboardId == 0) {
+        return HttpResponse::notFound("Dashboard not found");
+    }
+
+    const QString content = m_dashboardManager->getDashboardContent(dashboardId);
+    if (content.isEmpty()) {
+        return HttpResponse::notFound("Dashboard content not found");
+    }
+
+    QJsonObject result;
+    result.insert("dashboard_id", dashboardId);
+    result.insert("dashboard_type", dashboard.dashboardType);
+    result.insert("content", content);
+
+    return HttpResponse::ok(result);
+}
+
+HttpResponse RestApiHandler::handlePutDashboardContent(const HttpRequest& request, qint64 dashboardId)
+{
+    if (!m_dashboardManager) {
+        return HttpResponse::serverError("DashboardManager not initialized");
+    }
+
+    if (!request.jsonBody.contains("content")) {
+        return HttpResponse::badRequest("Missing 'content' field");
+    }
+
+    const QString content = request.jsonBody.value("content").toString();
+
+    if (m_dashboardManager->saveDashboardContent(dashboardId, content)) {
+        QJsonObject result;
+        result.insert("saved", true);
+        result.insert("dashboard_id", dashboardId);
+        return HttpResponse::ok(result);
+    }
+
+    return HttpResponse::serverError("Failed to save dashboard content");
+}
+
+HttpResponse RestApiHandler::handleGetResources(const HttpRequest& request, qint64 dashboardId)
+{
+    Q_UNUSED(request)
+
+    if (!m_dashboardManager) {
+        return HttpResponse::serverError("DashboardManager not initialized");
+    }
+
+    const QStringList resources = m_dashboardManager->listResources(dashboardId);
+
+    QJsonObject result;
+    QJsonArray resourcesArray;
+    for (const QString& r : resources) {
+        resourcesArray.append(r);
+    }
+
+    result.insert("dashboard_id", dashboardId);
+    result.insert("resources", resourcesArray);
+    result.insert("count", resourcesArray.size());
+
+    return HttpResponse::ok(result);
+}
+
+QJsonObject RestApiHandler::dashboardToJson(const DashboardDefinition& dashboard) const
+{
+    QJsonObject obj;
+    obj.insert("dashboard_id", dashboard.dashboardId);
+    obj.insert("name", dashboard.name);
+    obj.insert("description", dashboard.description);
+    obj.insert("owner", dashboard.owner);
+    obj.insert("dashboard_type", dashboard.dashboardType);
+    obj.insert("is_public", dashboard.isPublic);
+
+    if (dashboard.createdAt.isValid()) {
+        obj.insert("created_at", dashboard.createdAt.toString(Qt::ISODateWithMs));
+    }
+    if (dashboard.updatedAt.isValid()) {
+        obj.insert("updated_at", dashboard.updatedAt.toString(Qt::ISODateWithMs));
+    }
+
+    return obj;
+}
+
+bool RestApiHandler::jsonToDashboard(const QJsonObject& json, DashboardDefinition& dashboard, bool isUpdate) const
+{
+    if (!isUpdate) {
+        dashboard.name = "";
+        dashboard.description = "";
+        dashboard.owner = "system";
+        dashboard.dashboardType = "simple";
+        dashboard.isPublic = true;
+    }
+
+    if (!isUpdate) {
+        if (!json.contains("name")) {
+            return false;
+        }
+    }
+
+    if (json.contains("name")) {
+        dashboard.name = json.value("name").toString();
+    }
+    if (json.contains("description")) {
+        dashboard.description = json.value("description").toString();
+    }
+    if (json.contains("owner")) {
+        dashboard.owner = json.value("owner").toString();
+    }
+    if (json.contains("dashboard_type")) {
+        dashboard.dashboardType = json.value("dashboard_type").toString();
+    }
+    if (json.contains("is_public")) {
+        dashboard.isPublic = json.value("is_public").toBool();
+    }
+
+    return true;
+}
+
+bool RestApiHandler::parseIdFromPath(const QString& path, qint64& id, const QString& prefix, const QString& suffix) const
+{
+    QString workingPath = path;
+
+    if (!suffix.isEmpty() && workingPath.endsWith(suffix)) {
+        workingPath = workingPath.left(workingPath.length() - suffix.length());
+    }
+
+    if (!workingPath.startsWith(prefix)) {
+        return false;
+    }
+
+    const QString idStr = workingPath.mid(prefix.length());
+    bool ok = false;
+    id = idStr.toLongLong(&ok);
+
+    return ok && id > 0;
+}
+

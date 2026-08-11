@@ -9,6 +9,7 @@ debug/qmqtt_socket.o
 debug/qmqtt_timer.o
 debug/qmqtt_ssl_socket.o
 debug/ApiAuthenticator.o
+debug/DashboardManager.o
 debug/HttpServer.o
 debug/RestApiHandler.o
 debug/WebSocketHandler.o
@@ -45,6 +46,7 @@ debug/moc_qmqtt_socketinterface.o
 debug/moc_qmqtt_timer_p.o
 debug/moc_qmqtt_timerinterface.o
 debug/moc_qmqtt_ssl_socket_p.o
+debug/moc_DashboardManager.o
 debug/moc_HttpServer.o
 debug/moc_RestApiHandler.o
 debug/moc_WebSocketHandler.o

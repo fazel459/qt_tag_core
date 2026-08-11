@@ -21,6 +21,18 @@ enum class SourceKind
     Replay
 };
 
+struct DashboardDefinition {
+    qint64 dashboardId = 0;
+    QString name;
+    QString description;
+    QString owner;
+    QString dashboardType = "simple";  // simple, qml, html, template
+    QString config;  // JSON string
+    bool isPublic = true;
+    QDateTime createdAt;
+    QDateTime updatedAt;
+};
+
 struct TagDefinition
 {
     qint64 tagId = 0;

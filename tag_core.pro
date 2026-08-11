@@ -12,6 +12,7 @@ include(src/qmqtt/qmqtt.pri)
 
 SOURCES += \
     src/api/ApiAuthenticator.cpp \
+    src/api/DashboardManager.cpp \
     src/api/HttpServer.cpp \
     src/api/RestApiHandler.cpp \
     src/api/WebSocketHandler.cpp \
@@ -41,6 +42,7 @@ SOURCES += \
 
 HEADERS += \
     src/api/ApiAuthenticator.h \
+    src/api/DashboardManager.h \
     src/api/HttpServer.h \
     src/api/RestApiHandler.h \
     src/api/WebSocketHandler.h \

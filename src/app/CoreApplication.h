@@ -19,11 +19,14 @@
 #include "../storage/HistorianManager.h"
 #include "../storage/ArchiveManager.h"
 #include "api/WebSocketServer.h"
-//#include "api/WebSocketHandler.h"
+#include "../api/DashboardManager.h"
+
 #include <QObject>
 class WebSocketServer;
 class HttpServer;
 class RestApiHandler;
+
+
 class CoreApplication: public QObject
 {
 public:
@@ -55,6 +58,8 @@ private:
 
     QJsonObject handleListDriversCommand(const QJsonObject& payload);
 
+    QJsonObject handleLoadDashboardCommand(const QJsonObject& payload);
+
     std::unique_ptr<BatchHistorianWriter> m_historianWriter;
     std::unique_ptr<CurrentStateWriter> m_currentStateWriter;
     std::unique_ptr<StorageExceptionFilter> m_storageFilter;
@@ -67,6 +72,7 @@ private:
     std::unique_ptr<ComputedTagEngine> m_computedTagEngine;
     std::unique_ptr<HistorianManager> m_historianManager;
     std::unique_ptr<ArchiveManager> m_archiveManager;
+    std::unique_ptr<DashboardManager> m_dashboardManager;
 };
 
 
