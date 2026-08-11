@@ -18,9 +18,14 @@
 #include "../computed/ComputedTagEngine.h"
 #include "../storage/HistorianManager.h"
 #include "../storage/ArchiveManager.h"
-class CoreApplication
+#include "api/WebSocketServer.h"
+//#include "api/WebSocketHandler.h"
+#include <QObject>
+class WebSocketServer;
+class CoreApplication: public QObject
 {
 public:
+    explicit CoreApplication(QObject *parent = nullptr);
     bool initialize();
 
 private:
@@ -30,6 +35,9 @@ private:
 
     DbManager m_db;
     TagBus m_bus;
+    void startApiLayer();
+
+    WebSocketServer *m_wsServer = nullptr;
 
     std::unique_ptr<BatchHistorianWriter> m_historianWriter;
     std::unique_ptr<CurrentStateWriter> m_currentStateWriter;

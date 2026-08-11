@@ -8,6 +8,8 @@ debug/qmqtt_routesubscription.o
 debug/qmqtt_socket.o
 debug/qmqtt_timer.o
 debug/qmqtt_ssl_socket.o
+debug/WebSocketHandler.o
+debug/WebSocketServer.o
 debug/ComputedTagEngine.o
 debug/DriverFactory.o
 debug/DriverManager.o
@@ -40,3 +42,5 @@ debug/moc_qmqtt_socketinterface.o
 debug/moc_qmqtt_timer_p.o
 debug/moc_qmqtt_timerinterface.o
 debug/moc_qmqtt_ssl_socket_p.o
+debug/moc_WebSocketHandler.o
+debug/moc_WebSocketServer.o

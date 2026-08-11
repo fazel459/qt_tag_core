@@ -1,5 +1,6 @@
 #include "CoreApplication.h"
-
+#include "api/WebSocketServer.h"
+#include "api/WebSocketHandler.h"
 #include <QCoreApplication>
 #include <QDebug>
 #include <QFile>
@@ -31,6 +32,11 @@ QString CoreApplication::findConfigFile()
 
     qWarning() << "Config file not found in searched paths. Using default path: config/app.json";
     return "config/app.json";
+}
+
+CoreApplication::CoreApplication(QObject *parent): QObject(parent)
+{
+
 }
 
 bool CoreApplication::initialize()
@@ -241,6 +247,49 @@ bool CoreApplication::initialize()
         maxArchiveSizeBytes,
         archiveCheckIntervalMs
     );
-
+startApiLayer();
     return true;
+}
+
+void CoreApplication::startApiLayer()
+{
+    m_wsServer = new WebSocketServer(this);
+
+    WebSocketServer::Config config;
+    config.enabled = true;
+    config.host = QStringLiteral("0.0.0.0");
+    config.port = 8081;
+    config.batchIntervalMs = 100;
+
+    QObject::connect(m_wsServer, &WebSocketServer::started,
+            this, [](const QString &host, int port) {
+        qInfo() << "[API] WebSocket server started on" << host << ":" << port;
+    });
+
+    QObject::connect(m_wsServer, &WebSocketServer::failed,
+            this, [](const QString &message) {
+        qWarning() << "[API] WebSocket server failed:" << message;
+    });
+
+    if (!m_wsServer->start(config)) {
+        qWarning() << "[API] Failed to start WebSocket server";
+        return;
+    }
+
+    // Bridge: tags/{id}/update → WebSocketHandler
+    m_bus.subscribe("tags/#", [this](const BusMessage& msg) {
+        if (!msg.topic.endsWith("/update")) return;
+        if (m_wsServer && m_wsServer->handler()) {
+            m_wsServer->handler()->publishTagUpdate(msg.value);
+        }
+    });
+
+    // Bridge: alarms/{id}/{state} → WebSocketHandler
+    m_bus.subscribe("alarms/#", [this](const BusMessage& msg) {
+        if (m_wsServer && m_wsServer->handler()) {
+            m_wsServer->handler()->publishAlarmEvent(msg.value);
+        }
+    });
+
+    qInfo() << "[API] API Layer started";
 }

@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tag Core - SQL Commands Reference</title>
+    <style>
+        :root {
+            --primary: #1a237e;
+            --secondary: #303f9f;
+            --accent: #ff6f00;
+            --success: #2e7d32;
+            --warning: #f57f17;
+            --danger: #c62828;
+            --bg: #f5f5f5;
+            --card-bg: #ffffff;
+            --text: #212121;
+            --text-light: #757575;
+            --border: #e0e0e0;
+            --code-bg: #263238;
+            --code-text: #aed581;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .nav {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+        }
+
+        .nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .nav a {
+            display: block;
+            padding: 6px 14px;
+            background: var(--bg);
+            border-radius: 4px;
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 500;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .nav a:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .section h2 {
+            color: var(--primary);
+            font-size: 1.6em;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--accent);
+        }
+
+        .section h3 {
+            color: var(--secondary);
+            font-size: 1.3em;
+            margin: 15px 0 10px;
+        }
+
+        .sql-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            direction: ltr;
+            text-align: left;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        .sql-block .comment {
+            color: #546e7a;
+        }
+
+        .sql-block .keyword {
+            color: #ff7043;
+        }
+
+        .sql-block .string {
+            color: #ffca28;
+        }
+
+        .sql-block .number {
+            color: #ce93d8;
+        }
+
+        .sql-label {
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-bottom: 8px;
+        }
+
+        .sql-label.create { background: var(--success); }
+        .sql-label.insert { background: #0277bd; }
+        .sql-label.select { background: var(--accent); }
+        .sql-label.update { background: var(--warning); }
+        .sql-label.policy { background: #6a1b9a; }
+        .sql-label.archive { background: #00695c; }
+
+        .description {
+            background: var(--bg);
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            border-right: 4px solid var(--primary);
+        }
+
+        .warning-box {
+            background: #fff3e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            border-right: 4px solid var(--warning);
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            border-right: 4px solid #0277bd;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+
+        .copy-btn:hover {
+            background: var(--secondary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 10px;
+            text-align: right;
+        }
+
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:nth-child(even) {
+            background: var(--bg);
+        }
+
+        .toc {
+            background: var(--bg);
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .toc ol {
+            padding-right: 20px;
+        }
+
+        .toc a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-light);
+        }
+
+        @media print {
+            .nav { display: none; }
+            .copy-btn { display: none; }
+            .section { page-break-inside: avoid; }
+        }
+
+        @media (max-width: 768px) {
+            .sql-block { font-size: 0.8em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🗄️ Tag Core - SQL Commands</h1>
+    <p>راهنمای کامل دستورات SQL | PostgreSQL + TimescaleDB</p>
+</div>
+
+<div class="container">
+
+    <!-- Navigation -->
+    <div class="nav">
+        <ul>
+            <li><a href="#setup">راه‌اندازی اولیه</a></li>
+            <li><a href="#tables">ایجاد جداول</a></li>
+            <li><a href="#aggregates">Continuous Aggregates</a></li>
+            <li><a href="#policies">Policies</a></li>
+            <li><a href="#drivers">درایورها</a></li>
+            <li><a href="#tags">تگ‌ها</a></li>
+            <li><a href="#rules">قوانین آلارم</a></li>
+            <li><a href="#computed">تگ‌های محاسباتی</a></li>
+            <li><a href="#notification">اعلان‌ها</a></li>
+            <li><a href="#queries">Query های کاربردی</a></li>
+            <li><a href="#archive">آرشیو</a></li>
+            <li><a href="#monitoring">مانیتورینگ</a></li>
+        </ul>
+    </div>
+
+    <!-- Section 1: Setup -->
+    <div class="section" id="setup">
+        <h2>🚀 راه‌اندازی اولیه دیتابیس</h2>
+
+        <div class="info-box">
+            <p><strong>پیش‌نیازها:</strong> PostgreSQL 14+ و TimescaleDB Extension</p>
+        </div>
+
+        <h3>1. ایجاد دیتابیس</h3>
+        <span class="sql-label create">CREATE DATABASE</span>
+        <div class="sql-block">
+<span class="comment">-- اتصال به psql</span>
+<span class="comment">-- psql -U postgres</span>
+
+<span class="comment">-- ایجاد دیتابیس</span>
+<span class="keyword">CREATE DATABASE</span> tagsdb;
+
+<span class="comment">-- اتصال به دیتابیس</span>
+\c tagsdb;
+
+<span class="comment">-- فعال‌سازی TimescaleDB</span>
+<span class="keyword">CREATE EXTENSION IF NOT EXISTS</span> timescaledb;
+        </div>
+
+        <h3>2. ایجاد کاربر (اختیاری)</h3>
+        <span class="sql-label create">CREATE USER</span>
+        <div class="sql-block">
+<span class="comment">-- ایجاد کاربر جدید</span>
+<span class="keyword">CREATE USER</span> tagcore <span class="keyword">WITH PASSWORD</span> <span class="string">'your_password'</span>;
+
+<span class="comment">-- اعطای دسترسی‌ها</span>
+<span class="keyword">GRANT ALL PRIVILEGES ON DATABASE</span> tagsdb <span class="keyword">TO</span> tagcore;
+<span class="keyword">GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA</span> public <span class="keyword">TO</span> tagcore;
+<span class="keyword">GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA</span> public <span class="keyword">TO</span> tagcore;
+        </div>
+
+        <h3>3. بررسی صحت نصب</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="comment">-- بررسی نسخه TimescaleDB</span>
+<span class="keyword">SELECT</span> extversion <span class="keyword">FROM</span> pg_extension <span class="keyword">WHERE</span> extname = <span class="string">'timescaledb'</span>;
+
+<span class="comment">-- بررسی PostgreSQL version</span>
+<span class="keyword">SELECT</span> version();
+        </div>
+    </div>
+
+    <!-- Section 2: Tables -->
+    <div class="section" id="tables">
+        <h2>📋 ایجاد جداول</h2>
+
+        <div class="info-box">
+            <p>این جداول به صورت خودکار توسط DbManager ساخته می‌شوند، اما برای مرجع در اینجا آورده شده‌اند.</p>
+        </div>
+
+        <h3>1. جدول tags</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> tags (
+    tag_id <span class="keyword">BIGSERIAL PRIMARY KEY</span>,
+    tag_name <span class="keyword">TEXT UNIQUE NOT NULL</span>,
+    driver_id <span class="keyword">BIGINT REFERENCES</span> drivers(driver_id),
+    source_type <span class="keyword">TEXT DEFAULT</span> <span class="string">'real_driver'</span>,
+    data_type <span class="keyword">TEXT DEFAULT</span> <span class="string">'float'</span>,
+    eng_units <span class="keyword">TEXT</span>,
+    raw_min <span class="keyword">DOUBLE PRECISION DEFAULT</span> <span class="number">0</span>,
+    raw_max <span class="keyword">DOUBLE PRECISION DEFAULT</span> <span class="number">100</span>,
+    eng_min <span class="keyword">DOUBLE PRECISION DEFAULT</span> <span class="number">0</span>,
+    eng_max <span class="keyword">DOUBLE PRECISION DEFAULT</span> <span class="number">100</span>,
+    scaling_type <span class="keyword">TEXT DEFAULT</span> <span class="string">'linear'</span>,
+    scaling_slope <span class="keyword">DOUBLE PRECISION DEFAULT</span> <span class="number">1.0</span>,
+    scaling_offset <span class="keyword">DOUBLE PRECISION DEFAULT</span> <span class="number">0.0</span>,
+    clamp_enabled <span class="keyword">BOOLEAN DEFAULT TRUE</span>,
+    deadband <span class="keyword">DOUBLE PRECISION DEFAULT</span> <span class="number">0.5</span>,
+    storage_deadband <span class="keyword">DOUBLE PRECISION DEFAULT</span> <span class="number">0.5</span>,
+    alarm_hysteresis <span class="keyword">DOUBLE PRECISION DEFAULT</span> <span class="number">-1</span>,
+    heartbeat_interval_ms <span class="keyword">INT DEFAULT</span> <span class="number">30000</span>,
+    software_filter_type <span class="keyword">TEXT DEFAULT</span> <span class="string">'none'</span>,
+    software_filter_config <span class="keyword">TEXT DEFAULT</span> <span class="string">'{}'</span>,
+    sim_profile <span class="keyword">TEXT DEFAULT</span> <span class="string">'sine'</span>,
+    address_config <span class="keyword">TEXT DEFAULT</span> <span class="string">'{}'</span>,
+    enabled <span class="keyword">BOOLEAN DEFAULT TRUE</span>,
+    created_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now(),
+    updated_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now()
+);
+        </div>
+
+        <h3>2. جدول tag_values_raw (Hypertable)</h3>
+        <span class="sql-label create">CREATE TABLE + HYPERTABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> tag_values_raw (
+    time <span class="keyword">TIMESTAMPTZ NOT NULL</span>,
+    tag_id <span class="keyword">BIGINT NOT NULL</span>,
+    raw_value <span class="keyword">DOUBLE PRECISION</span>,
+    eng_value <span class="keyword">DOUBLE PRECISION</span>,
+    quality <span class="keyword">INT DEFAULT</span> <span class="number">0</span>,
+    source <span class="keyword">TEXT</span>
+);
+
+<span class="comment">-- تبدیل به Hypertable</span>
+<span class="keyword">SELECT</span> create_hypertable(<span class="string">'tag_values_raw'</span>, <span class="string">'time'</span>, if_not_exists => <span class="keyword">TRUE</span>);
+
+<span class="comment">-- ایجاد ایندکس</span>
+<span class="keyword">CREATE INDEX IF NOT EXISTS</span> idx_tag_values_raw_tag_time
+    <span class="keyword">ON</span> tag_values_raw(tag_id, time <span class="keyword">DESC</span>);
+        </div>
+
+        <h3>3. جدول tag_current_state</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> tag_current_state (
+    tag_id <span class="keyword">BIGINT PRIMARY KEY</span>,
+    last_value <span class="keyword">DOUBLE PRECISION</span>,
+    last_quality <span class="keyword">INT</span>,
+    last_timestamp <span class="keyword">TIMESTAMPTZ</span>,
+    updated_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now()
+);
+        </div>
+
+        <h3>4. جدول alarms</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> alarms (
+    alarm_id <span class="keyword">BIGSERIAL PRIMARY KEY</span>,
+    tag_id <span class="keyword">BIGINT</span>,
+    rule_type <span class="keyword">TEXT</span>,
+    alarm_type <span class="keyword">TEXT</span>,
+    severity <span class="keyword">TEXT</span>,
+    priority <span class="keyword">TEXT</span>,
+    state <span class="keyword">TEXT</span>,
+    value <span class="keyword">DOUBLE PRECISION</span>,
+    threshold <span class="keyword">DOUBLE PRECISION</span>,
+    message <span class="keyword">TEXT</span>,
+    active_time <span class="keyword">TIMESTAMPTZ DEFAULT</span> now(),
+    clear_time <span class="keyword">TIMESTAMPTZ</span>,
+    ack_time <span class="keyword">TIMESTAMPTZ</span>,
+    ack_user <span class="keyword">TEXT</span>
+);
+
+<span class="keyword">CREATE INDEX IF NOT EXISTS</span> idx_alarms_tag_state
+    <span class="keyword">ON</span> alarms(tag_id, state);
+        </div>
+
+        <h3>5. جدول alarm_events</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> alarm_events (
+    event_id <span class="keyword">BIGSERIAL PRIMARY KEY</span>,
+    alarm_id <span class="keyword">BIGINT REFERENCES</span> alarms(alarm_id),
+    event_type <span class="keyword">TEXT NOT NULL</span>,
+    event_time <span class="keyword">TIMESTAMPTZ DEFAULT</span> now(),
+    event_data <span class="keyword">TEXT</span>,
+    user_name <span class="keyword">TEXT</span>
+);
+
+<span class="keyword">CREATE INDEX IF NOT EXISTS</span> idx_alarm_events_alarm_id
+    <span class="keyword">ON</span> alarm_events(alarm_id);
+        </div>
+
+        <h3>6. جدول drivers</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> drivers (
+    driver_id <span class="keyword">BIGSERIAL PRIMARY KEY</span>,
+    name <span class="keyword">TEXT UNIQUE NOT NULL</span>,
+    type <span class="keyword">TEXT NOT NULL</span>,
+    connection_config <span class="keyword">TEXT DEFAULT</span> <span class="string">'{}'</span>,
+    polling_interval_ms <span class="keyword">INT DEFAULT</span> <span class="number">1000</span>,
+    enabled <span class="keyword">BOOLEAN DEFAULT TRUE</span>,
+    created_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now(),
+    updated_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now()
+);
+        </div>
+
+        <h3>7. جدول threshold_rules</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> threshold_rules (
+    rule_id <span class="keyword">BIGSERIAL PRIMARY KEY</span>,
+    tag_id <span class="keyword">BIGINT NOT NULL REFERENCES</span> tags(tag_id),
+    low <span class="keyword">DOUBLE PRECISION</span>,
+    high <span class="keyword">DOUBLE PRECISION</span>,
+    lowlow <span class="keyword">DOUBLE PRECISION</span>,
+    highhigh <span class="keyword">DOUBLE PRECISION</span>,
+    high_hysteresis <span class="keyword">DOUBLE PRECISION</span>,
+    low_hysteresis <span class="keyword">DOUBLE PRECISION</span>,
+    lowlow_hysteresis <span class="keyword">DOUBLE PRECISION</span>,
+    highhigh_hysteresis <span class="keyword">DOUBLE PRECISION</span>,
+    on_delay_ms <span class="keyword">INT</span>,
+    off_delay_ms <span class="keyword">INT</span>,
+    enabled <span class="keyword">BOOLEAN DEFAULT TRUE</span>,
+    updated_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now()
+);
+        </div>
+
+        <h3>8. جدول range_violation_rules</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> range_violation_rules (
+    rule_id <span class="keyword">BIGSERIAL PRIMARY KEY</span>,
+    tag_id <span class="keyword">BIGINT NOT NULL REFERENCES</span> tags(tag_id),
+    min_value <span class="keyword">DOUBLE PRECISION</span>,
+    max_value <span class="keyword">DOUBLE PRECISION</span>,
+    severity <span class="keyword">TEXT DEFAULT</span> <span class="string">'high'</span>,
+    enabled <span class="keyword">BOOLEAN DEFAULT TRUE</span>,
+    created_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now(),
+    updated_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now()
+);
+        </div>
+
+        <h3>9. جدول rate_of_change_rules</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> rate_of_change_rules (
+    rule_id <span class="keyword">BIGSERIAL PRIMARY KEY</span>,
+    tag_id <span class="keyword">BIGINT NOT NULL REFERENCES</span> tags(tag_id),
+    max_rate_per_second <span class="keyword">DOUBLE PRECISION NOT NULL</span>,
+    window_ms <span class="keyword">INT DEFAULT</span> <span class="number">5000</span>,
+    severity <span class="keyword">TEXT DEFAULT</span> <span class="string">'high'</span>,
+    enabled <span class="keyword">BOOLEAN DEFAULT TRUE</span>,
+    created_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now(),
+    updated_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now()
+);
+        </div>
+
+        <h3>10. جدول stuck_value_rules</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> stuck_value_rules (
+    rule_id <span class="keyword">BIGSERIAL PRIMARY KEY</span>,
+    tag_id <span class="keyword">BIGINT NOT NULL REFERENCES</span> tags(tag_id),
+    stuck_duration_ms <span class="keyword">INT DEFAULT</span> <span class="number">60000</span>,
+    epsilon <span class="keyword">DOUBLE PRECISION DEFAULT</span> <span class="number">0.01</span>,
+    severity <span class="keyword">TEXT DEFAULT</span> <span class="string">'medium'</span>,
+    enabled <span class="keyword">BOOLEAN DEFAULT TRUE</span>,
+    created_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now(),
+    updated_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now()
+);
+        </div>
+
+        <h3>11. جدول boolean_rules</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> boolean_rules (
+    rule_id <span class="keyword">BIGSERIAL PRIMARY KEY</span>,
+    tag_id <span class="keyword">BIGINT NOT NULL REFERENCES</span> tags(tag_id),
+    alarm_on_true <span class="keyword">BOOLEAN DEFAULT FALSE</span>,
+    alarm_on_false <span class="keyword">BOOLEAN DEFAULT FALSE</span>,
+    duration_ms <span class="keyword">INT DEFAULT</span> <span class="number">1000</span>,
+    severity <span class="keyword">TEXT DEFAULT</span> <span class="string">'medium'</span>,
+    enabled <span class="keyword">BOOLEAN DEFAULT TRUE</span>,
+    created_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now(),
+    updated_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now()
+);
+        </div>
+
+        <h3>12. جدول computed_tags</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> computed_tags (
+    computed_tag_id <span class="keyword">BIGSERIAL PRIMARY KEY</span>,
+    tag_id <span class="keyword">BIGINT NOT NULL REFERENCES</span> tags(tag_id),
+    expression <span class="keyword">TEXT NOT NULL</span>,
+    update_mode <span class="keyword">TEXT DEFAULT</span> <span class="string">'on_change'</span>,
+    update_interval_ms <span class="keyword">INT DEFAULT</span> <span class="number">1000</span>,
+    enabled <span class="keyword">BOOLEAN DEFAULT TRUE</span>,
+    created_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now(),
+    updated_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now()
+);
+
+<span class="keyword">CREATE INDEX IF NOT EXISTS</span> idx_computed_tags_tag
+    <span class="keyword">ON</span> computed_tags(tag_id);
+        </div>
+
+        <h3>13. جدول notification_rules</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> notification_rules (
+    notification_rule_id <span class="keyword">BIGSERIAL PRIMARY KEY</span>,
+    name <span class="keyword">TEXT NOT NULL</span>,
+    severity_filter <span class="keyword">TEXT</span>,
+    alarm_type_filter <span class="keyword">TEXT</span>,
+    channel <span class="keyword">TEXT NOT NULL</span>,
+    channel_config <span class="keyword">TEXT DEFAULT</span> <span class="string">'{}'</span>,
+    throttle_ms <span class="keyword">INT DEFAULT</span> <span class="number">60000</span>,
+    enabled <span class="keyword">BOOLEAN DEFAULT TRUE</span>,
+    created_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now(),
+    updated_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now()
+);
+        </div>
+
+        <h3>14. جدول notification_log</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> notification_log (
+    notification_id <span class="keyword">BIGSERIAL PRIMARY KEY</span>,
+    alarm_id <span class="keyword">BIGINT</span>,
+    notification_rule_id <span class="keyword">BIGINT</span>,
+    channel <span class="keyword">TEXT</span>,
+    status <span class="keyword">TEXT</span>,
+    message <span class="keyword">TEXT</span>,
+    sent_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now()
+);
+
+<span class="keyword">CREATE INDEX IF NOT EXISTS</span> idx_notification_log_alarm
+    <span class="keyword">ON</span> notification_log(alarm_id);
+        </div>
+
+        <h3>15. جدول archive_log</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> archive_log (
+    archive_id <span class="keyword">BIGSERIAL PRIMARY KEY</span>,
+    table_name <span class="keyword">TEXT NOT NULL</span>,
+    file_path <span class="keyword">TEXT NOT NULL</span>,
+    start_time <span class="keyword">TIMESTAMPTZ</span>,
+    end_time <span class="keyword">TIMESTAMPTZ</span>,
+    record_count <span class="keyword">BIGINT DEFAULT</span> <span class="number">0</span>,
+    file_size_bytes <span class="keyword">BIGINT DEFAULT</span> <span class="number">0</span>,
+    status <span class="keyword">TEXT DEFAULT</span> <span class="string">'completed'</span>,
+    created_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now()
+);
+        </div>
+
+        <h3>16. جدول system_settings</h3>
+        <span class="sql-label create">CREATE TABLE</span>
+        <div class="sql-block">
+<span class="keyword">CREATE TABLE IF NOT EXISTS</span> system_settings (
+    key <span class="keyword">TEXT PRIMARY KEY</span>,
+    value_text <span class="keyword">TEXT</span>,
+    value_int <span class="keyword">INT</span>,
+    value_double <span class="keyword">DOUBLE PRECISION</span>,
+    value_bool <span class="keyword">BOOLEAN</span>,
+    description <span class="keyword">TEXT</span>,
+    updated_at <span class="keyword">TIMESTAMPTZ DEFAULT</span> now()
+);
+        </div>
+    </div>
+
+    <!-- Section 3: Continuous Aggregates -->
+    <div class="section" id="aggregates">
+        <h2>📊 Continuous Aggregates</h2>
+
+        <h3>1. tag_values_1min</h3>
+        <span class="sql-label create">CREATE MATERIALIZED VIEW</span>
+        <div class="sql-block">
+<span class="keyword">CREATE MATERIALIZED VIEW IF NOT EXISTS</span> tag_values_1min
+<span class="keyword">WITH</span> (timescaledb.continuous) <span class="keyword">AS</span>
+<span class="keyword">SELECT</span>
+    time_bucket(<span class="keyword">INTERVAL</span> <span class="string">'1 minute'</span>, time) <span class="keyword">AS</span> bucket,
+    tag_id,
+    <span class="keyword">AVG</span>(eng_value) <span class="keyword">AS</span> avg_value,
+    <span class="keyword">MIN</span>(eng_value) <span class="keyword">AS</span> min_value,
+    <span class="keyword">MAX</span>(eng_value) <span class="keyword">AS</span> max_value,
+    <span class="keyword">FIRST</span>(eng_value, time) <span class="keyword">AS</span> first_value,
+    <span class="keyword">LAST</span>(eng_value, time) <span class="keyword">AS</span> last_value,
+    <span class="keyword">COUNT</span>(*) <span class="keyword">AS</span> sample_count
+<span class="keyword">FROM</span> tag_values_raw
+<span class="keyword">GROUP BY</span> bucket, tag_id
+<span class="keyword">WITH NO DATA</span>;
+        </div>
+
+        <h3>2. tag_values_5min</h3>
+        <span class="sql-label create">CREATE MATERIALIZED VIEW</span>
+        <div class="sql-block">
+<span class="keyword">CREATE MATERIALIZED VIEW IF NOT EXISTS</span> tag_values_5min
+<span class="keyword">WITH</span> (timescaledb.continuous) <span class="keyword">AS</span>
+<span class="keyword">SELECT</span>
+    time_bucket(<span class="keyword">INTERVAL</span> <span class="string">'5 minutes'</span>, time) <span class="keyword">AS</span> bucket,
+    tag_id,
+    <span class="keyword">AVG</span>(eng_value) <span class="keyword">AS</span> avg_value,
+    <span class="keyword">MIN</span>(eng_value) <span class="keyword">AS</span> min_value,
+    <span class="keyword">MAX</span>(eng_value) <span class="keyword">AS</span> max_value,
+    <span class="keyword">FIRST</span>(eng_value, time) <span class="keyword">AS</span> first_value,
+    <span class="keyword">LAST</span>(eng_value, time) <span class="keyword">AS</span> last_value,
+    <span class="keyword">COUNT</span>(*) <span class="keyword">AS</span> sample_count
+<span class="keyword">FROM</span> tag_values_raw
+<span class="keyword">GROUP BY</span> bucket, tag_id
+<span class="keyword">WITH NO DATA</span>;
+        </div>
+
+        <h3>3. tag_values_1hour</h3>
+        <span class="sql-label create">CREATE MATERIALIZED VIEW</span>
+        <div class="sql-block">
+<span class="keyword">CREATE MATERIALIZED VIEW IF NOT EXISTS</span> tag_values_1hour
+<span class="keyword">WITH</span> (timescaledb.continuous) <span class="keyword">AS</span>
+<span class="keyword">SELECT</span>
+    time_bucket(<span class="keyword">INTERVAL</span> <span class="string">'1 hour'</span>, time) <span class="keyword">AS</span> bucket,
+    tag_id,
+    <span class="keyword">AVG</span>(eng_value) <span class="keyword">AS</span> avg_value,
+    <span class="keyword">MIN</span>(eng_value) <span class="keyword">AS</span> min_value,
+    <span class="keyword">MAX</span>(eng_value) <span class="keyword">AS</span> max_value,
+    <span class="keyword">FIRST</span>(eng_value, time) <span class="keyword">AS</span> first_value,
+    <span class="keyword">LAST</span>(eng_value, time) <span class="keyword">AS</span> last_value,
+    <span class="keyword">COUNT</span>(*) <span class="keyword">AS</span> sample_count
+<span class="keyword">FROM</span> tag_values_raw
+<span class="keyword">GROUP BY</span> bucket, tag_id
+<span class="keyword">WITH NO DATA</span>;
+        </div>
+
+        <h3>4. tag_values_1day</h3>
+        <span class="sql-label create">CREATE MATERIALIZED VIEW</span>
+        <div class="sql-block">
+<span class="keyword">CREATE MATERIALIZED VIEW IF NOT EXISTS</span> tag_values_1day
+<span class="keyword">WITH</span> (timescaledb.continuous) <span class="keyword">AS</span>
+<span class="keyword">SELECT</span>
+    time_bucket(<span class="keyword">INTERVAL</span> <span class="string">'1 day'</span>, time) <span class="keyword">AS</span> bucket,
+    tag_id,
+    <span class="keyword">AVG</span>(eng_value) <span class="keyword">AS</span> avg_value,
+    <span class="keyword">MIN</span>(eng_value) <span class="keyword">AS</span> min_value,
+    <span class="keyword">MAX</span>(eng_value) <span class="keyword">AS</span> max_value,
+    <span class="keyword">FIRST</span>(eng_value, time) <span class="keyword">AS</span> first_value,
+    <span class="keyword">LAST</span>(eng_value, time) <span class="keyword">AS</span> last_value,
+    <span class="keyword">COUNT</span>(*) <span class="keyword">AS</span> sample_count
+<span class="keyword">FROM</span> tag_values_raw
+<span class="keyword">GROUP BY</span> bucket, tag_id
+<span class="keyword">WITH NO DATA</span>;
+        </div>
+    </div>
+
+    <!-- Section 4: Policies -->
+    <div class="section" id="policies">
+        <h2>⚙️ Policies (Compression, Retention, Refresh)</h2>
+
+        <h3>1. Continuous Aggregate Policies</h3>
+        <span class="sql-label policy">ADD CONTINUOUS AGGREGATE POLICY</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> add_continuous_aggregate_policy(<span class="string">'tag_values_1min'</span>,
+    start_offset => <span class="keyword">INTERVAL</span> <span class="string">'3 minutes'</span>,
+    end_offset => <span class="keyword">INTERVAL</span> <span class="string">'1 minute'</span>,
+    schedule_interval => <span class="keyword">INTERVAL</span> <span class="string">'1 minute'</span>,
+    if_not_exists => <span class="keyword">TRUE</span>
+);
+
+<span class="keyword">SELECT</span> add_continuous_aggregate_policy(<span class="string">'tag_values_5min'</span>,
+    start_offset => <span class="keyword">INTERVAL</span> <span class="string">'15 minutes'</span>,
+    end_offset => <span class="keyword">INTERVAL</span> <span class="string">'5 minutes'</span>,
+    schedule_interval => <span class="keyword">INTERVAL</span> <span class="string">'5 minutes'</span>,
+    if_not_exists => <span class="keyword">TRUE</span>
+);
+
+<span class="keyword">SELECT</span> add_continuous_aggregate_policy(<span class="string">'tag_values_1hour'</span>,
+    start_offset => <span class="keyword">INTERVAL</span> <span class="string">'3 hours'</span>,
+    end_offset => <span class="keyword">INTERVAL</span> <span class="string">'1 hour'</span>,
+    schedule_interval => <span class="keyword">INTERVAL</span> <span class="string">'1 hour'</span>,
+    if_not_exists => <span class="keyword">TRUE</span>
+);
+
+<span class="keyword">SELECT</span> add_continuous_aggregate_policy(<span class="string">'tag_values_1day'</span>,
+    start_offset => <span class="keyword">INTERVAL</span> <span class="string">'3 days'</span>,
+    end_offset => <span class="keyword">INTERVAL</span> <span class="string">'1 day'</span>,
+    schedule_interval => <span class="keyword">INTERVAL</span> <span class="string">'1 day'</span>,
+    if_not_exists => <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>2. Compression Policies</h3>
+        <span class="sql-label policy">ADD COMPRESSION POLICY</span>
+        <div class="sql-block">
+<span class="comment">-- فعال‌سازی compression برای tag_values_raw</span>
+<span class="keyword">ALTER TABLE</span> tag_values_raw <span class="keyword">SET</span> (
+    timescaledb.compress,
+    timescaledb.compress_segmentby = <span class="string">'tag_id'</span>,
+    timescaledb.compress_orderby = <span class="string">'time DESC'</span>
+);
+
+<span class="keyword">SELECT</span> add_compression_policy(<span class="string">'tag_values_raw'</span>,
+    compress_after => <span class="keyword">INTERVAL</span> <span class="string">'7 days'</span>,
+    if_not_exists => <span class="keyword">TRUE</span>
+);
+
+<span class="comment">-- فعال‌سازی compression برای tag_values_1min</span>
+<span class="keyword">ALTER MATERIALIZED VIEW</span> tag_values_1min <span class="keyword">SET</span> (
+    timescaledb.compress,
+    timescaledb.compress_segmentby = <span class="string">'tag_id'</span>
+);
+
+<span class="keyword">SELECT</span> add_compression_policy(<span class="string">'tag_values_1min'</span>,
+    compress_after => <span class="keyword">INTERVAL</span> <span class="string">'30 days'</span>,
+    if_not_exists => <span class="keyword">TRUE</span>
+);
+
+<span class="comment">-- فعال‌سازی compression برای tag_values_5min</span>
+<span class="keyword">ALTER MATERIALIZED VIEW</span> tag_values_5min <span class="keyword">SET</span> (
+    timescaledb.compress,
+    timescaledb.compress_segmentby = <span class="string">'tag_id'</span>
+);
+
+<span class="keyword">SELECT</span> add_compression_policy(<span class="string">'tag_values_5min'</span>,
+    compress_after => <span class="keyword">INTERVAL</span> <span class="string">'90 days'</span>,
+    if_not_exists => <span class="keyword">TRUE</span>
+);
+
+<span class="comment">-- فعال‌سازی compression برای tag_values_1hour</span>
+<span class="keyword">ALTER MATERIALIZED VIEW</span> tag_values_1hour <span class="keyword">SET</span> (
+    timescaledb.compress,
+    timescaledb.compress_segmentby = <span class="string">'tag_id'</span>
+);
+
+<span class="keyword">SELECT</span> add_compression_policy(<span class="string">'tag_values_1hour'</span>,
+    compress_after => <span class="keyword">INTERVAL</span> <span class="string">'1 year'</span>,
+    if_not_exists => <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>3. Retention Policies</h3>
+        <span class="sql-label policy">ADD RETENTION POLICY</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> add_retention_policy(<span class="string">'tag_values_raw'</span>,
+    drop_after => <span class="keyword">INTERVAL</span> <span class="string">'30 days'</span>,
+    if_not_exists => <span class="keyword">TRUE</span>
+);
+
+<span class="keyword">SELECT</span> add_retention_policy(<span class="string">'tag_values_1min'</span>,
+    drop_after => <span class="keyword">INTERVAL</span> <span class="string">'90 days'</span>,
+    if_not_exists => <span class="keyword">TRUE</span>
+);
+
+<span class="keyword">SELECT</span> add_retention_policy(<span class="string">'tag_values_5min'</span>,
+    drop_after => <span class="keyword">INTERVAL</span> <span class="string">'1 year'</span>,
+    if_not_exists => <span class="keyword">TRUE</span>
+);
+
+<span class="keyword">SELECT</span> add_retention_policy(<span class="string">'tag_values_1hour'</span>,
+    drop_after => <span class="keyword">INTERVAL</span> <span class="string">'5 years'</span>,
+    if_not_exists => <span class="keyword">TRUE</span>
+);
+        </div>
+    </div>
+
+    <!-- Section 5: Drivers -->
+    <div class="section" id="drivers">
+        <h2>🔌 مدیریت درایورها</h2>
+
+        <h3>1. ایجاد درایور Simulator</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> drivers (name, type, connection_config, polling_interval_ms, enabled)
+<span class="keyword">VALUES</span> (
+    <span class="string">'SIMULATOR'</span>,
+    <span class="string">'simulator'</span>,
+    <span class="string">'{}'</span>,
+    <span class="number">1000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>2. ایجاد درایور Modbus TCP</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> drivers (name, type, connection_config, polling_interval_ms, enabled)
+<span class="keyword">VALUES</span> (
+    <span class="string">'MODBUS_TCP_1'</span>,
+    <span class="string">'modbus_tcp'</span>,
+    <span class="string">'{"host": "127.0.0.1", "port": 502, "timeout_ms": 3000, "default_unit_id": 1, "inter_request_delay_ms": 50, "debug": false}'</span>,
+    <span class="number">1000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>3. ایجاد درایور Modbus RTU</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> drivers (name, type, connection_config, polling_interval_ms, enabled)
+<span class="keyword">VALUES</span> (
+    <span class="string">'MODBUS_RTU_1'</span>,
+    <span class="string">'modbus_rtu'</span>,
+    <span class="string">'{"port": "COM1", "baud_rate": 9600, "data_bits": 8, "stop_bits": 1, "parity": "none", "timeout_ms": 1000, "default_unit_id": 1, "inter_request_delay_ms": 50}'</span>,
+    <span class="number">1000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>4. ایجاد درایور MQTT</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> drivers (name, type, connection_config, polling_interval_ms, enabled)
+<span class="keyword">VALUES</span> (
+    <span class="string">'MQTT_BROKER_1'</span>,
+    <span class="string">'mqtt'</span>,
+    <span class="string">'{"host": "localhost", "port": 1883, "client_id": "tag_core_client", "username": "", "password": ""}'</span>,
+    <span class="number">1000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>5. ایجاد درایور OPC UA</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> drivers (name, type, connection_config, polling_interval_ms, enabled)
+<span class="keyword">VALUES</span> (
+    <span class="string">'OPCUA_SERVER_1'</span>,
+    <span class="string">'opcua'</span>,
+    <span class="string">'{"endpoint_url": "opc.tcp://localhost:4840", "username": "", "password": ""}'</span>,
+    <span class="number">1000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>6. لیست درایورها</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> driver_id, name, type, connection_config, polling_interval_ms, enabled
+<span class="keyword">FROM</span> drivers
+<span class="keyword">ORDER BY</span> driver_id;
+        </div>
+
+        <h3>7. غیرفعال کردن درایور</h3>
+        <span class="sql-label update">UPDATE</span>
+        <div class="sql-block">
+<span class="keyword">UPDATE</span> drivers
+<span class="keyword">SET</span> enabled = <span class="keyword">FALSE</span>
+<span class="keyword">WHERE</span> name = <span class="string">'MODBUS_TCP_1'</span>;
+        </div>
+
+        <h3>8. ویرایش connection_config</h3>
+        <span class="sql-label update">UPDATE</span>
+        <div class="sql-block">
+<span class="keyword">UPDATE</span> drivers
+<span class="keyword">SET</span> connection_config = <span class="string">'{"host": "192.168.1.100", "port": 502, "timeout_ms": 5000, "default_unit_id": 1, "inter_request_delay_ms": 100, "debug": true}'</span>
+<span class="keyword">WHERE</span> name = <span class="string">'MODBUS_TCP_1'</span>;
+        </div>
+    </div>
+
+    <!-- Section 6: Tags -->
+    <div class="section" id="tags">
+        <h2>🏷️ مدیریت تگ‌ها</h2>
+
+        <h3>1. ایجاد تگ Simulator</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> tags (
+    tag_id, tag_name, driver_id, source_type, data_type,
+    eng_units, raw_min, raw_max, eng_min, eng_max,
+    scaling_type, scaling_slope, scaling_offset,
+    deadband, storage_deadband,
+    software_filter_type, software_filter_config,
+    enabled, address_config
+)
+<span class="keyword">VALUES</span> (
+    <span class="number">1</span>,
+    <span class="string">'SIM.UNIT02.PUMP101.FIC-101.PV'</span>,
+    (<span class="keyword">SELECT</span> driver_id <span class="keyword">FROM</span> drivers <span class="keyword">WHERE</span> name = <span class="string">'SIMULATOR'</span>),
+    <span class="string">'real_driver'</span>,
+    <span class="string">'float'</span>,
+    <span class="string">'m3/h'</span>,
+    <span class="number">0</span>, <span class="number">100</span>, <span class="number">0</span>, <span class="number">100</span>,
+    <span class="string">'linear'</span>, <span class="number">1.0</span>, <span class="number">0.0</span>,
+    <span class="number">0.5</span>, <span class="number">0.5</span>,
+    <span class="string">'none'</span>, <span class="string">'{}'</span>,
+    <span class="keyword">TRUE</span>,
+    <span class="string">'{}'</span>
+);
+        </div>
+
+        <h3>2. ایجاد تگ Modbus TCP</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> tags (
+    tag_id, tag_name, driver_id, source_type, data_type,
+    eng_units, raw_min, raw_max, eng_min, eng_max,
+    scaling_type, scaling_slope, scaling_offset,
+    deadband, storage_deadband,
+    software_filter_type, software_filter_config,
+    enabled, address_config
+)
+<span class="keyword">VALUES</span> (
+    <span class="number">1001</span>,
+    <span class="string">'MODBUS.TEST.FIC-201.PV'</span>,
+    (<span class="keyword">SELECT</span> driver_id <span class="keyword">FROM</span> drivers <span class="keyword">WHERE</span> name = <span class="string">'MODBUS_TCP_1'</span>),
+    <span class="string">'real_driver'</span>,
+    <span class="string">'float'</span>,
+    <span class="string">'m3/h'</span>,
+    <span class="number">0</span>, <span class="number">100</span>, <span class="number">0</span>, <span class="number">100</span>,
+    <span class="string">'linear'</span>, <span class="number">1.0</span>, <span class="number">0.0</span>,
+    <span class="number">0.5</span>, <span class="number">0.5</span>,
+    <span class="string">'none'</span>, <span class="string">'{}'</span>,
+    <span class="keyword">TRUE</span>,
+    <span class="string">'{"function": "holding_register", "address": 0, "data_type": "float32", "word_order": "high_first", "unit_id": 1}'</span>
+);
+        </div>
+
+        <h3>3. ایجاد تگ Modbus با Card Index</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> tags (
+    tag_id, tag_name, driver_id, source_type, data_type,
+    eng_units, raw_min, raw_max, eng_min, eng_max,
+    scaling_type, scaling_slope, scaling_offset,
+    deadband, storage_deadband,
+    software_filter_type, software_filter_config,
+    enabled, address_config
+)
+<span class="keyword">VALUES</span> (
+    <span class="number">101</span>,
+    <span class="string">'CARD0.SENSOR0'</span>,
+    (<span class="keyword">SELECT</span> driver_id <span class="keyword">FROM</span> drivers <span class="keyword">WHERE</span> name = <span class="string">'MODBUS_TCP_1'</span>),
+    <span class="string">'real_driver'</span>,
+    <span class="string">'float'</span>,
+    <span class="string">'C'</span>,
+    <span class="number">0</span>, <span class="number">100</span>, <span class="number">0</span>, <span class="number">100</span>,
+    <span class="string">'linear'</span>, <span class="number">1.0</span>, <span class="number">0.0</span>,
+    <span class="number">0.1</span>, <span class="number">0.1</span>,
+    <span class="string">'none'</span>, <span class="string">'{}'</span>,
+    <span class="keyword">TRUE</span>,
+    <span class="string">'{"card_index": 0, "sensor_index": 0, "function": "holding_register", "data_type": "uint16", "unit_id": 1}'</span>
+);
+        </div>
+
+        <h3>4. ایجاد تگ MQTT</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> tags (
+    tag_id, tag_name, driver_id, source_type, data_type,
+    eng_units, raw_min, raw_max, eng_min, eng_max,
+    scaling_type, scaling_slope, scaling_offset,
+    deadband, storage_deadband,
+    software_filter_type, software_filter_config,
+    enabled, address_config
+)
+<span class="keyword">VALUES</span> (
+    <span class="number">2001</span>,
+    <span class="string">'MQTT.TEST.TEMP_SENSOR'</span>,
+    (<span class="keyword">SELECT</span> driver_id <span class="keyword">FROM</span> drivers <span class="keyword">WHERE</span> name = <span class="string">'MQTT_BROKER_1'</span>),
+    <span class="string">'real_driver'</span>,
+    <span class="string">'float'</span>,
+    <span class="string">'C'</span>,
+    <span class="number">-20</span>, <span class="number">100</span>, <span class="number">-20</span>, <span class="number">100</span>,
+    <span class="string">'linear'</span>, <span class="number">1.0</span>, <span class="number">0.0</span>,
+    <span class="number">0.1</span>, <span class="number">0.1</span>,
+    <span class="string">'none'</span>, <span class="string">'{}'</span>,
+    <span class="keyword">TRUE</span>,
+    <span class="string">'{"topic": "sensors/temperature", "payload_type": "json", "value_path": "value"}'</span>
+);
+        </div>
+
+        <h3>5. ایجاد تگ محاسباتی</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> tags (
+    tag_id, tag_name, driver_id, source_type, data_type,
+    eng_units, raw_min, raw_max, eng_min, eng_max,
+    scaling_type, scaling_slope, scaling_offset,
+    deadband, storage_deadband,
+    software_filter_type, software_filter_config,
+    enabled, address_config
+)
+<span class="keyword">VALUES</span> (
+    <span class="number">4</span>,
+    <span class="string">'CALC.UNIT02.PUMP101.SUM_PV'</span>,
+    <span class="number">1</span>,
+    <span class="string">'calculated'</span>,
+    <span class="string">'float'</span>,
+    <span class="string">''</span>,
+    <span class="number">0</span>, <span class="number">200</span>, <span class="number">0</span>, <span class="number">200</span>,
+    <span class="string">'linear'</span>, <span class="number">1.0</span>, <span class="number">0.0</span>,
+    <span class="number">0.1</span>, <span class="number">0.1</span>,
+    <span class="string">'none'</span>, <span class="string">'{}'</span>,
+    <span class="keyword">TRUE</span>,
+    <span class="string">'{}'</span>
+);
+        </div>
+
+        <h3>6. لیست تگ‌ها</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> tag_id, tag_name, driver_id, source_type, data_type, enabled
+<span class="keyword">FROM</span> tags
+<span class="keyword">ORDER BY</span> tag_id;
+        </div>
+
+        <h3>7. لیست تگ‌ها با جزئیات درایور</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span>
+    t.tag_id,
+    t.tag_name,
+    t.source_type,
+    t.data_type,
+    d.name <span class="keyword">AS</span> driver_name,
+    d.type <span class="keyword">AS</span> driver_type,
+    t.enabled
+<span class="keyword">FROM</span> tags t
+<span class="keyword">LEFT JOIN</span> drivers d <span class="keyword">ON</span> t.driver_id = d.driver_id
+<span class="keyword">ORDER BY</span> t.tag_id;
+        </div>
+
+        <h3>8. ویرایش تگ</h3>
+        <span class="sql-label update">UPDATE</span>
+        <div class="sql-block">
+<span class="keyword">UPDATE</span> tags
+<span class="keyword">SET</span> deadband = <span class="number">0.1</span>,
+    storage_deadband = <span class="number">0.1</span>,
+    software_filter_type = <span class="string">'moving_average'</span>,
+    software_filter_config = <span class="string">'{"window": 5}'</span>
+<span class="keyword">WHERE</span> tag_id = <span class="number">1</span>;
+        </div>
+
+        <h3>9. غیرفعال کردن تگ</h3>
+        <span class="sql-label update">UPDATE</span>
+        <div class="sql-block">
+<span class="keyword">UPDATE</span> tags
+<span class="keyword">SET</span> enabled = <span class="keyword">FALSE</span>
+<span class="keyword">WHERE</span> tag_id = <span class="number">1</span>;
+        </div>
+
+        <h3>10. حذف تگ</h3>
+        <span class="sql-label update">DELETE</span>
+        <div class="sql-block">
+<span class="keyword">DELETE FROM</span> tags
+<span class="keyword">WHERE</span> tag_id = <span class="number">1</span>;
+        </div>
+    </div>
+
+    <!-- Section 7: Rules -->
+    <div class="section" id="rules">
+        <h2>🚨 قوانین آلارم</h2>
+
+        <h3>1. ایجاد Threshold Rule (4 سطح)</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> threshold_rules (
+    tag_id, low, high, lowlow, highhigh,
+    high_hysteresis, low_hysteresis,
+    lowlow_hysteresis, highhigh_hysteresis,
+    on_delay_ms, off_delay_ms, enabled
+)
+<span class="keyword">VALUES</span> (
+    <span class="number">1</span>,
+    <span class="number">20</span>, <span class="number">80</span>, <span class="number">10</span>, <span class="number">90</span>,
+    <span class="number">2.0</span>, <span class="number">2.0</span>, <span class="number">2.0</span>, <span class="number">2.0</span>,
+    <span class="number">2000</span>, <span class="number">2000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>2. ایجاد Range Violation Rule</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> range_violation_rules (tag_id, min_value, max_value, severity, enabled)
+<span class="keyword">VALUES</span> (<span class="number">1</span>, <span class="number">5.0</span>, <span class="number">95.0</span>, <span class="string">'high'</span>, <span class="keyword">TRUE</span>);
+        </div>
+
+        <h3>3. ایجاد Rate of Change Rule</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> rate_of_change_rules (tag_id, max_rate_per_second, window_ms, severity, enabled)
+<span class="keyword">VALUES</span> (<span class="number">1</span>, <span class="number">5.0</span>, <span class="number">5000</span>, <span class="string">'high'</span>, <span class="keyword">TRUE</span>);
+        </div>
+
+        <h3>4. ایجاد Stuck Value Rule</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> stuck_value_rules (tag_id, stuck_duration_ms, epsilon, severity, enabled)
+<span class="keyword">VALUES</span> (<span class="number">3</span>, <span class="number">30000</span>, <span class="number">0.01</span>, <span class="string">'medium'</span>, <span class="keyword">TRUE</span>);
+        </div>
+
+        <h3>5. ایجاد Boolean Rule</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> boolean_rules (tag_id, alarm_on_true, alarm_on_false, duration_ms, severity, enabled)
+<span class="keyword">VALUES</span> (<span class="number">1</span>, <span class="keyword">FALSE</span>, <span class="keyword">TRUE</span>, <span class="number">5000</span>, <span class="string">'medium'</span>, <span class="keyword">TRUE</span>);
+        </div>
+
+        <h3>6. لیست قوانین</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> threshold_rules;
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> range_violation_rules;
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> rate_of_change_rules;
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> stuck_value_rules;
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> boolean_rules;
+        </div>
+
+        <h3>7. ویرایش Threshold Rule</h3>
+        <span class="sql-label update">UPDATE</span>
+        <div class="sql-block">
+<span class="keyword">UPDATE</span> threshold_rules
+<span class="keyword">SET</span> low = <span class="number">15</span>,
+    high = <span class="number">85</span>,
+    lowlow = <span class="number">5</span>,
+    highhigh = <span class="number">95</span>
+<span class="keyword">WHERE</span> tag_id = <span class="number">1</span>;
+        </div>
+
+        <h3>8. حذف Rule</h3>
+        <span class="sql-label update">DELETE</span>
+        <div class="sql-block">
+<span class="keyword">DELETE FROM</span> threshold_rules
+<span class="keyword">WHERE</span> tag_id = <span class="number">1</span>;
+        </div>
+    </div>
+
+    <!-- Section 8: Computed Tags -->
+    <div class="section" id="computed">
+        <h2>🧮 تگ‌های محاسباتی</h2>
+
+        <h3>1. ایجاد Computed Tag (جمع)</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> computed_tags (tag_id, expression, update_mode, update_interval_ms, enabled)
+<span class="keyword">VALUES</span> (
+    <span class="number">4</span>,
+    <span class="string">'SIM.UNIT02.PUMP101.FIC-101.PV + SIM.UNIT02.PUMP101.TIT-101.PV'</span>,
+    <span class="string">'on_change'</span>,
+    <span class="number">1000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>2. ایجاد Computed Tag (میانگین)</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> computed_tags (tag_id, expression, update_mode, update_interval_ms, enabled)
+<span class="keyword">VALUES</span> (
+    <span class="number">5</span>,
+    <span class="string">'(SIM.UNIT02.PUMP101.FIC-101.PV + SIM.UNIT02.PUMP101.TIT-101.PV) / 2'</span>,
+    <span class="string">'on_change'</span>,
+    <span class="number">1000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>3. ایجاد Computed Tag (تفاضل)</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> computed_tags (tag_id, expression, update_mode, update_interval_ms, enabled)
+<span class="keyword">VALUES</span> (
+    <span class="number">6</span>,
+    <span class="string">'SIM.UNIT02.PUMP101.FIC-101.PV - SIM.UNIT02.PUMP101.LIT-101.PV'</span>,
+    <span class="string">'on_change'</span>,
+    <span class="number">1000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>4. ایجاد Computed Tag (Periodic)</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> computed_tags (tag_id, expression, update_mode, update_interval_ms, enabled)
+<span class="keyword">VALUES</span> (
+    <span class="number">7</span>,
+    <span class="string">'Math.max(SIM.UNIT02.PUMP101.FIC-101.PV, SIM.UNIT02.PUMP101.TIT-101.PV)'</span>,
+    <span class="string">'periodic'</span>,
+    <span class="number">5000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>5. ایجاد Computed Tag (Boolean Logic)</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> computed_tags (tag_id, expression, update_mode, update_interval_ms, enabled)
+<span class="keyword">VALUES</span> (
+    <span class="number">8</span>,
+    <span class="string">'Tag1_PV == 1 && Tag2_PV == 1 ? 1 : 0'</span>,
+    <span class="string">'on_change'</span>,
+    <span class="number">1000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>6. لیست Computed Tags</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> ct.computed_tag_id, ct.tag_id, t.tag_name, ct.expression, ct.update_mode, ct.enabled
+<span class="keyword">FROM</span> computed_tags ct
+<span class="keyword">JOIN</span> tags t <span class="keyword">ON</span> ct.tag_id = t.tag_id
+<span class="keyword">ORDER BY</span> ct.computed_tag_id;
+        </div>
+    </div>
+
+    <!-- Section 9: Notification -->
+    <div class="section" id="notification">
+        <h2>📢 قوانین اعلان</h2>
+
+        <h3>1. ایجاد Notification Rule (Log)</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> notification_rules (
+    name, severity_filter, alarm_type_filter, channel, channel_config, throttle_ms, enabled
+)
+<span class="keyword">VALUES</span> (
+    <span class="string">'Log All Alarms'</span>,
+    <span class="keyword">NULL</span>,
+    <span class="keyword">NULL</span>,
+    <span class="string">'log'</span>,
+    <span class="string">'{}'</span>,
+    <span class="number">30000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>2. ایجاد Notification Rule (Webhook)</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> notification_rules (
+    name, severity_filter, alarm_type_filter, channel, channel_config, throttle_ms, enabled
+)
+<span class="keyword">VALUES</span> (
+    <span class="string">'Webhook Critical'</span>,
+    <span class="string">'critical'</span>,
+    <span class="keyword">NULL</span>,
+    <span class="string">'webhook'</span>,
+    <span class="string">'{"url": "https://webhook.site/your-unique-id", "method": "POST"}'</span>,
+    <span class="number">30000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>3. ایجاد Notification Rule (Sound)</h3>
+        <span class="sql-label insert">INSERT</span>
+        <div class="sql-block">
+<span class="keyword">INSERT INTO</span> notification_rules (
+    name, severity_filter, alarm_type_filter, channel, channel_config, throttle_ms, enabled
+)
+<span class="keyword">VALUES</span> (
+    <span class="string">'High Alarm Sound'</span>,
+    <span class="string">'high,critical'</span>,
+    <span class="keyword">NULL</span>,
+    <span class="string">'sound'</span>,
+    <span class="string">'{"sound_file": "alarm_high.wav", "repeat": 3}'</span>,
+    <span class="number">10000</span>,
+    <span class="keyword">TRUE</span>
+);
+        </div>
+
+        <h3>4. لیست Notification Rules</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> notification_rule_id, name, severity_filter, alarm_type_filter, channel, throttle_ms, enabled
+<span class="keyword">FROM</span> notification_rules
+<span class="keyword">ORDER BY</span> notification_rule_id;
+        </div>
+    </div>
+
+    <!-- Section 10: Queries -->
+    <div class="section" id="queries">
+        <h2>🔍 Query های کاربردی</h2>
+
+        <h3>1. آلارم‌های فعال</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> alarm_id, tag_id, alarm_type, severity, state, value, threshold, message, active_time
+<span class="keyword">FROM</span> alarms
+<span class="keyword">WHERE</span> state = <span class="string">'active'</span>
+<span class="keyword">ORDER BY</span> active_time <span class="keyword">DESC</span>;
+        </div>
+
+        <h3>2. تاریخچه آلارم‌ها</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> alarm_id, tag_id, alarm_type, severity, state, value, threshold, message, active_time, clear_time
+<span class="keyword">FROM</span> alarms
+<span class="keyword">ORDER BY</span> active_time <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> <span class="number">20</span>;
+        </div>
+
+        <h3>3. رویدادهای آلارم</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> e.event_id, e.alarm_id, e.event_type, e.event_time, a.alarm_type, a.severity
+<span class="keyword">FROM</span> alarm_events e
+<span class="keyword">JOIN</span> alarms a <span class="keyword">ON</span> e.alarm_id = a.alarm_id
+<span class="keyword">ORDER BY</span> e.event_time <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> <span class="number">20</span>;
+        </div>
+
+        <h3>4. داده‌های خام یک تگ</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> time, tag_id, raw_value, eng_value, quality, source
+<span class="keyword">FROM</span> tag_values_raw
+<span class="keyword">WHERE</span> tag_id = <span class="number">1</span>
+<span class="keyword">ORDER BY</span> time <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> <span class="number">20</span>;
+        </div>
+
+        <h3>5. وضعیت فعلی تگ‌ها</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> tcs.tag_id, t.tag_name, tcs.last_value, tcs.last_quality, tcs.last_timestamp
+<span class="keyword">FROM</span> tag_current_state tcs
+<span class="keyword">JOIN</span> tags t <span class="keyword">ON</span> tcs.tag_id = t.tag_id
+<span class="keyword">ORDER BY</span> tcs.tag_id;
+        </div>
+
+        <h3>6. داده‌های 1 دقیقه‌ای</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> bucket, tag_id, avg_value, min_value, max_value, sample_count
+<span class="keyword">FROM</span> tag_values_1min
+<span class="keyword">WHERE</span> tag_id = <span class="number">1</span>
+<span class="keyword">ORDER BY</span> bucket <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> <span class="number">10</span>;
+        </div>
+
+        <h3>7. داده‌های 5 دقیقه‌ای</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> bucket, tag_id, avg_value, min_value, max_value, sample_count
+<span class="keyword">FROM</span> tag_values_5min
+<span class="keyword">WHERE</span> tag_id = <span class="number">1</span>
+<span class="keyword">ORDER BY</span> bucket <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> <span class="number">10</span>;
+        </div>
+
+        <h3>8. داده‌های 1 ساعته</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> bucket, tag_id, avg_value, min_value, max_value, sample_count
+<span class="keyword">FROM</span> tag_values_1hour
+<span class="keyword">WHERE</span> tag_id = <span class="number">1</span>
+<span class="keyword">ORDER BY</span> bucket <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> <span class="number">10</span>;
+        </div>
+
+        <h3>9. داده‌های 1 روزه</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> bucket, tag_id, avg_value, min_value, max_value, sample_count
+<span class="keyword">FROM</span> tag_values_1day
+<span class="keyword">WHERE</span> tag_id = <span class="number">1</span>
+<span class="keyword">ORDER BY</span> bucket <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> <span class="number">10</span>;
+        </div>
+
+        <h3>10. لاگ اعلان‌ها</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> notification_id, alarm_id, channel, status, message, sent_at
+<span class="keyword">FROM</span> notification_log
+<span class="keyword">ORDER BY</span> sent_at <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> <span class="number">20</span>;
+        </div>
+
+        <h3>11. لاگ آرشیو</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> archive_id, table_name, file_path, record_count, file_size_bytes, created_at
+<span class="keyword">FROM</span> archive_log
+<span class="keyword">ORDER BY</span> created_at <span class="keyword">DESC</span>;
+        </div>
+
+        <h3>12. تنظیمات سیستم</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> key, value_text, value_int, value_double, value_bool, description
+<span class="keyword">FROM</span> system_settings
+<span class="keyword">ORDER BY</span> key;
+        </div>
+    </div>
+
+    <!-- Section 11: Archive -->
+    <div class="section" id="archive">
+        <h2>📦 آرشیو و بازیابی</h2>
+
+        <h3>1. Refresh دستی Continuous Aggregates</h3>
+        <span class="sql-label archive">CALL</span>
+        <div class="sql-block">
+<span class="keyword">CALL</span> refresh_continuous_aggregate(<span class="string">'tag_values_1min'</span>, <span class="keyword">NULL</span>, <span class="keyword">NULL</span>);
+<span class="keyword">CALL</span> refresh_continuous_aggregate(<span class="string">'tag_values_5min'</span>, <span class="keyword">NULL</span>, <span class="keyword">NULL</span>);
+<span class="keyword">CALL</span> refresh_continuous_aggregate(<span class="string">'tag_values_1hour'</span>, <span class="keyword">NULL</span>, <span class="keyword">NULL</span>);
+<span class="keyword">CALL</span> refresh_continuous_aggregate(<span class="string">'tag_values_1day'</span>, <span class="keyword">NULL</span>, <span class="keyword">NULL</span>);
+        </div>
+
+        <h3>2. Refresh با بازه زمانی</h3>
+        <span class="sql-label archive">CALL</span>
+        <div class="sql-block">
+<span class="keyword">CALL</span> refresh_continuous_aggregate(
+    <span class="string">'tag_values_1min'</span>,
+    <span class="string">'2024-04-01 00:00:00'</span>,
+    <span class="string">'2024-04-02 00:00:00'</span>
+);
+        </div>
+
+        <h3>3. Export به CSV</h3>
+        <span class="sql-label archive">COPY</span>
+        <div class="sql-block">
+<span class="keyword">COPY</span> (
+    <span class="keyword">SELECT</span> time, tag_id, raw_value, eng_value, quality, source
+    <span class="keyword">FROM</span> tag_values_raw
+    <span class="keyword">WHERE</span> time <= now() - <span class="keyword">INTERVAL</span> <span class="string">'30 days'</span>
+    <span class="keyword">ORDER BY</span> time <span class="keyword">ASC</span>
+) <span class="keyword">TO</span> <span class="string">'C:/tag_archive/archive_export.csv'</span> <span class="keyword">WITH</span> CSV HEADER;
+        </div>
+
+        <h3>4. Import از CSV</h3>
+        <span class="sql-label archive">COPY</span>
+        <div class="sql-block">
+<span class="keyword">COPY</span> tag_values_raw (time, tag_id, raw_value, eng_value, quality, source)
+<span class="keyword">FROM</span> <span class="string">'C:/tag_archive/archive_import.csv'</span> <span class="keyword">WITH</span> CSV HEADER;
+        </div>
+
+        <h3>5. حذف داده‌های آرشیو شده</h3>
+        <span class="sql-label update">DELETE</span>
+        <div class="sql-block">
+<span class="keyword">DELETE FROM</span> tag_values_raw
+<span class="keyword">WHERE</span> time <= now() - <span class="keyword">INTERVAL</span> <span class="string">'30 days'</span>;
+        </div>
+    </div>
+
+    <!-- Section 12: Monitoring -->
+    <div class="section" id="monitoring">
+        <h2>📈 مانیتورینگ و نگهداری</h2>
+
+        <h3>1. حجم جداول</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span>
+    <span class="string">'tag_values_raw'</span> <span class="keyword">AS</span> table_name,
+    pg_size_pretty(pg_total_relation_size(<span class="string">'tag_values_raw'</span>)) <span class="keyword">AS</span> total_size
+<span class="keyword">UNION ALL</span>
+<span class="keyword">SELECT</span>
+    <span class="string">'tag_values_1min'</span>,
+    pg_size_pretty(pg_total_relation_size(<span class="string">'tag_values_1min'</span>))
+<span class="keyword">UNION ALL</span>
+<span class="keyword">SELECT</span>
+    <span class="string">'tag_values_5min'</span>,
+    pg_size_pretty(pg_total_relation_size(<span class="string">'tag_values_5min'</span>))
+<span class="keyword">UNION ALL</span>
+<span class="keyword">SELECT</span>
+    <span class="string">'tag_values_1hour'</span>,
+    pg_size_pretty(pg_total_relation_size(<span class="string">'tag_values_1hour'</span>))
+<span class="keyword">UNION ALL</span>
+<span class="keyword">SELECT</span>
+    <span class="string">'tag_values_1day'</span>,
+    pg_size_pretty(pg_total_relation_size(<span class="string">'tag_values_1day'</span>))
+<span class="keyword">UNION ALL</span>
+<span class="keyword">SELECT</span>
+    <span class="string">'tag_current_state'</span>,
+    pg_size_pretty(pg_total_relation_size(<span class="string">'tag_current_state'</span>))
+<span class="keyword">UNION ALL</span>
+<span class="keyword">SELECT</span>
+    <span class="string">'alarms'</span>,
+    pg_size_pretty(pg_total_relation_size(<span class="string">'alarms'</span>))
+<span class="keyword">UNION ALL</span>
+<span class="keyword">SELECT</span>
+    <span class="string">'alarm_events'</span>,
+    pg_size_pretty(pg_total_relation_size(<span class="string">'alarm_events'</span>));
+        </div>
+
+        <h3>2. حجم Hypertable ها</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span>
+    hypertable_name,
+    pg_size_pretty(hypertable_size(format(<span class="string">'public.%I'</span>, hypertable_name))) <span class="keyword">AS</span> total_size,
+    pg_size_pretty(hypertable_size(format(<span class="string">'public.%I'</span>, hypertable_name), <span class="string">'index'</span>)) <span class="keyword">AS</span> index_size
+<span class="keyword">FROM</span> timescaledb_information.hypertables;
+        </div>
+
+        <h3>3. حجم Chunks</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span>
+    chunk_name,
+    chunk_schema,
+    pg_size_pretty(chunk_table_size) <span class="keyword">AS</span> size
+<span class="keyword">FROM</span> timescaledb_information.chunks
+<span class="keyword">WHERE</span> hypertable_name = <span class="string">'tag_values_raw'</span>
+<span class="keyword">ORDER BY</span> chunk_name <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> <span class="number">20</span>;
+        </div>
+
+        <h3>4. نسبت فشرده‌سازی</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span>
+    hypertable_name,
+    pg_size_pretty(before_compression_total_bytes) <span class="keyword">AS</span> before,
+    pg_size_pretty(after_compression_total_bytes) <span class="keyword">AS</span> after,
+    round(<span class="number">100.0</span> * (<span class="number">1</span> - after_compression_total_bytes::numeric / <span class="keyword">NULLIF</span>(before_compression_total_bytes, <span class="number">0</span>)), <span class="number">2</span>) <span class="keyword">AS</span> compression_ratio_percent
+<span class="keyword">FROM</span> hypertable_compression_stats(<span class="string">'tag_values_raw'</span>);
+        </div>
+
+        <h3>5. لیست Jobs</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> application_name, proc_name, config
+<span class="keyword">FROM</span> timescaledb_information.jobs
+<span class="keyword">ORDER BY</span> job_id;
+        </div>
+
+        <h3>6. لیست Continuous Aggregates</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> view_name, materialization_hypertable_name
+<span class="keyword">FROM</span> timescaledb_information.continuous_aggregates;
+        </div>
+
+        <h3>7. نرخ رشد داده‌ها</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span>
+    time_bucket(<span class="keyword">INTERVAL</span> <span class="string">'1 day'</span>, time) <span class="keyword">AS</span> day,
+    count(*) <span class="keyword">AS</span> record_count,
+    pg_size_pretty(count(*) * <span class="number">90</span>) <span class="keyword">AS</span> estimated_size
+<span class="keyword">FROM</span> tag_values_raw
+<span class="keyword">WHERE</span> time > now() - <span class="keyword">INTERVAL</span> <span class="string">'7 days'</span>
+<span class="keyword">GROUP BY</span> day
+<span class="keyword">ORDER BY</span> day <span class="keyword">DESC</span>;
+        </div>
+
+        <h3>8. حجم WAL</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> pg_size_pretty(sum(size)) <span class="keyword">AS</span> wal_size
+<span class="keyword">FROM</span> pg_ls_waldir();
+        </div>
+
+        <h3>9. تعداد رکوردها در هر جدول</h3>
+        <span class="sql-label select">SELECT</span>
+        <div class="sql-block">
+<span class="keyword">SELECT</span> <span class="string">'tag_values_raw'</span> <span class="keyword">AS</span> table_name, count(*) <span class="keyword">AS</span> row_count <span class="keyword">FROM</span> tag_values_raw
+<span class="keyword">UNION ALL</span>
+<span class="keyword">SELECT</span> <span class="string">'alarms'</span>, count(*) <span class="keyword">FROM</span> alarms
+<span class="keyword">UNION ALL</span>
+<span class="keyword">SELECT</span> <span class="string">'alarm_events'</span>, count(*) <span class="keyword">FROM</span> alarm_events
+<span class="keyword">UNION ALL</span>
+<span class="keyword">SELECT</span> <span class="string">'notification_log'</span>, count(*) <span class="keyword">FROM</span> notification_log
+<span class="keyword">UNION ALL</span>
+<span class="keyword">SELECT</span> <span class="string">'archive_log'</span>, count(*) <span class="keyword">FROM</span> archive_log;
+        </div>
+
+        <h3>10. VACUUM و ANALYZE</h3>
+        <span class="sql-label archive">MAINTENANCE</span>
+        <div class="sql-block">
+<span class="keyword">VACUUM ANALYZE</span> tag_values_raw;
+<span class="keyword">VACUUM ANALYZE</span> alarms;
+<span class="keyword">VACUUM ANALYZE</span> alarm_events;
+<span class="keyword">VACUUM ANALYZE</span> tags;
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Tag Core SQL Reference | Generated: 2024</p>
+        <p>PostgreSQL + TimescaleDB | Qt 5.14.2 | Windows</p>
+    </div>
+
+</div>
+
+</body>
+</html>

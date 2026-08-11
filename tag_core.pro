@@ -1,4 +1,4 @@
-QT += core sql network serialport qml
+QT += core sql network serialport qml websockets
 QT -= gui
 
 CONFIG += c++17 console
@@ -11,6 +11,8 @@ INCLUDEPATH += src
 include(src/qmqtt/qmqtt.pri)
 
 SOURCES += \
+    src/api/WebSocketHandler.cpp \
+    src/api/WebSocketServer.cpp \
     src/computed/ComputedTagEngine.cpp \
     src/drivers/DriverFactory.cpp \
     src/drivers/DriverManager.cpp \
@@ -35,6 +37,8 @@ SOURCES += \
     src/storage/StorageExceptionFilter.cpp
 
 HEADERS += \
+    src/api/WebSocketHandler.h \
+    src/api/WebSocketServer.h \
     src/app/CoreApplication.h \
     src/computed/ComputedTagEngine.h \
     src/core/Models.h \
