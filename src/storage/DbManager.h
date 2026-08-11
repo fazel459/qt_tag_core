@@ -87,7 +87,7 @@ public:
 
     QJsonObject getTagCurrentState(int tagId);
     QVector<QJsonObject> getTagsCurrentState(const QVector<int>& tagIds);
-
+    QVector<QJsonObject> loadAlarms(int limit = 100, int offset = 0);
     QSqlDatabase database() const;
 private:
     bool migrate();

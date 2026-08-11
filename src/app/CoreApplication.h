@@ -22,6 +22,8 @@
 //#include "api/WebSocketHandler.h"
 #include <QObject>
 class WebSocketServer;
+class HttpServer;
+class RestApiHandler;
 class CoreApplication: public QObject
 {
 public:
@@ -38,6 +40,8 @@ private:
     void startApiLayer();
 
     WebSocketServer *m_wsServer = nullptr;
+    HttpServer* m_httpServer = nullptr;
+    RestApiHandler* m_restApiHandler = nullptr;
 
     std::unique_ptr<BatchHistorianWriter> m_historianWriter;
     std::unique_ptr<CurrentStateWriter> m_currentStateWriter;

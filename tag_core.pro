@@ -11,6 +11,8 @@ INCLUDEPATH += src
 include(src/qmqtt/qmqtt.pri)
 
 SOURCES += \
+    src/api/HttpServer.cpp \
+    src/api/RestApiHandler.cpp \
     src/api/WebSocketHandler.cpp \
     src/api/WebSocketServer.cpp \
     src/computed/ComputedTagEngine.cpp \
@@ -37,6 +39,8 @@ SOURCES += \
     src/storage/StorageExceptionFilter.cpp
 
 HEADERS += \
+    src/api/HttpServer.h \
+    src/api/RestApiHandler.h \
     src/api/WebSocketHandler.h \
     src/api/WebSocketServer.h \
     src/app/CoreApplication.h \

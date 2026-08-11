@@ -8,6 +8,8 @@ release/qmqtt_routesubscription.o
 release/qmqtt_socket.o
 release/qmqtt_timer.o
 release/qmqtt_ssl_socket.o
+release/HttpServer.o
+release/RestApiHandler.o
 release/WebSocketHandler.o
 release/WebSocketServer.o
 release/ComputedTagEngine.o
@@ -42,5 +44,7 @@ release/moc_qmqtt_socketinterface.o
 release/moc_qmqtt_timer_p.o
 release/moc_qmqtt_timerinterface.o
 release/moc_qmqtt_ssl_socket_p.o
+release/moc_HttpServer.o
+release/moc_RestApiHandler.o
 release/moc_WebSocketHandler.o
 release/moc_WebSocketServer.o

@@ -2137,10 +2137,9 @@ bool DbManager::logNotification(
 QJsonObject DbManager::getTagCurrentState(int tagId)
 {
     QJsonObject result;
-
     QSqlQuery query(m_db);
     query.prepare(QStringLiteral(
-        "SELECT tag_id, value, quality, updated_at "
+        "SELECT tag_id, last_value, last_quality, last_timestamp, updated_at "
         "FROM tag_current_state WHERE tag_id = :tagId"
     ));
     query.bindValue(":tagId", tagId);
@@ -2148,8 +2147,9 @@ QJsonObject DbManager::getTagCurrentState(int tagId)
     if (query.exec() && query.next()) {
         result.insert("tag_id", query.value(0).toInt());
         result.insert("value", query.value(1).toDouble());
-        result.insert("quality", query.value(2).toString());
+        result.insert("quality", query.value(2).toInt());
         result.insert("ts", query.value(3).toDateTime().toString(Qt::ISODateWithMs));
+        result.insert("updated_at", query.value(4).toDateTime().toString(Qt::ISODateWithMs));
     }
 
     return result;
@@ -2169,7 +2169,7 @@ QVector<QJsonObject> DbManager::getTagsCurrentState(const QVector<int>& tagIds)
     }
 
     QString sql = QStringLiteral(
-        "SELECT tag_id, value, quality, updated_at "
+        "SELECT tag_id, last_value, last_quality, last_timestamp, updated_at "
         "FROM tag_current_state WHERE tag_id IN (%1)"
     ).arg(placeholders.join(","));
 
@@ -2185,14 +2185,67 @@ QVector<QJsonObject> DbManager::getTagsCurrentState(const QVector<int>& tagIds)
             QJsonObject obj;
             obj.insert("tag_id", query.value(0).toInt());
             obj.insert("value", query.value(1).toDouble());
-            obj.insert("quality", query.value(2).toString());
+            obj.insert("quality", query.value(2).toInt());
             obj.insert("ts", query.value(3).toDateTime().toString(Qt::ISODateWithMs));
+            obj.insert("updated_at", query.value(4).toDateTime().toString(Qt::ISODateWithMs));
             results.append(obj);
         }
     }
 
     return results;
 }
+
+QVector<QJsonObject> DbManager::loadAlarms(int limit, int offset)
+{
+    QVector<QJsonObject> alarms;
+
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral(
+        "SELECT alarm_id, tag_id, alarm_type, severity, state, value, threshold, "
+        "message, active_time, clear_time, ack_time, ack_user "
+        "FROM alarms "
+        "ORDER BY alarm_id DESC "
+        "LIMIT :limit OFFSET :offset"
+    ));
+    query.bindValue(":limit", limit);
+    query.bindValue(":offset", offset);
+
+    if (!query.exec()) {
+        qWarning() << "Load alarms failed:" << query.lastError().text();
+        return alarms;
+    }
+
+    while (query.next()) {
+        QJsonObject alarm;
+        alarm.insert("alarm_id", query.value(0).toLongLong());
+        alarm.insert("tag_id", query.value(1).toLongLong());
+        alarm.insert("alarm_type", query.value(2).toString());
+        alarm.insert("severity", query.value(3).toString());
+        alarm.insert("state", query.value(4).toString());
+        alarm.insert("value", query.value(5).toDouble());
+        alarm.insert("threshold", query.value(6).toDouble());
+        alarm.insert("message", query.value(7).toString());
+
+        if (!query.value(8).isNull()) {
+            alarm.insert("active_time", query.value(8).toDateTime().toString(Qt::ISODateWithMs));
+        }
+        if (!query.value(9).isNull()) {
+            alarm.insert("clear_time", query.value(9).toDateTime().toString(Qt::ISODateWithMs));
+        }
+        if (!query.value(10).isNull()) {
+            alarm.insert("ack_time", query.value(10).toDateTime().toString(Qt::ISODateWithMs));
+        }
+        if (!query.value(11).isNull()) {
+            alarm.insert("ack_user", query.value(11).toString());
+        }
+
+        alarms.append(alarm);
+    }
+
+    return alarms;
+}
+
+
 
 QSqlDatabase DbManager::database() const
 {

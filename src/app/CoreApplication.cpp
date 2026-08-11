@@ -1,6 +1,8 @@
 #include "CoreApplication.h"
 #include "api/WebSocketServer.h"
 #include "api/WebSocketHandler.h"
+#include "api/HttpServer.h"
+#include "api/RestApiHandler.h"
 #include <QCoreApplication>
 #include <QDebug>
 #include <QFile>
@@ -296,6 +298,32 @@ void CoreApplication::startApiLayer()
             m_wsServer->handler()->publishAlarmEvent(msg.value);
         }
     });
+
+
+    // ✅ REST API Server
+    m_httpServer = new HttpServer(this);
+    m_restApiHandler = new RestApiHandler(m_db, this);
+
+    m_httpServer->setRequestHandler(
+        [this](const HttpRequest& request) -> HttpResponse {
+            return m_restApiHandler->handleRequest(request);
+        }
+    );
+
+    QObject::connect(m_httpServer, &HttpServer::started,
+                     this, [](const QString& host, int port) {
+        qInfo() << "[API] REST API server started on" << host << ":" << port;
+    });
+
+    QObject::connect(m_httpServer, &HttpServer::failed,
+                     this, [](const QString& message) {
+        qWarning() << "[API] REST API server failed:" << message;
+    });
+
+    if (!m_httpServer->start(config.host, 8082)) {
+        qWarning() << "[API] Failed to start REST API server";
+        return;
+    }
 
     qInfo() << "[API] API Layer started";
 }
