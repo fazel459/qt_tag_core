@@ -353,6 +353,14 @@ void WebSocketHandler::onTextMessage(const QString &message)
         return;
     }
 
+    const QJsonObject obj = doc.object();
+
+    // ✅ اگر message از نوع command باشد، به handleCommandMessage بفرست
+    if (obj.contains("type") && obj.value("type").toString() == "command") {
+        handleCommandMessage(socket, obj);
+        return;
+    }
+
     handleControlMessage(socket, doc.object());
 }
 
@@ -879,4 +887,56 @@ void WebSocketHandler::sendSnapshotForTags(QWebSocket *socket, const QVector<int
     message.insert(QStringLiteral("tags"), tagsArray);
 
     sendJson(socket, message);
+}
+
+
+void WebSocketHandler::setCommandHandler(CommandHandler handler)
+{
+    m_commandHandler = std::move(handler);
+}
+
+void WebSocketHandler::handleCommandMessage(QWebSocket* socket, const QJsonObject& obj)
+{
+    const QString id = obj.value("id").toString();
+    const QString op = obj.value("op").toString();
+    const QJsonObject payload = obj.value("payload").toObject();
+
+    if (op.isEmpty()) {
+        sendCommandResponse(socket, id, false, QJsonObject(), "Missing 'op' field");
+        return;
+    }
+
+    if (!m_commandHandler) {
+        sendCommandResponse(socket, id, false, QJsonObject(), "No command handler configured");
+        return;
+    }
+
+    // فراخوانی handler
+    const QJsonObject result = m_commandHandler(op, payload);
+
+    const bool ok = result.value("ok").toBool();
+    const QJsonObject data = result.value("data").toObject();
+    const QString error = result.value("error").toString();
+
+    sendCommandResponse(socket, id, ok, data, error);
+}
+
+void WebSocketHandler::sendCommandResponse(QWebSocket* socket, const QString& id,
+                                           bool ok,
+                                           const QJsonObject& data,
+                                           const QString& error)
+{
+    QJsonObject response;
+    response.insert("type", "response");
+    response.insert("id", id);
+    response.insert("ok", ok);
+    response.insert("ts", currentUtcIso());
+
+    if (ok) {
+        response.insert("data", data);
+    } else {
+        response.insert("error", error);
+    }
+
+    sendJson(socket, response);
 }

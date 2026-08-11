@@ -18,7 +18,8 @@ public:
 
     bool startAll();
     void stopAll();
-
+    bool startDriver(qint64 driverId);
+    bool stopDriver(qint64 driverId);
 private:
     TagBus& m_bus;
     AppConfig m_config;

@@ -40,6 +40,10 @@ public:
     void setSnapshotProvider(SnapshotProvider provider);
     void sendSnapshotToClient(QWebSocket *socket);
 
+    using CommandHandler = std::function<QJsonObject(const QString& op, const QJsonObject& payload)>;
+    void setCommandHandler(CommandHandler handler);
+
+
 signals:
     void clientCountChanged(int count);
 
@@ -106,6 +110,12 @@ private:
 
     void sendSnapshotForTags(QWebSocket *socket, const QVector<int>& tagIds);
 
+    CommandHandler m_commandHandler;
+    void handleCommandMessage(QWebSocket* socket, const QJsonObject& obj);
+    void sendCommandResponse(QWebSocket* socket, const QString& id,
+                             bool ok,
+                             const QJsonObject& data = QJsonObject(),
+                             const QString& error = QString());
 
 };
 

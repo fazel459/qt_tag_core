@@ -44,6 +44,15 @@ private:
     HttpServer* m_httpServer = nullptr;
     RestApiHandler* m_restApiHandler = nullptr;
 
+    void setupCommandHandler();
+    QJsonObject handleStartDriverCommand(const QJsonObject& payload);
+    QJsonObject handleStopDriverCommand(const QJsonObject& payload);
+
+    QJsonObject handleWriteTagCommand(const QJsonObject& payload);
+    QJsonObject handleAckAlarmCommand(const QJsonObject& payload);
+    QJsonObject handleGetCurrentCommand(const QJsonObject& payload);
+    QJsonObject handleReloadDriversCommand(const QJsonObject& payload);
+
     std::unique_ptr<BatchHistorianWriter> m_historianWriter;
     std::unique_ptr<CurrentStateWriter> m_currentStateWriter;
     std::unique_ptr<StorageExceptionFilter> m_storageFilter;

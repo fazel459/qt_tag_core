@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QStringList>
+#include <QJsonArray>
 
 QString CoreApplication::findConfigFile()
 {
@@ -64,6 +65,7 @@ void CoreApplication::configureApiAuth()
         qInfo() << "[API] Authentication disabled (development mode)";
     }
 }
+
 
 bool CoreApplication::initialize()
 {
@@ -323,6 +325,8 @@ void CoreApplication::startApiLayer()
         }
     });
 
+    // ✅ Command Handler
+    setupCommandHandler();
 
     // ✅ REST API Server
     m_httpServer = new HttpServer(this);
@@ -351,5 +355,278 @@ void CoreApplication::startApiLayer()
         return;
     }
 
+
     qInfo() << "[API] API Layer started";
 }
+
+
+void CoreApplication::setupCommandHandler()
+{
+    if (!m_wsServer || !m_wsServer->handler()) {
+        return;
+    }
+
+    m_wsServer->handler()->setCommandHandler(
+        [this](const QString& op, const QJsonObject& payload) -> QJsonObject {
+
+            if (op == "write_tag") {
+                return handleWriteTagCommand(payload);
+            }
+
+            if (op == "ack_alarm") {
+                return handleAckAlarmCommand(payload);
+            }
+
+            if (op == "get_current") {
+                return handleGetCurrentCommand(payload);
+            }
+
+            if (op == "reload_drivers") {
+                return handleReloadDriversCommand(payload);
+            }
+
+            if (op == "start_driver") {
+                return handleStartDriverCommand(payload);
+            }
+
+
+            if (op == "stop_driver") {
+                return handleStopDriverCommand(payload);
+            }
+
+
+            QJsonObject result;
+            result.insert("ok", false);
+            result.insert("error", "Unknown command: " + op);
+            return result;
+        }
+    );
+
+    qInfo() << "[API] Command handler configured";
+}
+
+QJsonObject CoreApplication::handleStartDriverCommand(const QJsonObject& payload)
+{
+    Q_UNUSED(payload)
+
+    QJsonObject result;
+
+    if (!m_driverManager) {
+        result.insert("ok", false);
+        result.insert("error", "DriverManager not initialized");
+        return result;
+    }
+
+    if (m_driverManager->startAll()) {
+        result.insert("ok", true);
+        QJsonObject data;
+        data.insert("started", "all");
+        result.insert("data", data);
+        qInfo() << "All drivers started";
+    } else {
+        result.insert("ok", false);
+        result.insert("error", "Failed to start drivers");
+    }
+
+    return result;
+}
+
+QJsonObject CoreApplication::handleStopDriverCommand(const QJsonObject& payload)
+{
+    Q_UNUSED(payload)
+
+    QJsonObject result;
+
+    if (!m_driverManager) {
+        result.insert("ok", false);
+        result.insert("error", "DriverManager not initialized");
+        return result;
+    }
+
+    m_driverManager->stopAll();
+
+    result.insert("ok", true);
+    QJsonObject data;
+    data.insert("stopped", "all");
+    result.insert("data", data);
+    qInfo() << "All drivers stopped";
+
+    return result;
+}
+
+QJsonObject CoreApplication::handleWriteTagCommand(const QJsonObject& payload)
+{
+    QJsonObject result;
+
+    // بررسی فیلدهای اجباری
+    if (!payload.contains("tag_id")) {
+        result.insert("ok", false);
+        result.insert("error", "Missing 'tag_id' field");
+        return result;
+    }
+
+    if (!payload.contains("value")) {
+        result.insert("ok", false);
+        result.insert("error", "Missing 'value' field");
+        return result;
+    }
+
+    const qint64 tagId = payload.value("tag_id").toVariant().toLongLong();
+    const double value = payload.value("value").toDouble();
+
+    // بررسی وجود تگ
+    bool tagExists = false;
+    const QVector<TagDefinition> tags = m_db.loadTags();
+    for (const TagDefinition& tag : tags) {
+        if (tag.tagId == tagId) {
+            tagExists = true;
+            break;
+        }
+    }
+
+    if (!tagExists) {
+        result.insert("ok", false);
+        result.insert("error", "Tag not found: " + QString::number(tagId));
+        return result;
+    }
+
+    // ساخت TagValue برای publish
+    TagValue writeCommand;
+    writeCommand.tagId = tagId;
+    writeCommand.engineeringValue = value;
+    writeCommand.timestamp = QDateTime::currentDateTimeUtc();
+    writeCommand.quality = Quality::Good;
+    writeCommand.source = SourceKind::Manual;
+
+    // Publish به TagBus روی topic commands/{tag_id}/write
+    const QString topic = QString("commands/%1/write").arg(tagId);
+    m_bus.publish(topic, writeCommand);
+
+    qInfo() << "Write command published:" << topic << "value=" << value;
+
+    result.insert("ok", true);
+    QJsonObject data;
+    data.insert("tag_id", tagId);
+    data.insert("written_value", value);
+    result.insert("data", data);
+
+    return result;
+}
+
+QJsonObject CoreApplication::handleAckAlarmCommand(const QJsonObject& payload)
+{
+    QJsonObject result;
+
+    if (!payload.contains("alarm_id")) {
+        result.insert("ok", false);
+        result.insert("error", "Missing 'alarm_id' field");
+        return result;
+    }
+
+    const qint64 alarmId = payload.value("alarm_id").toVariant().toLongLong();
+    QString userName = "system";
+    if (payload.contains("user_name")) {
+        userName = payload.value("user_name").toString();
+    }
+
+    if (m_db.acknowledgeAlarm(alarmId, userName)) {
+        result.insert("ok", true);
+        QJsonObject data;
+        data.insert("alarm_id", alarmId);
+        data.insert("acknowledged", true);
+        data.insert("user_name", userName);
+        result.insert("data", data);
+
+        // Publish یک event برای اطلاع بقیه client ها
+        TagValue ackEvent;
+        ackEvent.tagId = alarmId;
+        ackEvent.tagName = "alarm_acknowledged";
+        ackEvent.timestamp = QDateTime::currentDateTimeUtc();
+        ackEvent.quality = Quality::Good;
+        ackEvent.source = SourceKind::Manual;
+        m_bus.publish("alarms/" + QString::number(alarmId) + "/acknowledged", ackEvent);
+    } else {
+        result.insert("ok", false);
+        result.insert("error", "Failed to acknowledge alarm");
+    }
+
+    return result;
+}
+
+QJsonObject CoreApplication::handleGetCurrentCommand(const QJsonObject& payload)
+{
+    QJsonObject result;
+
+    if (!payload.contains("tag_ids")) {
+        result.insert("ok", false);
+        result.insert("error", "Missing 'tag_ids' field");
+        return result;
+    }
+
+    // تبدیل tag_ids به QVector<int>
+    QVector<int> tagIds;
+    const QJsonArray idsArray = payload.value("tag_ids").toArray();
+    for (const QJsonValue& v : idsArray) {
+        tagIds.append(v.toVariant().toInt());
+    }
+
+    if (tagIds.isEmpty()) {
+        result.insert("ok", false);
+        result.insert("error", "tag_ids is empty");
+        return result;
+    }
+
+    // گرفتن مقادیر فعلی از دیتابیس
+    const QVector<QJsonObject> currentValues = m_db.getTagsCurrentState(tagIds);
+
+    result.insert("ok", true);
+    QJsonObject data;
+    QJsonArray tagsArray;
+    for (const QJsonObject& cv : currentValues) {
+        tagsArray.append(cv);
+    }
+    data.insert("tags", tagsArray);
+    data.insert("count", tagsArray.size());
+    result.insert("data", data);
+
+    return result;
+}
+
+QJsonObject CoreApplication::handleReloadDriversCommand(const QJsonObject& payload)
+{
+    Q_UNUSED(payload)
+
+    QJsonObject result;
+
+    if (!m_driverManager) {
+        result.insert("ok", false);
+        result.insert("error", "DriverManager not initialized");
+        return result;
+    }
+
+    // توقف درایورها
+    m_driverManager->stopAll();
+
+    // بارگذاری مجدد config
+    m_config.tags = m_db.loadTags();
+    m_config.drivers = m_db.loadDrivers();
+
+    // شروع مجدد درایورها
+    if (m_driverManager->startAll()) {
+        result.insert("ok", true);
+        QJsonObject data;
+        data.insert("reloaded", true);
+        data.insert("tags_count", m_config.tags.size());
+        data.insert("drivers_count", m_config.drivers.size());
+        result.insert("data", data);
+
+        qInfo() << "Drivers reloaded. Tags:" << m_config.tags.size()
+                << "Drivers:" << m_config.drivers.size();
+    } else {
+        result.insert("ok", false);
+        result.insert("error", "Failed to restart drivers");
+    }
+
+    return result;
+}
+

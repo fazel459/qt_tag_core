@@ -94,3 +94,15 @@ void DriverManager::stopAll()
         driver->stop();
     }
 }
+
+bool DriverManager::startDriver(qint64 driverId)
+{
+
+    return false;
+}
+
+bool DriverManager::stopDriver(qint64 driverId)
+{
+
+    return false;
+}
