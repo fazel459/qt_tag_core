@@ -53,6 +53,8 @@ private:
     QJsonObject handleGetCurrentCommand(const QJsonObject& payload);
     QJsonObject handleReloadDriversCommand(const QJsonObject& payload);
 
+    QJsonObject handleListDriversCommand(const QJsonObject& payload);
+
     std::unique_ptr<BatchHistorianWriter> m_historianWriter;
     std::unique_ptr<CurrentStateWriter> m_currentStateWriter;
     std::unique_ptr<StorageExceptionFilter> m_storageFilter;

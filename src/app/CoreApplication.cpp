@@ -394,6 +394,9 @@ void CoreApplication::setupCommandHandler()
                 return handleStopDriverCommand(payload);
             }
 
+            if (op == "list_drivers") {
+                return handleListDriversCommand(payload);
+            }
 
             QJsonObject result;
             result.insert("ok", false);
@@ -407,8 +410,6 @@ void CoreApplication::setupCommandHandler()
 
 QJsonObject CoreApplication::handleStartDriverCommand(const QJsonObject& payload)
 {
-    Q_UNUSED(payload)
-
     QJsonObject result;
 
     if (!m_driverManager) {
@@ -417,15 +418,31 @@ QJsonObject CoreApplication::handleStartDriverCommand(const QJsonObject& payload
         return result;
     }
 
-    if (m_driverManager->startAll()) {
+    // اگر driver_id مشخص نشده، همه درایورها را start کن
+    if (!payload.contains("driver_id")) {
+        if (m_driverManager->startAll()) {
+            result.insert("ok", true);
+            QJsonObject data;
+            data.insert("started", "all");
+            result.insert("data", data);
+            qInfo() << "All drivers started";
+        } else {
+            result.insert("ok", false);
+            result.insert("error", "Failed to start all drivers");
+        }
+        return result;
+    }
+
+    const qint64 driverId = payload.value("driver_id").toVariant().toLongLong();
+
+    if (m_driverManager->startDriver(driverId)) {
         result.insert("ok", true);
         QJsonObject data;
-        data.insert("started", "all");
+        data.insert("started", driverId);
         result.insert("data", data);
-        qInfo() << "All drivers started";
     } else {
         result.insert("ok", false);
-        result.insert("error", "Failed to start drivers");
+        result.insert("error", "Failed to start driver: " + QString::number(driverId));
     }
 
     return result;
@@ -433,8 +450,6 @@ QJsonObject CoreApplication::handleStartDriverCommand(const QJsonObject& payload
 
 QJsonObject CoreApplication::handleStopDriverCommand(const QJsonObject& payload)
 {
-    Q_UNUSED(payload)
-
     QJsonObject result;
 
     if (!m_driverManager) {
@@ -443,16 +458,32 @@ QJsonObject CoreApplication::handleStopDriverCommand(const QJsonObject& payload)
         return result;
     }
 
-    m_driverManager->stopAll();
+    // اگر driver_id مشخص نشده، همه درایورها را stop کن
+    if (!payload.contains("driver_id")) {
+        m_driverManager->stopAll();
+        result.insert("ok", true);
+        QJsonObject data;
+        data.insert("stopped", "all");
+        result.insert("data", data);
+        qInfo() << "All drivers stopped";
+        return result;
+    }
 
-    result.insert("ok", true);
-    QJsonObject data;
-    data.insert("stopped", "all");
-    result.insert("data", data);
-    qInfo() << "All drivers stopped";
+    const qint64 driverId = payload.value("driver_id").toVariant().toLongLong();
+
+    if (m_driverManager->stopDriver(driverId)) {
+        result.insert("ok", true);
+        QJsonObject data;
+        data.insert("stopped", driverId);
+        result.insert("data", data);
+    } else {
+        result.insert("ok", false);
+        result.insert("error", "Failed to stop driver: " + QString::number(driverId));
+    }
 
     return result;
 }
+
 
 QJsonObject CoreApplication::handleWriteTagCommand(const QJsonObject& payload)
 {
@@ -626,6 +657,41 @@ QJsonObject CoreApplication::handleReloadDriversCommand(const QJsonObject& paylo
         result.insert("ok", false);
         result.insert("error", "Failed to restart drivers");
     }
+
+    return result;
+}
+
+QJsonObject CoreApplication::handleListDriversCommand(const QJsonObject& payload)
+{
+    Q_UNUSED(payload)
+
+    QJsonObject result;
+
+    if (!m_driverManager) {
+        result.insert("ok", false);
+        result.insert("error", "DriverManager not initialized");
+        return result;
+    }
+
+    const QVector<DriverDefinition> drivers = m_db.loadDrivers();
+    const QVector<qint64> runningIds = m_driverManager->runningDriverIds();
+
+    QJsonArray driversArray;
+    for (const DriverDefinition& driver : drivers) {
+        QJsonObject driverObj;
+        driverObj.insert("driver_id", driver.driverId);
+        driverObj.insert("name", driver.name);
+        driverObj.insert("type", driver.type);
+        driverObj.insert("enabled", driver.enabled);
+        driverObj.insert("running", runningIds.contains(driver.driverId));
+        driversArray.append(driverObj);
+    }
+
+    result.insert("ok", true);
+    QJsonObject data;
+    data.insert("drivers", driversArray);
+    data.insert("count", driversArray.size());
+    result.insert("data", data);
 
     return result;
 }
