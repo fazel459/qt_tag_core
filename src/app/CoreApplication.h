@@ -38,6 +38,7 @@ private:
     DbManager m_db;
     TagBus m_bus;
     void startApiLayer();
+    void configureApiAuth();
 
     WebSocketServer *m_wsServer = nullptr;
     HttpServer* m_httpServer = nullptr;

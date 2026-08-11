@@ -41,6 +41,30 @@ CoreApplication::CoreApplication(QObject *parent): QObject(parent)
 
 }
 
+
+void CoreApplication::configureApiAuth()
+{
+    ApiAuthenticator::Config authConfig;
+
+    // پیش‌فرض غیرفعال است - برای تست راحت
+    authConfig.enabled = m_db.settingInt("api.auth.enabled", 0) == 1;
+
+    // خواندن API key ها از تنظیمات (با کاما جدا شده‌اند)
+    const QString keysStr = m_db.settingValue("api.auth.keys", "dev-key-123");
+    authConfig.apiKeys = keysStr.split(',', QString::SkipEmptyParts);
+    for (QString& key : authConfig.apiKeys) {
+        key = key.trimmed();
+    }
+
+    m_restApiHandler->setAuthenticator(authConfig);
+
+    if (authConfig.enabled) {
+        qInfo() << "[API] Authentication enabled with" << authConfig.apiKeys.size() << "key(s)";
+    } else {
+        qInfo() << "[API] Authentication disabled (development mode)";
+    }
+}
+
 bool CoreApplication::initialize()
 {
     qInfo() << "Starting Tag Core...";
@@ -249,7 +273,7 @@ bool CoreApplication::initialize()
         maxArchiveSizeBytes,
         archiveCheckIntervalMs
     );
-startApiLayer();
+    startApiLayer();
     return true;
 }
 
@@ -303,12 +327,14 @@ void CoreApplication::startApiLayer()
     // ✅ REST API Server
     m_httpServer = new HttpServer(this);
     m_restApiHandler = new RestApiHandler(m_db, this);
+    configureApiAuth();
 
     m_httpServer->setRequestHandler(
         [this](const HttpRequest& request) -> HttpResponse {
             return m_restApiHandler->handleRequest(request);
         }
     );
+
 
     QObject::connect(m_httpServer, &HttpServer::started,
                      this, [](const QString& host, int port) {

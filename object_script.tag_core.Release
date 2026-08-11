@@ -8,6 +8,7 @@ release/qmqtt_routesubscription.o
 release/qmqtt_socket.o
 release/qmqtt_timer.o
 release/qmqtt_ssl_socket.o
+release/ApiAuthenticator.o
 release/HttpServer.o
 release/RestApiHandler.o
 release/WebSocketHandler.o

@@ -660,7 +660,7 @@ bool DbManager::migrate()
             compress_after => INTERVAL '1 year',
             if_not_exists => TRUE
         );
-        )"
+        )",
         R"(
         SELECT add_retention_policy('tag_values_raw',
             drop_after => INTERVAL '30 days',
@@ -687,7 +687,7 @@ bool DbManager::migrate()
             drop_after => INTERVAL '5 years',
             if_not_exists => TRUE
         );
-        )"
+        )",
         R"(
         CREATE TABLE IF NOT EXISTS archive_log (
             archive_id BIGSERIAL PRIMARY KEY,
@@ -700,8 +700,15 @@ bool DbManager::migrate()
             status TEXT DEFAULT 'completed',
             created_at TIMESTAMPTZ DEFAULT now()
         );
-        )"
+        )",
 
+        R"(
+            INSERT INTO system_settings (key, value_text, updated_at) VALUES
+            ('api.auth.enabled', 'false', now()),
+            ('api.auth.keys', 'dev-key-123', now())
+            ON CONFLICT (key) DO NOTHING;
+        );
+        )",
     };
 
     for (const QString& sql : statements)
@@ -743,13 +750,12 @@ bool DbManager::upsertTag(const TagDefinition& tag)
             software_filter_type,
             software_filter_config,
             sim_profile,
-            enabled,                  
             driver_id,
             address_config,
-            updated_at,
-            clamp_enabled
-        )
-        VALUES (
+            enabled,
+            clamp_enabled,
+            updated_at
+        ) VALUES (
             :tag_id,
             :tag_name,
             :source_type,
@@ -769,9 +775,9 @@ bool DbManager::upsertTag(const TagDefinition& tag)
             :software_filter_type,
             :software_filter_config,
             :sim_profile,
-            :enabled,
             :driver_id,
             :address_config,
+            :enabled,
             :clamp_enabled,
             now()
         )
@@ -794,11 +800,11 @@ bool DbManager::upsertTag(const TagDefinition& tag)
             software_filter_type = EXCLUDED.software_filter_type,
             software_filter_config = EXCLUDED.software_filter_config,
             sim_profile = EXCLUDED.sim_profile,
+            driver_id = EXCLUDED.driver_id,
+            address_config = EXCLUDED.address_config,
             enabled = EXCLUDED.enabled,
-            driver_id =EXCLUDED.driver_id,
-            address_config=EXCLUDED.address_config,
-            clamp_enabled=EXCLUDED.clamp_enabled,
-            updated_at = now();
+            clamp_enabled = EXCLUDED.clamp_enabled,
+            updated_at = now()
     )");
 
     query.bindValue(":tag_id", tag.tagId);
@@ -814,57 +820,23 @@ bool DbManager::upsertTag(const TagDefinition& tag)
     query.bindValue(":scaling_slope", tag.slope);
     query.bindValue(":scaling_offset", tag.offset);
     query.bindValue(":deadband", tag.deadband);
+    query.bindValue(":storage_deadband", tag.storageDeadband);
+    query.bindValue(":alarm_hysteresis", tag.alarmHysteresis);
+    query.bindValue(":heartbeat_interval_ms", tag.heartbeatIntervalMs);
+    query.bindValue(":software_filter_type", tag.softwareFilter);
+    query.bindValue(":software_filter_config", tag.softwareFilterConfig);
+    query.bindValue(":sim_profile", tag.simProfile);
+    query.bindValue(":driver_id", tag.driverId);
+    query.bindValue(":address_config", tag.addressConfig);
+    query.bindValue(":enabled", tag.enabled);
     query.bindValue(":clamp_enabled", tag.clampEnabled);
 
-    if (tag.storageDeadband >= 0.0)
-    {
-        query.bindValue(":storage_deadband", tag.storageDeadband);
-    }
-    else
-    {
-        query.bindValue(":storage_deadband", QVariant());
-    }
-
-    if (tag.alarmHysteresis >= 0.0)
-    {
-        query.bindValue(":alarm_hysteresis", tag.alarmHysteresis);
-    }
-    else
-    {
-        query.bindValue(":alarm_hysteresis", QVariant());
-    }
-
-    if (tag.heartbeatIntervalMs >= 0)
-    {
-        query.bindValue(":heartbeat_interval_ms", tag.heartbeatIntervalMs);
-    }
-    else
-    {
-        query.bindValue(":heartbeat_interval_ms", QVariant());
-    }
-
-    query.bindValue(":software_filter_type", tag.softwareFilter);
-    query.bindValue(":software_filter_config", tag.softwareFilterConfig.isEmpty() ? "{}" : tag.softwareFilterConfig);
-    query.bindValue(":sim_profile", tag.simProfile);
-    query.bindValue(":enabled", tag.enabled);
-
-    if (tag.driverId > 0)
-    {
-        query.bindValue(":driver_id", tag.driverId);
-    }
-    else
-    {
-        query.bindValue(":driver_id", QVariant());
-    }
-
-    query.bindValue(":address_config", tag.addressConfig.isEmpty() ? QStringLiteral("{}") : tag.addressConfig);
-
-    if (!query.exec())
-    {
+    if (!query.exec()) {
         qWarning() << "Upsert tag failed:" << query.lastError().text();
         return false;
     }
 
+    qInfo() << "Tag upserted:" << tag.tagId << tag.tagName;
     return true;
 }
 
@@ -2251,3 +2223,159 @@ QSqlDatabase DbManager::database() const
 {
     return m_db;
 }
+
+bool DbManager::deleteTag(qint64 tagId)
+{
+    if (!m_db.transaction()) {
+        qWarning() << "Cannot start transaction for deleteTag:" << m_db.lastError().text();
+        return false;
+    }
+
+    QSqlQuery query(m_db);
+
+    // اول rule های مرتبط را حذف کن
+    query.prepare("DELETE FROM threshold_rules WHERE tag_id = :tag_id;");
+    query.bindValue(":tag_id", tagId);
+    if (!query.exec()) {
+        qWarning() << "Delete threshold_rules failed:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+
+    query.prepare("DELETE FROM range_violation_rules WHERE tag_id = :tag_id;");
+    query.bindValue(":tag_id", tagId);
+    query.exec();
+
+    query.prepare("DELETE FROM rate_of_change_rules WHERE tag_id = :tag_id;");
+    query.bindValue(":tag_id", tagId);
+    query.exec();
+
+    query.prepare("DELETE FROM stuck_value_rules WHERE tag_id = :tag_id;");
+    query.bindValue(":tag_id", tagId);
+    query.exec();
+
+    query.prepare("DELETE FROM boolean_rules WHERE tag_id = :tag_id;");
+    query.bindValue(":tag_id", tagId);
+    query.exec();
+
+    // بعد current state را حذف کن
+    query.prepare("DELETE FROM tag_current_state WHERE tag_id = :tag_id;");
+    query.bindValue(":tag_id", tagId);
+    query.exec();
+
+    // در نهایت خود tag را حذف کن
+    query.prepare("DELETE FROM tags WHERE tag_id = :tag_id;");
+    query.bindValue(":tag_id", tagId);
+    if (!query.exec()) {
+        qWarning() << "Delete tag failed:" << query.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+
+    const int affectedRows = query.numRowsAffected();
+
+    if (!m_db.commit()) {
+        qWarning() << "Cannot commit deleteTag:" << m_db.lastError().text();
+        m_db.rollback();
+        return false;
+    }
+
+    qInfo() << "Tag deleted:" << tagId;
+    return affectedRows > 0;
+}
+
+QVector<QJsonObject> DbManager::queryTagHistory(
+    qint64 tagId,
+    const QDateTime& fromTime,
+    const QDateTime& toTime,
+    const QString& interval,
+    int limit)
+{
+    QVector<QJsonObject> results;
+
+    QSqlQuery query(m_db);
+
+    if (interval.isEmpty()) {
+        // Raw data query
+        query.prepare(QStringLiteral(
+            "SELECT time, raw_value, eng_value, quality, source "
+            "FROM tag_values_raw "
+            "WHERE tag_id = :tag_id "
+            "AND time >= :from_time AND time < :to_time "
+            "ORDER BY time DESC "
+            "LIMIT :limit"
+        ));
+        query.bindValue(":tag_id", tagId);
+        query.bindValue(":from_time", fromTime);
+        query.bindValue(":to_time", toTime);
+        query.bindValue(":limit", limit);
+
+        if (!query.exec()) {
+            qWarning() << "Query tag history failed:" << query.lastError().text();
+            return results;
+        }
+
+        while (query.next()) {
+            QJsonObject obj;
+            obj.insert("time", query.value(0).toDateTime().toString(Qt::ISODateWithMs));
+            obj.insert("raw_value", query.value(1).toDouble());
+            obj.insert("eng_value", query.value(2).toDouble());
+            obj.insert("quality", query.value(3).toInt());
+            obj.insert("source", query.value(4).toString());
+            results.append(obj);
+        }
+    } else {
+        // Aggregated query با time_bucket
+        QString intervalStr = interval;
+
+        // اعتبارسنجی ساده interval برای جلوگیری از SQL injection
+        if (intervalStr != "1 second" && intervalStr != "1 minute" &&
+            intervalStr != "5 minutes" && intervalStr != "1 hour" &&
+            intervalStr != "1 day") {
+            intervalStr = "1 minute";
+        }
+
+        const QString sql = QStringLiteral(
+            "SELECT "
+            "  time_bucket(INTERVAL '%1', time) AS bucket, "
+            "  avg(eng_value) AS avg_value, "
+            "  min(eng_value) AS min_value, "
+            "  max(eng_value) AS max_value, "
+            "  first(eng_value, time) AS first_value, "
+            "  last(eng_value, time) AS last_value, "
+            "  count(*) AS sample_count "
+            "FROM tag_values_raw "
+            "WHERE tag_id = :tag_id "
+            "AND time >= :from_time AND time < :to_time "
+            "GROUP BY bucket "
+            "ORDER BY bucket ASC "
+            "LIMIT :limit"
+        ).arg(intervalStr);
+
+        query.prepare(sql);
+        query.bindValue(":tag_id", tagId);
+        query.bindValue(":from_time", fromTime);
+        query.bindValue(":to_time", toTime);
+        query.bindValue(":limit", limit);
+
+        if (!query.exec()) {
+            qWarning() << "Query tag history aggregate failed:" << query.lastError().text();
+            return results;
+        }
+
+        while (query.next()) {
+            QJsonObject obj;
+            obj.insert("bucket", query.value(0).toDateTime().toString(Qt::ISODateWithMs));
+            obj.insert("avg", query.value(1).toDouble());
+            obj.insert("min", query.value(2).toDouble());
+            obj.insert("max", query.value(3).toDouble());
+            obj.insert("first", query.value(4).toDouble());
+            obj.insert("last", query.value(5).toDouble());
+            obj.insert("count", query.value(6).toInt());
+            results.append(obj);
+        }
+    }
+
+    return results;
+}
+

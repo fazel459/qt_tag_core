@@ -8,6 +8,7 @@ debug/qmqtt_routesubscription.o
 debug/qmqtt_socket.o
 debug/qmqtt_timer.o
 debug/qmqtt_ssl_socket.o
+debug/ApiAuthenticator.o
 debug/HttpServer.o
 debug/RestApiHandler.o
 debug/WebSocketHandler.o

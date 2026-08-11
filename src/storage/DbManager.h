@@ -89,6 +89,17 @@ public:
     QVector<QJsonObject> getTagsCurrentState(const QVector<int>& tagIds);
     QVector<QJsonObject> loadAlarms(int limit = 100, int offset = 0);
     QSqlDatabase database() const;
+
+
+    bool deleteTag(qint64 tagId);
+    QVector<QJsonObject> queryTagHistory(
+        qint64 tagId,
+        const QDateTime& fromTime,
+        const QDateTime& toTime,
+        const QString& interval = QString(),
+        int limit = 1000
+    );
+
 private:
     bool migrate();
 
