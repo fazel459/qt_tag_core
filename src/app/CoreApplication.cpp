@@ -276,7 +276,14 @@ void CoreApplication::startApiLayer()
         return;
     }
 
-    // Bridge: tags/{id}/update → WebSocketHandler
+    // ✅ Snapshot Provider - فقط یک بار
+    m_wsServer->handler()->setSnapshotProvider(
+        [this](const QVector<int>& tagIds) -> QVector<QJsonObject> {
+            return m_db.getTagsCurrentState(tagIds);
+        }
+    );
+
+    // Bridge TagBus → WebSocketHandler
     m_bus.subscribe("tags/#", [this](const BusMessage& msg) {
         if (!msg.topic.endsWith("/update")) return;
         if (m_wsServer && m_wsServer->handler()) {
@@ -284,7 +291,6 @@ void CoreApplication::startApiLayer()
         }
     });
 
-    // Bridge: alarms/{id}/{state} → WebSocketHandler
     m_bus.subscribe("alarms/#", [this](const BusMessage& msg) {
         if (m_wsServer && m_wsServer->handler()) {
             m_wsServer->handler()->publishAlarmEvent(msg.value);

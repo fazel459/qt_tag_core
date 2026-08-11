@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QString>
+#include <functional>
 
 class QWebSocketServer;
 class WebSocketHandler;

@@ -8,7 +8,7 @@
 #include <QList>
 #include <QDateTime>
 #include <QJsonObject>
-
+#include <functional>
 #include "../core/Models.h"
 
 class QWebSocket;
@@ -36,6 +36,9 @@ public:
     void publishTagUpdate(const TagValue &value);
     void publishAlarmEvent(const TagValue &value);
     void publishSystemStatus(const TagValue &value);
+    using SnapshotProvider = std::function<QVector<QJsonObject>(const QVector<int>& tagIds)>;
+    void setSnapshotProvider(SnapshotProvider provider);
+    void sendSnapshotToClient(QWebSocket *socket);
 
 signals:
     void clientCountChanged(int count);
@@ -98,6 +101,12 @@ private:
     void queueTagUpdate(int tagId, const QJsonObject &message);
 
     static QString qualityToString(Quality quality);
+
+    SnapshotProvider m_snapshotProvider;
+
+    void sendSnapshotForTags(QWebSocket *socket, const QVector<int>& tagIds);
+
+
 };
 
 #endif // WEBSOCKETHANDLER_H

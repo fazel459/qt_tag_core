@@ -1,8 +1,11 @@
 #pragma once
 
 #include <QSqlDatabase>
+#include <QJsonObject>
 
 #include "../core/Models.h"
+
+
 
 class DbManager
 {
@@ -82,6 +85,8 @@ public:
         const QString& message
     );
 
+    QJsonObject getTagCurrentState(int tagId);
+    QVector<QJsonObject> getTagsCurrentState(const QVector<int>& tagIds);
 
     QSqlDatabase database() const;
 private:

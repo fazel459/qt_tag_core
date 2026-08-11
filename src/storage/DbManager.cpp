@@ -2134,6 +2134,65 @@ bool DbManager::logNotification(
     return true;
 }
 
+QJsonObject DbManager::getTagCurrentState(int tagId)
+{
+    QJsonObject result;
+
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral(
+        "SELECT tag_id, value, quality, updated_at "
+        "FROM tag_current_state WHERE tag_id = :tagId"
+    ));
+    query.bindValue(":tagId", tagId);
+
+    if (query.exec() && query.next()) {
+        result.insert("tag_id", query.value(0).toInt());
+        result.insert("value", query.value(1).toDouble());
+        result.insert("quality", query.value(2).toString());
+        result.insert("ts", query.value(3).toDateTime().toString(Qt::ISODateWithMs));
+    }
+
+    return result;
+}
+
+QVector<QJsonObject> DbManager::getTagsCurrentState(const QVector<int>& tagIds)
+{
+    QVector<QJsonObject> results;
+
+    if (tagIds.isEmpty()) {
+        return results;
+    }
+
+    QStringList placeholders;
+    for (int i = 0; i < tagIds.size(); ++i) {
+        placeholders << QString(":id%1").arg(i);
+    }
+
+    QString sql = QStringLiteral(
+        "SELECT tag_id, value, quality, updated_at "
+        "FROM tag_current_state WHERE tag_id IN (%1)"
+    ).arg(placeholders.join(","));
+
+    QSqlQuery query(m_db);
+    query.prepare(sql);
+
+    for (int i = 0; i < tagIds.size(); ++i) {
+        query.bindValue(QString(":id%1").arg(i), tagIds[i]);
+    }
+
+    if (query.exec()) {
+        while (query.next()) {
+            QJsonObject obj;
+            obj.insert("tag_id", query.value(0).toInt());
+            obj.insert("value", query.value(1).toDouble());
+            obj.insert("quality", query.value(2).toString());
+            obj.insert("ts", query.value(3).toDateTime().toString(Qt::ISODateWithMs));
+            results.append(obj);
+        }
+    }
+
+    return results;
+}
 
 QSqlDatabase DbManager::database() const
 {

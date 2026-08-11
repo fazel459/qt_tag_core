@@ -128,6 +128,7 @@ void WebSocketHandler::routeInitialUrl(QWebSocket *socket, const QUrl &url)
             }
         }
     }
+    sendSnapshotToClient(socket);
 }
 
 void WebSocketHandler::sendHello(QWebSocket *socket)
@@ -400,6 +401,15 @@ void WebSocketHandler::handleControlMessage(QWebSocket *socket, const QJsonObjec
                     unsubscribeTag(socket, tagId);
                 }
             }
+
+            // ✅ Snapshot برای تگ‌های جدید
+            if (add && !tagIds.isEmpty()) {
+                QVector<int> ids;
+                for (int id : tagIds) {
+                    ids.append(id);
+                }
+                sendSnapshotForTags(socket, ids);
+            }
         }
 
         if (obj.contains(QStringLiteral("dashboard"))) {
@@ -418,6 +428,22 @@ void WebSocketHandler::handleControlMessage(QWebSocket *socket, const QJsonObjec
             m_clients[socket].batchMode = (delivery == QStringLiteral("batch"));
         }
 
+        sendAck(socket, obj);
+        return;
+    }
+
+    if (op == QStringLiteral("get_snapshot")) {
+        if (obj.contains(QStringLiteral("tags"))) {
+            const QList<int> tagIds = toIntList(obj.value(QStringLiteral("tags")));
+            QVector<int> ids;
+            for (int id : tagIds) {
+                ids.append(id);
+            }
+            sendSnapshotForTags(socket, ids);
+        } else {
+            // snapshot برای همه تگ‌های subscribed شده
+            sendSnapshotToClient(socket);
+        }
         sendAck(socket, obj);
         return;
     }
@@ -807,4 +833,50 @@ QString WebSocketHandler::currentUtcIso()
 {
     return QDateTime::currentDateTimeUtc()
         .toString(QStringLiteral("yyyy-MM-ddTHH:mm:ss.zzz'Z'"));
+}
+
+void WebSocketHandler::setSnapshotProvider(SnapshotProvider provider)
+{
+    m_snapshotProvider = std::move(provider);
+}
+
+void WebSocketHandler::sendSnapshotToClient(QWebSocket *socket)
+{
+    if (!socket || !m_clients.contains(socket)) {
+        return;
+    }
+
+    const ClientInfo info = m_clients.value(socket);
+
+    if (info.tagIds.isEmpty()) {
+        return;
+    }
+
+    QVector<int> tagIds;
+    for (int id : info.tagIds) {
+        tagIds.append(id);
+    }
+
+    sendSnapshotForTags(socket, tagIds);
+}
+
+void WebSocketHandler::sendSnapshotForTags(QWebSocket *socket, const QVector<int>& tagIds)
+{
+    if (!m_snapshotProvider || tagIds.isEmpty()) {
+        return;
+    }
+
+    const QVector<QJsonObject> snapshots = m_snapshotProvider(tagIds);
+
+    QJsonArray tagsArray;
+    for (const QJsonObject &snapshot : snapshots) {
+        tagsArray.append(snapshot);
+    }
+
+    QJsonObject message;
+    message.insert(QStringLiteral("type"), QStringLiteral("tags.snapshot"));
+    message.insert(QStringLiteral("ts"), currentUtcIso());
+    message.insert(QStringLiteral("tags"), tagsArray);
+
+    sendJson(socket, message);
 }
