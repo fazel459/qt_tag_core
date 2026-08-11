@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tag Core - مستندات فنی کامل</title>
+<style>
+  :root{
+    --bg:#0d1520; --panel:#141f2e; --panel2:#1a2838; --border:#24384d;
+    --text:#dbe7f3; --muted:#8fa5ba; --accent:#22d3ee; --accent2:#34d399;
+    --warn:#fbbf24; --danger:#f87171; --code-bg:#0a111b; --purple:#c084fc;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:"Segoe UI",Tahoma,Vazirmatn,sans-serif; background:var(--bg); color:var(--text); line-height:1.8;}
+  .layout{display:flex; min-height:100vh;}
+  aside{width:280px; background:var(--panel); border-left:1px solid var(--border); position:sticky; top:0; height:100vh; overflow-y:auto; padding:20px 14px; flex-shrink:0;}
+  aside .logo{font-size:22px; font-weight:800; color:var(--accent); padding:6px 10px 16px; border-bottom:1px solid var(--border); margin-bottom:14px;}
+  aside .logo small{display:block; color:var(--muted); font-size:11px; font-weight:400;}
+  aside a{display:block; color:var(--muted); text-decoration:none; font-size:13px; padding:6px 12px; border-radius:8px; margin:1px 0; transition:.2s;}
+  aside a:hover{background:var(--panel2); color:var(--accent);}
+  aside a.h{color:var(--text); font-weight:700; margin-top:12px; font-size:14px;}
+  aside a.sub{padding-right:26px; font-size:12.5px;}
+  main{flex:1; padding:36px 46px; max-width:1200px;}
+  h1{font-size:30px; color:#fff; margin-bottom:6px;}
+  h1 span{color:var(--accent);}
+  h2{font-size:24px; color:var(--accent); margin:52px 0 16px; padding-bottom:10px; border-bottom:2px solid var(--border);}
+  h3{font-size:17px; color:var(--accent2); margin:26px 0 10px;}
+  h4{font-size:14.5px; color:var(--purple); margin:18px 0 8px;}
+  p{margin:10px 0;}
+  .sub{color:var(--muted); font-size:14px;}
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; margin:18px 0;}
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; transition:.2s;}
+  .card:hover{border-color:var(--accent); transform:translateY(-2px);}
+  .card b{color:var(--accent); display:block; margin-bottom:6px; font-size:15px;}
+  .card p{font-size:13px; color:var(--muted); margin:0;}
+  .badge{display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; background:rgba(52,211,153,.15); color:var(--accent2); border:1px solid var(--accent2); margin-left:6px;}
+  .badge.todo{background:rgba(251,191,36,.12); color:var(--warn); border-color:var(--warn);}
+  table{width:100%; border-collapse:collapse; margin:16px 0; font-size:13px; background:var(--panel); border-radius:10px; overflow:hidden;}
+  th{background:var(--panel2); color:var(--accent); text-align:right; padding:10px 14px;}
+  td{padding:9px 14px; border-top:1px solid var(--border);}
+  td code{color:var(--accent2);}
+  tr:hover td{background:rgba(34,211,238,.04);}
+  pre{background:var(--code-bg); border:1px solid var(--border); border-radius:10px; padding:16px; overflow-x:auto; direction:ltr; text-align:left; font-family:"Cascadia Code",Consolas,monospace; font-size:12.8px; line-height:1.65; margin:14px 0; color:#c9e4f5;}
+  code.inline{background:var(--code-bg); border:1px solid var(--border); border-radius:6px; padding:1px 7px; direction:ltr; font-family:Consolas,monospace; font-size:12.5px; color:var(--accent2);}
+  .k{color:#7dd3fc;} .s{color:#a5f3a5;} .c{color:#64748b;} .n{color:#fbbf24;} .p{color:#c084fc;}
+  .m{display:inline-block; min-width:52px; text-align:center; padding:1px 8px; border-radius:6px; font-size:11.5px; font-weight:700; font-family:Consolas,monospace;}
+  .m.get{background:rgba(52,211,153,.18); color:var(--accent2);}
+  .m.post{background:rgba(34,211,238,.18); color:var(--accent);}
+  .m.put{background:rgba(251,191,36,.18); color:var(--warn);}
+  .m.del{background:rgba(248,113,113,.18); color:var(--danger);}
+  .diagram{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:18px; margin:20px 0; text-align:center;}
+  .diagram img{max-width:100%; border-radius:10px;}
+  .flow{display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px; margin:16px 0;}
+  .flow .node{background:var(--panel2); border:1px solid var(--accent); color:var(--accent); padding:8px 16px; border-radius:10px; font-size:13px; font-weight:700;}
+  .flow .arr{color:var(--accent); font-size:18px;}
+  .note{background:rgba(251,191,36,.08); border-right:4px solid var(--warn); padding:12px 16px; border-radius:8px; margin:14px 0; font-size:13.5px;}
+  .note.ok{background:rgba(52,211,153,.08); border-right:4px solid var(--accent2);}
+  .note.info{background:rgba(34,211,238,.08); border-right:4px solid var(--accent);}
+  .tree{direction:ltr; text-align:left;}
+  .testbox{background:var(--panel); border:1px solid var(--accent2); border-radius:12px; padding:16px; margin:16px 0;}
+  .testbox .t{color:var(--accent2); font-weight:700; margin-bottom:8px; font-size:14px;}
+  footer{margin-top:60px; padding:20px 0; border-top:1px solid var(--border); color:var(--muted); font-size:13px; text-align:center;}
+  @media(max-width:950px){ aside{display:none;} main{padding:20px;} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside>
+  <div class="logo">⚙ Tag Core<small>SCADA / Historian Core — v0.1.0</small></div>
+  <a class="h" href="#overview">۱. نمای کلی</a>
+  <a class="sub" href="#arch">معماری سیستم</a>
+  <a class="sub" href="#stack">فناوری‌ها</a>
+  <a class="sub" href="#files">ساختار فایل‌ها</a>
+  <a class="h" href="#structs">۲. ساختار داده‌ها</a>
+  <a class="sub" href="#st-tagvalue">TagValue</a>
+  <a class="sub" href="#st-tagdef">TagDefinition</a>
+  <a class="sub" href="#st-driverdef">DriverDefinition</a>
+  <a class="sub" href="#st-rules">Rules</a>
+  <a class="sub" href="#st-dash">DashboardDefinition</a>
+  <a class="h" href="#db">۳. دیتابیس</a>
+  <a class="sub" href="#db-tables">جدول‌ها</a>
+  <a class="sub" href="#db-schema">Schema</a>
+  <a class="h" href="#core">۴. قابلیت‌های Core</a>
+  <a class="sub" href="#pipeline">Processing Pipeline</a>
+  <a class="sub" href="#rules">Rule Engine</a>
+  <a class="sub" href="#drivers">درایورها</a>
+  <a class="sub" href="#historian">Historian</a>
+  <a class="h" href="#api">۵. لایه API</a>
+  <a class="sub" href="#ws">WebSocket Server</a>
+  <a class="sub" href="#ws-channels">کانال‌های WS</a>
+  <a class="sub" href="#ws-ctrl">پیام‌های کنترلی</a>
+  <a class="sub" href="#ws-msg">پیام‌های سرور</a>
+  <a class="sub" href="#cmd">Command Channel</a>
+  <a class="sub" href="#rest">REST API</a>
+  <a class="sub" href="#dash">Dashboard API</a>
+  <a class="sub" href="#report">Report Generation</a>
+  <a class="sub" href="#auth">Authentication</a>
+  <a class="h" href="#test">۶. راهنمای تست</a>
+  <a class="sub" href="#t-ws">تست WebSocket</a>
+  <a class="sub" href="#t-cmd">تست Commands</a>
+  <a class="sub" href="#t-rest">تست REST</a>
+  <a class="sub" href="#t-dash">تست Dashboards</a>
+  <a class="sub" href="#t-report">تست Reports</a>
+  <a class="h" href="#trouble">۷. عیب‌یابی</a>
+  <a class="h" href="#next">۸. مراحل بعدی</a>
+</aside>
+
+<main>
+
+<h1>⚙ Tag <span>Core</span> — مستندات فنی کامل</h1>
+<p class="sub">نسخه 0.1.0 &nbsp;|&nbsp; آخرین به‌روزرسانی: August 2026 &nbsp;|&nbsp; Qt 5.14.2 / MinGW 7.3 / Windows</p>
+
+<!-- ================= 1 OVERVIEW ================= -->
+<h2 id="overview">۱. نمای کلی پروژه</h2>
+<p>Tag Core یک هسته مرکزی SCADA/Historian است که داده‌های صنعتی را از درایورهای مختلف دریافت، پردازش، ذخیره و از طریق API های WebSocket و REST در اختیار GUI های مستقل قرار می‌دهد.</p>
+
+<div class="cards">
+  <div class="card"><b>📥 Ingestion</b><p>دریافت داده از Modbus TCP/RTU، MQTT، Simulator و OPC UA</p></div>
+  <div class="card"><b>🧮 Processing</b><p>Scaling، Filtering، Rounding، Deadband و Exception Reporting</p></div>
+  <div class="card"><b>🚨 Rules & Alarms</b><p>۹ نوع آلارم با hysteresis، delay و severity</p></div>
+  <div class="card"><b>🗄 Historian</b><p>TimescaleDB با Continuous Aggregates، Compression و Retention</p></div>
+  <div class="card"><b>🔌 API Layer</b><p>WebSocket (real-time) + REST (CRUD/Query) + Command Channel</p></div>
+  <div class="card"><b>📊 Dashboards</b><p>داشبوردهای file-based با پشتیبانی QML/HTML/JSON</p></div>
+  <div class="card"><b>📈 Reports</b><p>گزارش CSV/JSON از تاریخچه، آلارم‌ها و خلاصه روزانه</p></div>
+</div>
+
+<h3 id="arch">معماری سیستم</h3>
+<div class="diagram"><img src="architecture.png" alt="Tag Core Architecture"></div>
+
+<h3>جریان داده (Data Flow)</h3>
+<div class="flow">
+  <div class="node">Driver</div><div class="arr">→</div>
+  <div class="node">tags/{id}/raw</div><div class="arr">→</div>
+  <div class="node">FilterProcessor</div><div class="arr">→</div>
+  <div class="node">tags/{id}/update</div><div class="arr">→</div>
+  <div class="node">Historian / Rules / Cache / API</div>
+</div>
+
+<h3 id="stack">فناوری‌ها</h3>
+<table>
+  <tr><th>بخش</th><th>فناوری</th><th>توضیح</th></tr>
+  <tr><td>زبان</td><td><code>C++ (Qt 5.14.2)</code></td><td>MinGW 7.3 64-bit / Windows</td></tr>
+  <tr><td>دیتابیس</td><td><code>PostgreSQL + TimescaleDB</code></td><td>درایور QPSQL</td></tr>
+  <tr><td>Build</td><td><code>qmake (.pro)</code></td><td>QT += core sql network serialport qml websockets</td></tr>
+  <tr><td>MQTT</td><td><code>qmqtt</code></td><td>کتابخانه خارجی</td></tr>
+  <tr><td>OPC UA</td><td><code>open62541</code></td><td>در حال build</td></tr>
+  <tr><td>WebSocket</td><td><code>Qt WebSockets</code></td><td>پورت 8081</td></tr>
+  <tr><td>REST</td><td><code>QTcpServer (custom HTTP)</code></td><td>پورت 8082</td></tr>
+</table>
+
+<h3 id="files">ساختار فایل‌ها</h3>
+<pre class="tree">src/
+├── main.cpp
+├── app/
+│   └── CoreApplication.{h,cpp}        <span class="c"># راه‌اندازی کل سیستم + API Layer</span>
+├── core/
+│   ├── Models.h                        <span class="c"># ساختارهای داده</span>
+│   ├── ConfigLoader.{h,cpp}
+│   └── ValueUtils.h
+├── tagbus/
+│   └── TagBus.h                        <span class="c"># pub/sub داخلی</span>
+├── storage/
+│   ├── DbManager.{h,cpp}               <span class="c"># دسترسی به PostgreSQL</span>
+│   ├── BatchHistorianWriter.{h,cpp}
+│   ├── CurrentStateWriter.{h,cpp}
+│   ├── StorageExceptionFilter.{h,cpp}
+│   ├── HistorianManager.{h,cpp}
+│   └── ArchiveManager.{h,cpp}
+├── filters/
+│   ├── ISoftwareFilter.h
+│   ├── SoftwareFilters.h
+│   ├── SoftwareFilterFactory.{h,cpp}
+│   └── FilterProcessor.{h,cpp}
+├── scaling/ScalingEngine.h
+├── ingestion/DeadbandFilter.h
+├── realtime/RealtimeCache.h
+├── rules/RuleEngine.{h,cpp}
+├── notifications/
+│   ├── NotificationManager.{h,cpp}
+│   └── WebhookNotifier.{h,cpp}
+├── computed/ComputedTagEngine.{h,cpp}
+├── drivers/
+│   ├── ITagDriver.h
+│   ├── DriverFactory.{h,cpp}
+│   ├── DriverManager.{h,cpp}
+│   ├── ModbusTypes.h
+│   ├── ModbusCardManager.{h,cpp}
+│   ├── SimulatorDriver.{h,cpp}
+│   ├── ModbusTcpDriver.{h,cpp}
+│   ├── ModbusRtuDriver.{h,cpp}
+│   └── MqttDriver.{h,cpp}
+└── api/                                <span class="c"># ✨ لایه API (جدید)</span>
+    ├── WebSocketServer.{h,cpp}         <span class="c"># پورت 8081</span>
+    ├── WebSocketHandler.{h,cpp}
+    ├── HttpServer.{h,cpp}              <span class="c"># پورت 8082</span>
+    ├── RestApiHandler.{h,cpp}
+    ├── ApiAuthenticator.{h,cpp}
+    ├── DashboardManager.{h,cpp}
+    └── ReportGenerator.{h,cpp}
+config/
+├── bootstrap.json                      <span class="c"># فقط اتصال DB</span>
+└── app.json                            <span class="c"># seed اولیه</span>
+dashboards/                             <span class="c"># فایل‌های داشبورد (runtime)</span>
+└── {id}/dashboard.{qml|html|json}</pre>
+
+<!-- ================= 2 STRUCTS ================= -->
+<h2 id="structs">۲. ساختار داده‌ها</h2>
+
+<h3 id="st-tagvalue">TagValue — داده زنده در TagBus</h3>
+<pre><span class="k">struct</span> TagValue {
+    qint64  tagId = <span class="n">0</span>;
+    QString tagName;
+    QDateTime timestamp;
+    <span class="k">double</span>  rawValue = <span class="n">0.0</span>;
+    <span class="k">double</span>  engineeringValue = <span class="n">0.0</span>;
+    Quality quality = Quality::Good;      <span class="c">// Good / Bad / Uncertain</span>
+    SourceKind source = SourceKind::Simulator; <span class="c">// RealDriver/Simulator/Calculated/Manual/Replay</span>
+    quint64 sequence = <span class="n">0</span>;
+};</pre>
+
+<h3 id="st-tagdef">TagDefinition — تعریف تگ (جدول tags)</h3>
+<pre><span class="k">struct</span> TagDefinition {
+    qint64 tagId;            QString tagName;
+    QString sourceType;      QString dataType;      QString engUnits;
+    <span class="k">double</span> rawMin, rawMax, engMin, engMax;
+    QString scalingType;     <span class="k">double</span> slope, offset;
+    <span class="k">double</span> deadband, storageDeadband, alarmHysteresis;
+    <span class="k">int</span> heartbeatIntervalMs;
+    QString softwareFilter, softwareFilterConfig;
+    QString simProfile;      qint64 driverId;
+    QString addressConfig;   <span class="k">bool</span> enabled, clampEnabled;
+};</pre>
+
+<h3 id="st-driverdef">DriverDefinition — تعریف درایور (جدول drivers)</h3>
+<pre><span class="k">struct</span> DriverDefinition {
+    qint64 driverId;
+    QString name;
+    QString type;              <span class="c">// simulator / modbus_tcp / modbus_rtu / mqtt</span>
+    QString connectionConfig;  <span class="c"># JSON string</span>
+    <span class="k">int</span> pollingIntervalMs;
+    <span class="k">bool</span> enabled;
+};</pre>
+
+<h3 id="st-rules">ساختار Rule ها</h3>
+<pre><span class="k">struct</span> ThresholdRule { ruleId, tagId, low, high, lowlow, highhigh,
+    highHysteresis, lowHysteresis, lowLowHysteresis, highHighHysteresis,
+    onDelayMs, offDelayMs, hasLow/hasHigh/hasLowLow/hasHighHigh };
+
+<span class="k">struct</span> RangeViolationRule { ruleId, tagId, minValue, maxValue, severity };
+<span class="k">struct</span> RateOfChangeRule  { ruleId, tagId, maxRatePerSecond, windowMs, severity };
+<span class="k">struct</span> StuckValueRule    { ruleId, tagId, stuckDurationMs, epsilon, severity };
+<span class="k">struct</span> BooleanRule       { ruleId, tagId, alarmOnTrue, alarmOnFalse, durationMs, severity };
+<span class="k">struct</span> NotificationRule  { notificationRuleId, name, severityFilter,
+    alarmTypeFilter, channel, channelConfig, throttleMs, enabled };
+<span class="k">struct</span> ComputedTag       { computedTagId, tagId, expression, updateMode, updateIntervalMs, enabled };</pre>
+
+<h3 id="st-dash">DashboardDefinition — داشبورد</h3>
+<pre><span class="k">struct</span> DashboardDefinition {
+    qint64 dashboardId = <span class="n">0</span>;
+    QString name, description, owner;
+    QString dashboardType = <span class="s">"simple"</span>;  <span class="c">// simple / qml / html</span>
+    QString config;                     <span class="c"># محتوای فایل (نه در DB)</span>
+    <span class="k">bool</span> isPublic = <span class="k">true</span>;
+    QDateTime createdAt, updatedAt;
+};</pre>
+
+<h3>BusMessage — پیام TagBus</h3>
+<pre><span class="k">struct</span> BusMessage { QString topic; TagValue value; };
+
+<span class="c">// Topic های اصلی:</span>
+tags/{id}/raw          <span class="c"># خروجی درایور</span>
+tags/{id}/update       <span class="c"># خروجی FilterProcessor</span>
+tags/{id}/alarms       <span class="c"># آلارم تگ</span>
+alarms/{id}/{state}    <span class="c"># raised / cleared / acknowledged</span>
+commands/{id}/write    <span class="c"># فرمان write</span>
+system/status</pre>
+
+<!-- ================= 3 DB ================= -->
+<h2 id="db">۳. دیتابیس</h2>
+
+<h3 id="db-tables">جدول‌ها</h3>
+<table>
+  <tr><th>جدول</th><th>کاربرد</th></tr>
+  <tr><td><code>tags</code></td><td>تعریف تگ‌ها</td></tr>
+  <tr><td><code>drivers</code></td><td>تعریف درایورها</td></tr>
+  <tr><td><code>tag_values_raw</code></td><td>Hypertable داده‌های تاریخی (TimescaleDB)</td></tr>
+  <tr><td><code>tag_current_state</code></td><td>آخرین مقدار هر تگ (UPSERT)</td></tr>
+  <tr><td><code>threshold_rules</code> + ۴ جدول rule دیگر</td><td>قوانین آلارم</td></tr>
+  <tr><td><code>alarms</code> / <code>alarm_events</code></td><td>آلارم‌ها و رویدادها</td></tr>
+  <tr><td><code>notification_rules</code> / <code>notification_log</code></td><td>اعلان‌ها</td></tr>
+  <tr><td><code>computed_tags</code></td><td>تگ‌های محاسباتی</td></tr>
+  <tr><td><code>system_settings</code></td><td>تنظیمات سراسری (key/value)</td></tr>
+  <tr><td><code>archive_log</code></td><td>لاگ آرشیو CSV</td></tr>
+  <tr><td><code>dashboards</code></td><td>metadata داشبوردها (جدید)</td></tr>
+</table>
+
+<h3 id="db-schema">Schema جدول‌های جدید</h3>
+<pre><span class="c">-- dashboards</span>
+<span class="k">CREATE TABLE</span> dashboards (
+    dashboard_id BIGSERIAL <span class="k">PRIMARY KEY</span>,
+    name TEXT <span class="k">NOT NULL</span>,
+    description TEXT <span class="k">DEFAULT</span> <span class="s">''</span>,
+    owner TEXT <span class="k">DEFAULT</span> <span class="s">'system'</span>,
+    dashboard_type TEXT <span class="k">DEFAULT</span> <span class="s">'simple'</span>,
+    is_public <span class="k">BOOLEAN DEFAULT</span> <span class="k">true</span>,
+    created_at TIMESTAMPTZ <span class="k">DEFAULT</span> now(),
+    updated_at TIMESTAMPTZ <span class="k">DEFAULT</span> now()
+);
+
+<span class="c">-- tag_current_state (ستون‌های واقعی)</span>
+tag_id, last_value, last_quality, last_timestamp, updated_at</pre>
+
+<!-- ================= 4 CORE ================= -->
+<h2 id="core">۴. قابلیت‌های Core</h2>
+
+<h3 id="pipeline">Processing Pipeline</h3>
+<table>
+  <tr><th>ماژول</th><th>کارکرد</th><th>وضعیت</th></tr>
+  <tr><td>ScalingEngine</td><td>linear + min_max + reverseScale برای write</td><td><span class="badge">✅</span></td></tr>
+  <tr><td>SoftwareFilterChain</td><td>moving_average, exponential, median, debounce, outlier, rate_limiter</td><td><span class="badge">✅</span></td></tr>
+  <tr><td>StorageExceptionFilter</td><td>deadband + heartbeat + quality bypass</td><td><span class="badge">✅</span></td></tr>
+  <tr><td>Rounding</td><td>engineering_decimals = 4</td><td><span class="badge">✅</span></td></tr>
+  <tr><td>BatchHistorianWriter</td><td>transaction-based insert</td><td><span class="badge">✅</span></td></tr>
+  <tr><td>CurrentStateWriter</td><td>batch upsert به tag_current_state</td><td><span class="badge">✅</span></td></tr>
+</table>
+
+<h3 id="rules">Rule Engine (۹ نوع آلارم)</h3>
+<div class="cards">
+  <div class="card"><b>Threshold</b><p>HighHigh/High/Low/LowLow با hysteresis + on/off delay</p></div>
+  <div class="card"><b>Range Violation</b><p>خارج از بازه مجاز</p></div>
+  <div class="card"><b>Rate of Change</b><p>تغییر سریع مقدار</p></div>
+  <div class="card"><b>Stuck Value</b><p>ثابت ماندن مقدار</p></div>
+  <div class="card"><b>Boolean State</b><p>وضعیت دیجیتال</p></div>
+  <div class="card"><b>Bad Quality</b><p>کیفیت نامعتبر</p></div>
+</div>
+<p>Severity: <code class="inline">critical/high/medium/low/info</code> + Alarm Events + Acknowledgment</p>
+
+<h3 id="drivers">درایورها</h3>
+<table>
+  <tr><th>درایور</th><th>پروتکل</th><th>قابلیت‌ها</th><th>وضعیت</th></tr>
+  <tr><td>SimulatorDriver</td><td>شبیه‌سازی</td><td>sine / bad_quality / stuck</td><td><span class="badge">✅</span></td></tr>
+  <tr><td>ModbusTcpDriver</td><td>Modbus TCP</td><td>FC3/4/5/6/16، Batch Read، Write</td><td><span class="badge">✅</span></td></tr>
+  <tr><td>ModbusRtuDriver</td><td>Modbus RTU</td><td>QSerialPort، CRC16، Batch Read</td><td><span class="badge">✅</span></td></tr>
+  <tr><td>MqttDriver</td><td>MQTT</td><td>subscribe، JSON/raw payload</td><td><span class="badge">✅</span></td></tr>
+  <tr><td>OpcUaDriver</td><td>OPC UA</td><td>open62541</td><td><span class="badge todo">🚧 TODO</span></td></tr>
+</table>
+<p>هر ۱۶ سنسور روی یک کارت: Card 0 → آدرس 0-15، Card 1 → 16-31 و... (ModbusCardManager)</p>
+
+<h3 id="historian">Historian</h3>
+<div class="cards">
+  <div class="card"><b>Continuous Aggregates</b><p>1min / 5min / 1hour / 1day</p></div>
+  <div class="card"><b>Compression</b><p>فشرده‌سازی داده‌های قدیمی</p></div>
+  <div class="card"><b>Retention</b><p>سیاست نگهداری داده</p></div>
+  <div class="card"><b>ArchiveManager</b><p>خروجی CSV هر 100MB</p></div>
+</div>
+
+<!-- ================= 5 API ================= -->
+<h2 id="api">۵. لایه API</h2>
+<table>
+  <tr><th>سرور</th><th>پورت</th><th>کاربرد</th></tr>
+  <tr><td>WebSocket Server</td><td><code>8081</code></td><td>داده real-time، subscribe، command</td></tr>
+  <tr><td>REST API Server</td><td><code>8082</code></td><td>CRUD، Query، گزارش، داشبورد</td></tr>
+</table>
+
+<h3 id="ws">WebSocket Server</h3>
+<pre>ws://127.0.0.1:8081/ws/...</pre>
+
+<h3 id="ws-channels">کانال‌های WebSocket</h3>
+<table>
+  <tr><th>کانال</th><th>کاربرد</th><th>GUI هدف</th></tr>
+  <tr><td><code>/ws/alarms/analog</code></td><td>آلارم‌های آنالوگ</td><td>GUI آلارم آنالوگ</td></tr>
+  <tr><td><code>/ws/alarms/digital</code></td><td>آلارم‌های دیجیتال</td><td>GUI آلارم دیجیتال</td></tr>
+  <tr><td><code>/ws/alarms/all</code></td><td>همه آلارم‌ها</td><td>کنترل پنل</td></tr>
+  <tr><td><code>/ws/tags/batch?ids=1,2,3</code></td><td>آپدیت تگ‌ها (batch)</td><td>گراف آنلاین</td></tr>
+  <tr><td><code>/ws/dashboard/{id}?ids=...</code></td><td>داشبورد</td><td>صفحات کاربر</td></tr>
+  <tr><td><code>/ws/system/status</code></td><td>وضعیت سیستم</td><td>کنترل پنل</td></tr>
+</table>
+
+<h3 id="ws-ctrl">پیام‌های کنترلی (بعد از اتصال)</h3>
+<pre>{ <span class="s">"op"</span>:<span class="s">"subscribe"</span>,   <span class="s">"tags"</span>:[<span class="n">1,2,3</span>] }
+{ <span class="s">"op"</span>:<span class="s">"subscribe"</span>,   <span class="s">"channel"</span>:<span class="s">"alarms/analog"</span> }
+{ <span class="s">"op"</span>:<span class="s">"subscribe"</span>,   <span class="s">"dashboard"</span>:<span class="s">"main"</span> }
+{ <span class="s">"op"</span>:<span class="s">"unsubscribe"</span>, <span class="s">"tags"</span>:[<span class="n">3</span>] }
+{ <span class="s">"op"</span>:<span class="s">"options"</span>,     <span class="s">"delivery"</span>:<span class="s">"batch"</span> }   <span class="c">// یا "event"</span>
+{ <span class="s">"op"</span>:<span class="s">"get_snapshot"</span>,<span class="s">"tags"</span>:[<span class="n">1,2,3</span>] }
+{ <span class="s">"op"</span>:<span class="s">"ping"</span> }</pre>
+
+<h3 id="ws-msg">پیام‌های سرور</h3>
+<table>
+  <tr><th>type</th><th>توضیح</th></tr>
+  <tr><td><code>hello</code></td><td>بعد از اتصال، شامل session و تنظیمات</td></tr>
+  <tr><td><code>tags.snapshot</code></td><td>مقادیر فعلی از tag_current_state</td></tr>
+  <tr><td><code>tag.update</code></td><td>آپدیت یک تگ (حالت event)</td></tr>
+  <tr><td><code>tags.batch</code></td><td>چند آپدیت در یک پیام (حالت batch)</td></tr>
+  <tr><td><code>alarm.event</code></td><td>رویداد آلارم با category</td></tr>
+  <tr><td><code>system.status</code></td><td>وضعیت سیستم</td></tr>
+  <tr><td><code>response</code></td><td>پاسخ به command</td></tr>
+  <tr><td><code>ack / error / pong</code></td><td>پیام‌های کنترلی</td></tr>
+</table>
+
+<pre><span class="c">// نمونه tags.batch</span>
+{ <span class="s">"type"</span>:<span class="s">"tags.batch"</span>, <span class="s">"ts"</span>:<span class="s">"2026-08-11T12:00:00.100Z"</span>,
+  <span class="s">"updates"</span>:[ { <span class="s">"type"</span>:<span class="s">"tag.update"</span>, <span class="s">"tag_id"</span>:<span class="n">1</span>, <span class="s">"value"</span>:<span class="n">23.4</span>, <span class="s">"quality"</span>:<span class="s">"good"</span> } ] }</pre>
+
+<h3 id="cmd">Command Channel (Request/Response)</h3>
+<pre><span class="c">// Request</span>
+{ <span class="s">"type"</span>:<span class="s">"command"</span>, <span class="s">"id"</span>:<span class="s">"req-1"</span>, <span class="s">"op"</span>:<span class="s">"write_tag"</span>, <span class="s">"payload"</span>:{...} }
+<span class="c">// Response</span>
+{ <span class="s">"type"</span>:<span class="s">"response"</span>, <span class="s">"id"</span>:<span class="s">"req-1"</span>, <span class="s">"ok"</span>:<span class="k">true</span>, <span class="s">"data"</span>:{...} }</pre>
+<table>
+  <tr><th>op</th><th>کارکرد</th><th>payload</th></tr>
+  <tr><td><code>write_tag</code></td><td>نوشتن مقدار به تگ</td><td><code>{tag_id, value}</code></td></tr>
+  <tr><td><code>ack_alarm</code></td><td>تأیید آلارم</td><td><code>{alarm_id, user_name}</code></td></tr>
+  <tr><td><code>get_current</code></td><td>مقادیر فعلی چند تگ</td><td><code>{tag_ids:[...]}</code></td></tr>
+  <tr><td><code>reload_drivers</code></td><td>بارگذاری مجدد درایورها</td><td><code>{}</code></td></tr>
+  <tr><td><code>start_driver</code></td><td>start درایور خاص/همه</td><td><code>{driver_id}</code> یا <code>{}</code></td></tr>
+  <tr><td><code>stop_driver</code></td><td>stop درایور خاص/همه</td><td><code>{driver_id}</code> یا <code>{}</code></td></tr>
+  <tr><td><code>list_drivers</code></td><td>لیست و وضعیت درایورها</td><td><code>{}</code></td></tr>
+  <tr><td><code>load_dashboard</code></td><td>لود داشبورد + tag_ids</td><td><code>{dashboard_id}</code></td></tr>
+</table>
+
+<h3 id="rest">REST API Reference</h3>
+<h4>Tags</h4>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>توضیح</th></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/tags</code></td><td>لیست همه تگ‌ها</td></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/tags/{id}</code></td><td>جزئیات یک تگ</td></tr>
+  <tr><td><span class="m post">POST</span></td><td><code>/api/v1/tags</code></td><td>ساخت تگ جدید</td></tr>
+  <tr><td><span class="m put">PUT</span></td><td><code>/api/v1/tags/{id}</code></td><td>ویرایش تگ</td></tr>
+  <tr><td><span class="m del">DEL</span></td><td><code>/api/v1/tags/{id}</code></td><td>حذف تگ</td></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/tags/{id}/current</code></td><td>مقدار فعلی</td></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/tags/{id}/history</code></td><td>تاریخچه (from/to/interval/limit)</td></tr>
+</table>
+
+<h4>Alarms / Drivers / System</h4>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>توضیح</th></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/alarms?limit&offset</code></td><td>لیست آلارم‌ها</td></tr>
+  <tr><td><span class="m post">POST</span></td><td><code>/api/v1/alarms/{id}/ack</code></td><td>تأیید آلارم</td></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/drivers</code></td><td>لیست درایورها</td></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/system/status</code></td><td>وضعیت سیستم (public)</td></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/health</code></td><td>health check (public)</td></tr>
+</table>
+
+<h3 id="dash">Dashboard API (File-based)</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>توضیح</th></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/dashboards</code></td><td>لیست داشبوردها</td></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/dashboards/{id}</code></td><td>metadata داشبورد</td></tr>
+  <tr><td><span class="m post">POST</span></td><td><code>/api/v1/dashboards</code></td><td>ساخت داشبورد</td></tr>
+  <tr><td><span class="m put">PUT</span></td><td><code>/api/v1/dashboards/{id}</code></td><td>ویرایش metadata</td></tr>
+  <tr><td><span class="m del">DEL</span></td><td><code>/api/v1/dashboards/{id}</code></td><td>حذف داشبورد</td></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/dashboards/{id}/content</code></td><td>محتوای فایل</td></tr>
+  <tr><td><span class="m put">PUT</span></td><td><code>/api/v1/dashboards/{id}/content</code></td><td>آپدیت محتوا (با validation)</td></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/dashboards/{id}/resources</code></td><td>لیست منابع</td></tr>
+</table>
+<pre class="tree">dashboards/
+├── 1/
+│   ├── dashboard.qml      <span class="c"># یا .html / .json</span>
+│   └── resources/
+└── 2/
+    └── dashboard.json</pre>
+
+<h3 id="report">Report Generation</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Parameters</th></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/reports/tag-history</code></td><td>tag_ids, from, to, interval, limit, format</td></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/reports/alarms</code></td><td>from, to, severity, state, tag_id, limit, format</td></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/reports/daily-summary</code></td><td>tag_ids, date, format</td></tr>
+</table>
+<p>فرمت: <code class="inline">json</code> یا <code class="inline">csv</code> (با BOM برای Excel). interval: <code class="inline">raw, 1 minute, 5 minutes, 1 hour, 1 day</code></p>
+
+<h3 id="auth">Authentication</h3>
+<div class="note ok">پیش‌فرض <b>غیرفعال</b> است (حالت development).</div>
+<pre><span class="c">-- فعال‌سازی</span>
+<span class="k">UPDATE</span> system_settings <span class="k">SET</span> value_text=<span class="s">'true'</span> <span class="k">WHERE</span> key=<span class="s">'api.auth.enabled'</span>;
+
+<span class="c"># ارسال API Key</span>
+curl http://127.0.0.1:8082/api/v1/tags -H <span class="s">"X-API-Key: dev-key-123"</span>
+curl <span class="s">"http://127.0.0.1:8082/api/v1/tags?api_key=dev-key-123"</span></pre>
+<p>مسیرهای همیشه عمومی: <code class="inline">/api/v1/health</code> و <code class="inline">/api/v1/system/status</code></p>
+
+<!-- ================= 6 TEST ================= -->
+<h2 id="test">۶. راهنمای تست هر بخش</h2>
+
+<div class="testbox" id="t-ws">
+  <div class="t">🔌 تست ۱: اتصال WebSocket + Snapshot</div>
+<pre>wscat -c <span class="s">"ws://127.0.0.1:8081/ws/tags/batch?ids=1,2,3"</span>
+<span class="c">// انتظار: پیام hello سپس tags.snapshot سپس tags.batch</span></pre>
+</div>
+
+<div class="testbox">
+  <div class="t">📡 تست ۲: Subscribe داینامیک</div>
+<pre>&gt; {<span class="s">"op"</span>:<span class="s">"subscribe"</span>,<span class="s">"tags"</span>:[<span class="n">4,5</span>]}
+&lt; {<span class="s">"type"</span>:<span class="s">"ack"</span>,<span class="s">"op"</span>:<span class="s">"subscribe"</span>,...}
+&gt; {<span class="s">"op"</span>:<span class="s">"ping"</span>}
+&lt; {<span class="s">"type"</span>:<span class="s">"pong"</span>,...}</pre>
+</div>
+
+<div class="testbox" id="t-cmd">
+  <div class="t">🎛 تست ۳: Command Channel</div>
+<pre>&gt; {<span class="s">"type"</span>:<span class="s">"command"</span>,<span class="s">"id"</span>:<span class="s">"t1"</span>,<span class="s">"op"</span>:<span class="s">"list_drivers"</span>,<span class="s">"payload"</span>:{}}
+&lt; {...<span class="s">"drivers"</span>:[{<span class="s">"driver_id"</span>:<span class="n">1</span>,<span class="s">"running"</span>:<span class="k">true</span>}...]}
+
+&gt; {<span class="s">"type"</span>:<span class="s">"command"</span>,<span class="s">"id"</span>:<span class="s">"t2"</span>,<span class="s">"op"</span>:<span class="s">"write_tag"</span>,<span class="s">"payload"</span>:{<span class="s">"tag_id"</span>:<span class="n">1002</span>,<span class="s">"value"</span>:<span class="n">55.0</span>}}
+&lt; {<span class="s">"type"</span>:<span class="s">"response"</span>,<span class="s">"id"</span>:<span class="s">"t2"</span>,<span class="s">"ok"</span>:<span class="k">true</span>,...}
+
+&gt; {<span class="s">"type"</span>:<span class="s">"command"</span>,<span class="s">"id"</span>:<span class="s">"t3"</span>,<span class="s">"op"</span>:<span class="s">"stop_driver"</span>,<span class="s">"payload"</span>:{<span class="s">"driver_id"</span>:<span class="n">1</span>}}
+&gt; {<span class="s">"type"</span>:<span class="s">"command"</span>,<span class="s">"id"</span>:<span class="s">"t4"</span>,<span class="s">"op"</span>:<span class="s">"start_driver"</span>,<span class="s">"payload"</span>:{<span class="s">"driver_id"</span>:<span class="n">1</span>}}</pre>
+</div>
+
+<div class="testbox" id="t-rest">
+  <div class="t">🌐 تست ۴: REST — CRUD تگ‌ها (PowerShell)</div>
+<pre><span class="c"># ساخت</span>
+$body = @{ tag_id=<span class="n">9001</span>; tag_name=<span class="s">"Test"</span>; source_type=<span class="s">"simulator"</span>;
+  data_type=<span class="s">"float"</span>; sim_profile=<span class="s">"sine"</span>; driver_id=<span class="n">1</span>; enabled=$true } | ConvertTo-Json
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/tags"</span> -Method Post -Body $body -ContentType <span class="s">"application/json"</span>
+
+<span class="c"># ویرایش</span>
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/tags/9001"</span> -Method Put `
+  -Body (@{ eng_units=<span class="s">"F"</span> } | ConvertTo-Json) -ContentType <span class="s">"application/json"</span>
+
+<span class="c"># خواندن / مقدار فعلی / حذف</span>
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/tags/9001"</span>
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/tags/1/current"</span>
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/tags/9001"</span> -Method Delete</pre>
+</div>
+
+<div class="testbox">
+  <div class="t">📜 تست ۵: History</div>
+<pre>Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/tags/1/history?limit=10"</span>
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/tags/1/history?interval=1 minute"</span></pre>
+</div>
+
+<div class="testbox" id="t-dash">
+  <div class="t">📊 تست ۶: Dashboards</div>
+<pre><span class="c"># ساخت</span>
+$body = @{ name=<span class="s">"Main"</span>; dashboard_type=<span class="s">"simple"</span>; is_public=$true } | ConvertTo-Json
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/dashboards"</span> -Method Post -Body $body -ContentType <span class="s">"application/json"</span>
+
+<span class="c"># خواندن content</span>
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/dashboards/1/content"</span>
+
+<span class="c"># آپدیت content (QML)</span>
+$qml = <span class="s">"import QtQuick 2.15`nRectangle { color:'#1e1e1e' }"</span>
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/dashboards/1/content"</span> -Method Put `
+  -Body (@{ content=$qml } | ConvertTo-Json) -ContentType <span class="s">"application/json"</span></pre>
+</div>
+
+<div class="testbox" id="t-report">
+  <div class="t">📈 تست ۷: Reports</div>
+<pre><span class="c"># JSON</span>
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/reports/tag-history?tag_ids=1,2&format=json"</span>
+
+<span class="c"># دانلود CSV</span>
+Invoke-WebRequest -Uri <span class="s">"http://127.0.0.1:8082/api/v1/reports/tag-history?tag_ids=1,2&format=csv"</span> -OutFile report.csv
+
+<span class="c"># گزارش آلارم / خلاصه روزانه</span>
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/reports/alarms?severity=critical"</span>
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/reports/daily-summary?tag_ids=1,2"</span></pre>
+</div>
+
+<!-- ================= 7 TROUBLE ================= -->
+<h2 id="trouble">۷. عیب‌یابی</h2>
+<table>
+  <tr><th>مشکل</th><th>علت</th><th>راه‌حل</th></tr>
+  <tr><td>خطای <code>connect</code> undeclared</td><td>کلاس از QObject ارث نمی‌برد</td><td>ارث‌بری از QObject + Q_OBJECT</td></tr>
+  <tr><td><code>toInteger</code> not found</td><td>Qt 5.15+</td><td><code>toVariant().toLongLong()</code></td></tr>
+  <tr><td><code>sizeof incomplete type</code></td><td>unique_ptr با forward decl</td><td>include کامل هدر</td></tr>
+  <tr><td>تگ جدید current ندارد</td><td>درایور آن را نمی‌شناسد</td><td>restart یا <code>reload_drivers</code></td></tr>
+  <tr><td>curl در cmd خطا می‌دهد</td><td>single-quote</td><td>PowerShell یا <code>-d @file.json</code></td></tr>
+  <tr><td>داشبورد not found</td><td>ستون config در query</td><td>حذف config، استفاده از dashboard_type</td></tr>
+  <tr><td><code>EXECUTE (</code> syntax error</td><td>prepared statement خراب</td><td>بازنویسی upsertTag با prepare استاندارد</td></tr>
+</table>
+
+<!-- ================= 8 NEXT ================= -->
+<h2 id="next">۸. مراحل بعدی</h2>
+<div class="cards">
+  <div class="card"><b>👤 User Management</b><p>Login/JWT، Role-based access (admin/operator/viewer)</p></div>
+  <div class="card"><b>📦 Template System</b><p>داشبوردهای از پیش تعریف شده با پارامتر</p></div>
+  <div class="card"><b>🔒 SSL/TLS</b><p>HTTPS و WSS برای production</p></div>
+  <div class="card"><b>📄 OpenAPI</b><p>مستندات Swagger</p></div>
+  <div class="card"><b>🔔 Alarm Sync</b><p>اطلاع‌رسانی ack به بقیه client ها</p></div>
+</div>
+
+<footer>Tag Core — SCADA/Historian Core &nbsp;|&nbsp; مستندات کامل: August 2026</footer>
+</main>
+</div>
+</body>
+</html>
