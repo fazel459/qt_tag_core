@@ -43,6 +43,7 @@ public:
     using CommandHandler = std::function<QJsonObject(const QString& op, const QJsonObject& payload)>;
     void setCommandHandler(CommandHandler handler);
 
+    void publishAlarmAck(qint64 alarmId, qint64 tagId, const QString& userName);
 
 signals:
     void clientCountChanged(int count);

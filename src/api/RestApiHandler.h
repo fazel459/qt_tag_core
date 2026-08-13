@@ -10,6 +10,8 @@
 class DbManager;
 class DashboardManager;
 class ReportGenerator;
+class WebSocketHandler;
+class UserManager;
 
 class RestApiHandler : public QObject
 {
@@ -22,12 +24,19 @@ public:
 
     HttpResponse handleRequest(const HttpRequest& request);
     void setAuthenticator(const ApiAuthenticator::Config& config);
+    void setWebSocketHandler(WebSocketHandler* ws);
+
+    void setUserManager(UserManager* um);
 
 private:
     DbManager& m_db;
     ApiAuthenticator m_auth;
     DashboardManager* m_dashboardManager;
     ReportGenerator* m_reportGenerator;
+    WebSocketHandler* m_wsHandler = nullptr;
+
+    UserManager* m_userManager = nullptr;
+
 
     // Tags
     HttpResponse handleGetTags(const HttpRequest& request);
@@ -79,6 +88,17 @@ private:
     QVector<qint64> parseTagIdsParam(const QString& tagIdsStr) const;
     QDateTime parseDateTimeParam(const QString& str, const QDateTime& defaultValue) const;
 
+    HttpResponse handleLogin(const HttpRequest& request);
+    HttpResponse handleLogout(const HttpRequest& request);
+    HttpResponse handleMe(const HttpRequest& request);
+    HttpResponse handleGetUsers(const HttpRequest& request);
+    HttpResponse handleCreateUser(const HttpRequest& request);
+    HttpResponse handleUpdateUser(const HttpRequest& request, qint64 userId);
+    HttpResponse handleDeleteUser(const HttpRequest& request, qint64 userId);
+    HttpResponse handleUserChangePassword(const HttpRequest& request, qint64 userId);
+
+    bool authenticateRequest(const HttpRequest& request, UserDefinition& user);
+    QString extractBearerToken(const HttpRequest& request) const;
 
 };
 

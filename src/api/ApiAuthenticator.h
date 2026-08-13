@@ -24,6 +24,7 @@ public:
     bool authenticate(const HttpRequest& request) const;
     QString extractApiKey(const HttpRequest& request) const;
 
+    bool isValidApiKey(const QString& key) const { return m_config.apiKeys.contains(key); }
 private:
     Config m_config;
 

@@ -16,6 +16,7 @@ SOURCES += \
     src/api/HttpServer.cpp \
     src/api/ReportGenerator.cpp \
     src/api/RestApiHandler.cpp \
+    src/api/UserManager.cpp \
     src/api/WebSocketHandler.cpp \
     src/api/WebSocketServer.cpp \
     src/computed/ComputedTagEngine.cpp \
@@ -47,6 +48,7 @@ HEADERS += \
     src/api/HttpServer.h \
     src/api/ReportGenerator.h \
     src/api/RestApiHandler.h \
+    src/api/UserManager.h \
     src/api/WebSocketHandler.h \
     src/api/WebSocketServer.h \
     src/app/CoreApplication.h \

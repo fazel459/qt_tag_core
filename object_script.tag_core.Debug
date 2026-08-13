@@ -13,6 +13,7 @@ debug/DashboardManager.o
 debug/HttpServer.o
 debug/ReportGenerator.o
 debug/RestApiHandler.o
+debug/UserManager.o
 debug/WebSocketHandler.o
 debug/WebSocketServer.o
 debug/ComputedTagEngine.o
@@ -51,5 +52,6 @@ debug/moc_DashboardManager.o
 debug/moc_HttpServer.o
 debug/moc_ReportGenerator.o
 debug/moc_RestApiHandler.o
+debug/moc_UserManager.o
 debug/moc_WebSocketHandler.o
 debug/moc_WebSocketServer.o

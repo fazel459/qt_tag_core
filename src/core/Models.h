@@ -33,6 +33,18 @@ struct DashboardDefinition {
     QDateTime updatedAt;
 };
 
+struct UserDefinition {
+    qint64 userId = 0;
+    QString username;
+    QString displayName;
+    QString role = "operator";   // admin / operator / viewer
+    bool isActive = true;
+    QString passwordHash;        // داخلی
+    QString salt;                // داخلی
+    QDateTime lastLoginAt;
+    QDateTime createdAt;
+};
+
 struct TagDefinition
 {
     qint64 tagId = 0;

@@ -21,11 +21,14 @@
 #include "api/WebSocketServer.h"
 #include "../api/DashboardManager.h"
 #include "../api/ReportGenerator.h"
+#include "../api/ApiAuthenticator.h"
+#include "../api/UserManager.h"
 
 #include <QObject>
 class WebSocketServer;
 class HttpServer;
 class RestApiHandler;
+
 
 
 class CoreApplication: public QObject
@@ -75,6 +78,7 @@ private:
     std::unique_ptr<ArchiveManager> m_archiveManager;
     std::unique_ptr<DashboardManager> m_dashboardManager;
     std::unique_ptr<ReportGenerator> m_reportGenerator;
+    std::unique_ptr<UserManager> m_userManager;
 };
 
 

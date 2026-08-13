@@ -725,6 +725,21 @@ bool DbManager::migrate()
         CREATE INDEX IF NOT EXISTS idx_dashboards_type ON dashboards(dashboard_type);
         CREATE INDEX IF NOT EXISTS idx_dashboards_is_public ON dashboards(is_public);
         )",
+
+        R"(
+        CREATE TABLE IF NOT EXISTS users (
+            user_id BIGSERIAL PRIMARY KEY,
+            username TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            salt TEXT NOT NULL,
+            display_name TEXT DEFAULT '',
+            role TEXT DEFAULT 'operator',
+            is_active BOOLEAN DEFAULT true,
+            last_login_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+        )",
     };
 
     for (const QString& sql : statements)
@@ -2539,6 +2554,124 @@ bool DbManager::touchDashboard(qint64 dashboardId)
     query.bindValue(":id", dashboardId);
     return query.exec();
 }
+
+int DbManager::userCount()
+{
+    QSqlQuery query(m_db);
+    if (!query.exec("SELECT count(*) FROM users;")) return -1;
+    if (query.next()) return query.value(0).toInt();
+    return -1;
+}
+
+static UserDefinition readUserRow(QSqlQuery& query, bool withSecret)
+{
+    UserDefinition u;
+    u.userId = query.value(0).toLongLong();
+    u.username = query.value(1).toString();
+    if (withSecret) {
+        u.passwordHash = query.value(2).toString();
+        u.salt = query.value(3).toString();
+        u.displayName = query.value(4).toString();
+        u.role = query.value(5).toString();
+        u.isActive = query.value(6).toBool();
+    } else {
+        u.displayName = query.value(2).toString();
+        u.role = query.value(3).toString();
+        u.isActive = query.value(4).toBool();
+    }
+    return u;
+}
+
+UserDefinition DbManager::loadUserByUsername(const QString& username)
+{
+    UserDefinition u;
+    QSqlQuery query(m_db);
+    query.prepare("SELECT user_id, username, password_hash, salt, display_name, role, is_active "
+                  "FROM users WHERE username = :username");
+    query.bindValue(":username", username);
+    if (query.exec() && query.next()) u = readUserRow(query, true);
+    return u;
+}
+
+UserDefinition DbManager::loadUserById(qint64 userId)
+{
+    UserDefinition u;
+    QSqlQuery query(m_db);
+    query.prepare("SELECT user_id, username, password_hash, salt, display_name, role, is_active "
+                  "FROM users WHERE user_id = :id");
+    query.bindValue(":id", userId);
+    if (query.exec() && query.next()) u = readUserRow(query, true);
+    return u;
+}
+
+QVector<UserDefinition> DbManager::loadUsers()
+{
+    QVector<UserDefinition> users;
+    QSqlQuery query(m_db);
+    query.prepare("SELECT user_id, username, display_name, role, is_active FROM users ORDER BY user_id");
+    if (!query.exec()) return users;
+    while (query.next()) users.append(readUserRow(query, false));
+    return users;
+}
+
+qint64 DbManager::insertUserRaw(const QString& username, const QString& passwordHash,
+                                const QString& salt, const QString& displayName, const QString& role)
+{
+    QSqlQuery query(m_db);
+    query.prepare("INSERT INTO users (username, password_hash, salt, display_name, role) "
+                  "VALUES (:username, :hash, :salt, :display, :role) RETURNING user_id");
+    query.bindValue(":username", username);
+    query.bindValue(":hash", passwordHash);
+    query.bindValue(":salt", salt);
+    query.bindValue(":display", displayName);
+    query.bindValue(":role", role);
+    if (!query.exec()) {
+        qWarning() << "Insert user failed:" << query.lastError().text();
+        return -1;
+    }
+    if (query.next()) return query.value(0).toLongLong();
+    return -1;
+}
+
+bool DbManager::updateUser(const UserDefinition& user)
+{
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE users SET display_name = :display, role = :role, is_active = :active, "
+                  "updated_at = now() WHERE user_id = :id");
+    query.bindValue(":display", user.displayName);
+    query.bindValue(":role", user.role);
+    query.bindValue(":active", user.isActive);
+    query.bindValue(":id", user.userId);
+    return query.exec() && query.numRowsAffected() > 0;
+}
+
+bool DbManager::deleteUser(qint64 userId)
+{
+    QSqlQuery query(m_db);
+    query.prepare("DELETE FROM users WHERE user_id = :id");
+    query.bindValue(":id", userId);
+    return query.exec() && query.numRowsAffected() > 0;
+}
+
+bool DbManager::updateUserPassword(qint64 userId, const QString& passwordHash, const QString& salt)
+{
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE users SET password_hash = :hash, salt = :salt, updated_at = now() "
+                  "WHERE user_id = :id");
+    query.bindValue(":hash", passwordHash);
+    query.bindValue(":salt", salt);
+    query.bindValue(":id", userId);
+    return query.exec() && query.numRowsAffected() > 0;
+}
+
+bool DbManager::touchLastLogin(qint64 userId)
+{
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE users SET last_login_at = now() WHERE user_id = :id");
+    query.bindValue(":id", userId);
+    return query.exec();
+}
+
 
 
 

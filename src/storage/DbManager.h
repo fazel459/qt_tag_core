@@ -106,6 +106,19 @@ public:
     bool updateDashboard(const DashboardDefinition& dashboard);
     bool deleteDashboard(qint64 dashboardId);
     bool touchDashboard(qint64 dashboardId);
+
+    int userCount();
+    UserDefinition loadUserByUsername(const QString& username);
+    UserDefinition loadUserById(qint64 userId);
+    QVector<UserDefinition> loadUsers();
+    qint64 insertUserRaw(const QString& username, const QString& passwordHash,
+                         const QString& salt, const QString& displayName, const QString& role);
+    bool updateUser(const UserDefinition& user);
+    bool deleteUser(qint64 userId);
+    bool updateUserPassword(qint64 userId, const QString& passwordHash, const QString& salt);
+    bool touchLastLogin(qint64 userId);
+
+
 private:
     bool migrate();
 

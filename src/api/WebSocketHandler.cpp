@@ -895,6 +895,22 @@ void WebSocketHandler::setCommandHandler(CommandHandler handler)
     m_commandHandler = std::move(handler);
 }
 
+void WebSocketHandler::publishAlarmAck(qint64 alarmId, qint64 tagId, const QString& userName)
+{
+    QJsonObject message;
+    message.insert("type", "alarm.ack");
+    message.insert("alarm_id", alarmId);
+    message.insert("tag_id", tagId);
+    message.insert("user_name", userName);
+    message.insert("ts", currentUtcIso());
+
+    QMetaObject::invokeMethod(this, [this, message]() {
+        broadcastToChannel(QStringLiteral("alarms/all"), message);
+        broadcastToChannel(QStringLiteral("alarms/analog"), message);
+        broadcastToChannel(QStringLiteral("alarms/digital"), message);
+    }, Qt::AutoConnection);
+}
+
 void WebSocketHandler::handleCommandMessage(QWebSocket* socket, const QJsonObject& obj)
 {
     const QString id = obj.value("id").toString();

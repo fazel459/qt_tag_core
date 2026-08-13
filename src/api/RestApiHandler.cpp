@@ -2,6 +2,8 @@
 #include "../storage/DbManager.h"
 #include "../core/Models.h"
 #include "ReportGenerator.h"
+#include "WebSocketHandler.h"
+#include "../api/UserManager.h"
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QDateTime>
@@ -21,11 +23,204 @@ void RestApiHandler::setAuthenticator(const ApiAuthenticator::Config& config)
     qInfo() << "[API] Authenticator enabled:" << config.enabled;
 }
 
+void RestApiHandler::setWebSocketHandler(WebSocketHandler* ws)
+{
+    m_wsHandler = ws;
+}
+
+void RestApiHandler::setUserManager(UserManager* um) { m_userManager = um; }
+
+QString RestApiHandler::extractBearerToken(const HttpRequest& request) const
+{
+    if (request.headers.contains("authorization")) {
+        QString auth = request.headers.value("authorization");
+        if (auth.startsWith("Bearer ", Qt::CaseInsensitive))
+            return auth.mid(7).trimmed();
+    }
+    return request.queryParam("token");
+}
+
+bool RestApiHandler::authenticateRequest(const HttpRequest& request, UserDefinition& user)
+{
+    // 1) API Key → نقش admin
+    const QString apiKey = m_auth.extractApiKey(request);
+    if (!apiKey.isEmpty() && m_auth.isValidApiKey(apiKey)) {
+        user.role = "admin";
+        user.username = "api-key";
+        return true;
+    }
+    // 2) Bearer token
+    const QString token = extractBearerToken(request);
+    if (!token.isEmpty() && m_userManager && m_userManager->validateToken(token, user))
+        return true;
+    return false;
+}
+
+HttpResponse RestApiHandler::handleLogin(const HttpRequest& request)
+{
+    if (!m_userManager) return HttpResponse::serverError("UserManager not initialized");
+    const QString username = request.jsonBody.value("username").toString();
+    const QString password = request.jsonBody.value("password").toString();
+    if (username.isEmpty() || password.isEmpty())
+        return HttpResponse::badRequest("username and password are required");
+
+    QJsonObject res = m_userManager->login(username, password);
+    if (!res.value("ok").toBool()) {
+        HttpResponse r; r.statusCode = 401;
+        r.errorMessage = res.value("error").toString();
+        return r;
+    }
+    return HttpResponse::ok(res.value("data").toObject());
+}
+
+HttpResponse RestApiHandler::handleLogout(const HttpRequest& request)
+{
+    if (!m_userManager) return HttpResponse::serverError("UserManager not initialized");
+    const QString token = extractBearerToken(request);
+    QJsonObject result;
+    result.insert("logged_out", m_userManager->logout(token));
+    return HttpResponse::ok(result);
+}
+
+HttpResponse RestApiHandler::handleMe(const HttpRequest& request)
+{
+    if (!m_userManager) return HttpResponse::serverError("UserManager not initialized");
+    const QString token = extractBearerToken(request);
+    QJsonObject res = m_userManager->me(token);
+    if (!res.value("ok").toBool()) {
+        HttpResponse r; r.statusCode = 401;
+        r.errorMessage = res.value("error").toString();
+        return r;
+    }
+    return HttpResponse::ok(res.value("data").toObject());
+}
+
+HttpResponse RestApiHandler::handleGetUsers(const HttpRequest& request)
+{
+    Q_UNUSED(request)
+    QJsonObject result;
+    QJsonArray arr;
+    const QVector<UserDefinition> users = m_db.loadUsers();
+    for (const UserDefinition& u : users) {
+        QJsonObject o;
+        o.insert("user_id", u.userId);
+        o.insert("username", u.username);
+        o.insert("display_name", u.displayName);
+        o.insert("role", u.role);
+        o.insert("is_active", u.isActive);
+        arr.append(o);
+    }
+    result.insert("users", arr);
+    result.insert("count", arr.size());
+    return HttpResponse::ok(result);
+}
+
+HttpResponse RestApiHandler::handleCreateUser(const HttpRequest& request)
+{
+    if (!m_userManager) return HttpResponse::serverError("UserManager not initialized");
+    const QString username = request.jsonBody.value("username").toString();
+    const QString password = request.jsonBody.value("password").toString();
+    if (username.isEmpty() || password.isEmpty())
+        return HttpResponse::badRequest("username and password are required");
+
+    QString role = request.jsonBody.value("role").toString("operator");
+    QStringList validRoles; validRoles << "admin" << "operator" << "viewer";
+    if (!validRoles.contains(role))
+        return HttpResponse::badRequest("Invalid role");
+
+    if (m_db.loadUserByUsername(username).userId != 0)
+        return HttpResponse::badRequest("Username already exists");
+
+    const QString salt = UserManager::generateSalt();
+    const QString hash = UserManager::hashPassword(password, salt);
+    const qint64 newId = m_db.insertUserRaw(username, hash, salt,
+        request.jsonBody.value("display_name").toString(), role);
+
+    if (newId > 0) {
+        QJsonObject result;
+        result.insert("created", true);
+        result.insert("user_id", newId);
+        return HttpResponse::created(result);
+    }
+    return HttpResponse::serverError("Failed to create user");
+}
+
+HttpResponse RestApiHandler::handleUpdateUser(const HttpRequest& request, qint64 userId)
+{
+    UserDefinition user = m_db.loadUserById(userId);
+    if (user.userId == 0) return HttpResponse::notFound("User not found");
+
+    if (request.jsonBody.contains("display_name"))
+        user.displayName = request.jsonBody.value("display_name").toString();
+    if (request.jsonBody.contains("role")) {
+        QString role = request.jsonBody.value("role").toString();
+        QStringList validRoles; validRoles << "admin" << "operator" << "viewer";
+        if (!validRoles.contains(role)) return HttpResponse::badRequest("Invalid role");
+        user.role = role;
+    }
+    if (request.jsonBody.contains("is_active"))
+        user.isActive = request.jsonBody.value("is_active").toBool();
+
+    if (m_db.updateUser(user)) {
+        QJsonObject result;
+        result.insert("updated", true);
+        result.insert("user_id", userId);
+        return HttpResponse::ok(result);
+    }
+    return HttpResponse::serverError("Failed to update user");
+}
+
+HttpResponse RestApiHandler::handleDeleteUser(const HttpRequest& request, qint64 userId)
+{
+    Q_UNUSED(request)
+    if (m_db.deleteUser(userId)) {
+        QJsonObject result;
+        result.insert("deleted", true);
+        result.insert("user_id", userId);
+        return HttpResponse::ok(result);
+    }
+    return HttpResponse::notFound("User not found or delete failed");
+}
+
+HttpResponse RestApiHandler::handleUserChangePassword(const HttpRequest& request, qint64 userId)
+{
+    if (!m_userManager) return HttpResponse::serverError("UserManager not initialized");
+    const QString newPassword = request.jsonBody.value("new_password").toString();
+    if (newPassword.isEmpty()) return HttpResponse::badRequest("new_password is required");
+
+    UserDefinition user = m_db.loadUserById(userId);
+    if (user.userId == 0) return HttpResponse::notFound("User not found");
+
+    const QString salt = UserManager::generateSalt();
+    const QString hash = UserManager::hashPassword(newPassword, salt);
+    if (m_db.updateUserPassword(userId, hash, salt)) {
+        QJsonObject result;
+        result.insert("password_changed", true);
+        return HttpResponse::ok(result);
+    }
+    return HttpResponse::serverError("Failed to change password");
+}
+
+
 HttpResponse RestApiHandler::handleRequest(const HttpRequest& request)
 {
     // OPTIONS همیشه قبول است (برای CORS preflight)
     if (request.method == "OPTIONS") {
         return HttpResponse::ok();
+    }
+    // ✅ احراز هویت + نقش
+    if (!m_auth.isPublicPath(request.path) && m_auth.isEnabled()) {
+        UserDefinition user;
+        if (!authenticateRequest(request, user)) {
+            HttpResponse r; r.statusCode = 401;
+            r.errorMessage = "Unauthorized: invalid or missing credentials";
+            return r;
+        }
+        if (m_userManager && !m_userManager->can(user, request.method, request.path)) {
+            HttpResponse r; r.statusCode = 403;
+            r.errorMessage = "Forbidden: insufficient role";
+            return r;
+        }
     }
 
     // بررسی احراز هویت
@@ -204,6 +399,35 @@ HttpResponse RestApiHandler::handleRequest(const HttpRequest& request)
         return HttpResponse::badRequest("Method not allowed");
     }
 
+    // Auth
+    if (request.path == "/api/v1/auth/login" && request.method == "POST") return handleLogin(request);
+    if (request.path == "/api/v1/auth/logout" && request.method == "POST") return handleLogout(request);
+    if (request.path == "/api/v1/auth/me" && request.method == "GET") return handleMe(request);
+
+    // Users
+    if (request.path == "/api/v1/users") {
+        if (request.method == "GET") return handleGetUsers(request);
+        if (request.method == "POST") return handleCreateUser(request);
+        return HttpResponse::badRequest("Method not allowed");
+    }
+    if (request.path.startsWith("/api/v1/users/")) {
+        if (request.path.endsWith("/password")) {
+            qint64 id = 0;
+            if (parseIdFromPath(request.path, id, "/api/v1/users/", "/password")) {
+                if (request.method == "PUT") return handleUserChangePassword(request, id);
+                return HttpResponse::badRequest("Method not allowed");
+            }
+            return HttpResponse::badRequest("Invalid user id");
+        }
+        qint64 id = 0;
+        if (parseIdFromPath(request.path, id, "/api/v1/users/")) {
+            if (request.method == "GET") { /* می‌تواند جزئیات برگرداند */ }
+            if (request.method == "PUT") return handleUpdateUser(request, id);
+            if (request.method == "DELETE") return handleDeleteUser(request, id);
+            return HttpResponse::badRequest("Method not allowed");
+        }
+        return HttpResponse::badRequest("Invalid user id");
+    }
     return HttpResponse::notFound("Endpoint not found: " + path);
 }
 
@@ -440,6 +664,9 @@ HttpResponse RestApiHandler::handleAckAlarm(const HttpRequest& request, qint64 a
     }
 
     if (m_db.acknowledgeAlarm(alarmId, userName)) {
+        if (m_wsHandler) {
+            m_wsHandler->publishAlarmAck(alarmId, 0, userName);
+        }
         QJsonObject result;
         result.insert("alarm_id", alarmId);
         result.insert("acknowledged", true);

@@ -4,6 +4,7 @@
 #include "api/HttpServer.h"
 #include "api/RestApiHandler.h"
 #include "api/ReportGenerator.h"
+#include "api/UserManager.h"
 #include <QCoreApplication>
 #include <QDebug>
 #include <QFile>
@@ -334,6 +335,9 @@ void CoreApplication::startApiLayer()
         }
     });
 
+    m_userManager = std::make_unique<UserManager>(m_db);
+    m_userManager->ensureDefaultAdmin();
+
     // ✅ Command Handler
     setupCommandHandler();
 
@@ -365,6 +369,10 @@ void CoreApplication::startApiLayer()
         return;
     }
 
+    m_restApiHandler->setWebSocketHandler(m_wsServer->handler());
+
+    m_restApiHandler->setUserManager(m_userManager.get());
+    m_restApiHandler->setWebSocketHandler(m_wsServer->handler());
 
     qInfo() << "[API] API Layer started";
 }
@@ -575,6 +583,13 @@ QJsonObject CoreApplication::handleAckAlarmCommand(const QJsonObject& payload)
     }
 
     if (m_db.acknowledgeAlarm(alarmId, userName)) {
+
+        // ✅ Alarm Sync: اطلاع به همه client ها
+        if (m_wsServer && m_wsServer->handler()) {
+            m_wsServer->handler()->publishAlarmAck(alarmId, 0, userName);
+        }
+
+
         result.insert("ok", true);
         QJsonObject data;
         data.insert("alarm_id", alarmId);

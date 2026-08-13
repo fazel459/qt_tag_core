@@ -5,7 +5,8 @@ ApiAuthenticator::ApiAuthenticator()
     // مسیرهایی که همیشه بدون auth هستند
     m_config.publicPaths << QStringLiteral("/api/v1/health")
                          << QStringLiteral("/health")
-                         << QStringLiteral("/api/v1/system/status");
+                         << QStringLiteral("/api/v1/system/status")
+                         << QStringLiteral("/api/v1/auth/login");
 }
 
 void ApiAuthenticator::setConfig(const Config& config)
