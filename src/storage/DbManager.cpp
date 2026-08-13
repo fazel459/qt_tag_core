@@ -1304,45 +1304,40 @@ void DbManager::seedDefaults()
 {
     QSqlQuery q(m_db);
 
-    // ===== درایورهای پیش‌فرض =====
-    if (!q.exec(R"(
-        INSERT INTO drivers (driver_id, name, type, connection_config, polling_interval_ms, enabled) VALUES
-        (1, 'Simulator',  'simulator',  '{}', 1000, true),
-        (2, 'Modbus TCP', 'modbus_tcp',
-         '{"host":"127.0.0.1","port":502,"default_unit_id":1,"inter_request_delay_ms":50,"debug":false}',
-         1000, false),
-        (3, 'Modbus RTU', 'modbus_rtu',
-         '{"port":"COM1","baud_rate":9600,"data_bits":8,"stop_bits":1,"parity":"none","default_unit_id":1}',
-         1000, false),
-        (4, 'OPC UA', 'opc_ua',
-         '{"endpoint":"opc.tcp://127.0.0.1:4840","iterate_ms":100}',
-         1000, false)
-        ON CONFLICT DO NOTHING
-    )")) {
-        qWarning() << "Seed drivers failed:" << q.lastError().text();
-    }
+    // درایورها فقط اگر نوعشان وجود نداشته باشد
+    q.exec(R"(
+        INSERT INTO drivers (name, type, connection_config, polling_interval_ms, enabled)
+        SELECT 'Simulator', 'simulator', '{}', 1000, true
+        WHERE NOT EXISTS (SELECT 1 FROM drivers WHERE type='simulator')
+    )");
+    q.exec(R"(
+        INSERT INTO drivers (name, type, connection_config, polling_interval_ms, enabled)
+        SELECT 'Modbus TCP', 'modbus_tcp',
+               '{"host":"127.0.0.1","port":502,"default_unit_id":1,"inter_request_delay_ms":50}',
+               1000, false
+        WHERE NOT EXISTS (SELECT 1 FROM drivers WHERE type='modbus_tcp')
+    )");
+    q.exec(R"(
+        INSERT INTO drivers (name, type, connection_config, polling_interval_ms, enabled)
+        SELECT 'OPC UA', 'opc_ua',
+               '{"endpoint":"opc.tcp://127.0.0.1:4840","iterate_ms":100}',
+               1000, false
+        WHERE NOT EXISTS (SELECT 1 FROM drivers WHERE type='opc_ua')
+    )");
 
-    // ===== تگ‌های نمونه =====
-    if (!q.exec(R"(
+    // تگ‌های نمونه با lookup نوع درایور
+    q.exec(R"(
         INSERT INTO tags
         (tag_id, tag_name, source_type, data_type, eng_units,
          raw_min, raw_max, eng_min, eng_max, scaling_type,
          scaling_slope, scaling_offset, deadband, sim_profile,
          driver_id, address_config, enabled)
-        VALUES
-        (9001, 'SIM_Sine', 'simulator', 'float', 'C',
-         0, 100, 0, 100, 'linear', 1, 0, 0.1, 'sine',
-         1, '{}', true),
-        (9002, 'MODBUS_Card0_S0', 'real_driver', 'uint16', '',
-         0, 4095, 0, 100, 'linear', 1, 0, 0, '',
-         2, '{"card_index":0,"sensor_index":0,"data_type":"uint16"}', false),
-        (9003, 'OPC_Temperature', 'real_driver', 'float', 'C',
-         0, 100, 0, 100, 'linear', 1, 0, 0, '',
-         4, '{"node_id":"ns=2;s=Temperature"}', false)
+        SELECT 9003, 'OPC_Temperature', 'real_driver', 'float', 'C',
+               0, 100, 0, 100, 'linear', 1, 0, 0, '',
+               d.driver_id, '{"node_id":"ns=2;s=Temperature"}', false
+        FROM drivers d WHERE d.type = 'opc_ua'
         ON CONFLICT DO NOTHING
-    )")) {
-        qWarning() << "Seed tags failed:" << q.lastError().text();
-    }
+    )");
 
     qInfo() << "DbManager: default seeds applied (idempotent)";
 }

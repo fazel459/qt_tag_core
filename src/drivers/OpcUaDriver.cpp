@@ -148,11 +148,14 @@ void OpcUaDriver::onIterateTimer()
 
     // ساخت subscription یک‌بار
     if (!m_subscriptionTried) {
-        m_subscriptionTried = true;
-        setupSubscription();
-        if (m_usePolling)
-            m_pollTimer.start();
-    }
+            qInfo() << "OpcUaDriver: attempting subscription...";
+            m_subscriptionTried = true;
+            setupSubscription();
+            if (m_usePolling) {
+                qInfo() << "OpcUaDriver: switching to polling mode";
+                m_pollTimer.start();
+            }
+        }
 
     // پردازش رویدادهای open62541 (غیرمسدودکننده)
     UA_Client_run_iterate(m_client, 0);
@@ -172,17 +175,22 @@ void OpcUaDriver::setupSubscription()
     UA_CreateSubscriptionRequest req = UA_CreateSubscriptionRequest_default();
     req.requestedPublishingInterval = 250.0;
 
+    qInfo() << "OpcUaDriver: creating subscription...";
+
     UA_CreateSubscriptionResponse resp =
         UA_Client_Subscriptions_create(m_client, req, this, nullptr, nullptr);
 
     if (resp.responseHeader.serviceResult != UA_STATUSCODE_GOOD) {
-        qWarning() << "OpcUaDriver: subscription not supported -> polling mode";
+        qWarning() << "OpcUaDriver: subscription failed:"
+                   << UA_StatusCode_name(resp.responseHeader.serviceResult)
+                   << "-> polling mode";
         m_usePolling = true;
         return;
     }
 
     m_subscriptionId = resp.subscriptionId;
     m_subscriptionReady = true;
+    qInfo() << "OpcUaDriver: subscription created, id=" << m_subscriptionId;
     addMonitoredItems();
 }
 
@@ -191,6 +199,9 @@ void OpcUaDriver::addMonitoredItems()
     for (auto it = m_nodeIds.constBegin(); it != m_nodeIds.constEnd(); ++it) {
         const qint64 tagId = it.key();
         UA_NodeId nodeId = parseNodeId(it.value());
+
+        qInfo() << "OpcUaDriver: monitoring tag" << tagId
+                << "node=" << it.value();
 
         UA_MonitoredItemCreateRequest monRequest = UA_MonitoredItemCreateRequest_default(nodeId);
         monRequest.requestedParameters.samplingInterval = 250.0;
@@ -203,6 +214,8 @@ void OpcUaDriver::addMonitoredItems()
         if (result.statusCode != UA_STATUSCODE_GOOD) {
             qWarning() << "OpcUaDriver: monitor failed for tag:" << tagId
                        << UA_StatusCode_name(result.statusCode);
+        } else {
+            qInfo() << "OpcUaDriver: monitor created for tag" << tagId;
         }
 
         UA_NodeId_clear(&nodeId);
@@ -217,16 +230,23 @@ void OpcUaDriver::onDataChange(UA_Client*, UA_UInt32, void* subContext,
 
     const qint64 tagId = reinterpret_cast<qint64>(monContext);
 
+    // ✅ لاگ debug
+//    qInfo() << "OpcUaDriver: data change for tag" << tagId;
+
     if (!value->hasValue) {
+        qWarning() << "OpcUaDriver: tag" << tagId << "has no value";
         self->publishBad(tagId);
         return;
     }
 
     const double v = self->variantToDouble(value->value);
-    if (std::isnan(v))
+    if (std::isnan(v)) {
+        qWarning() << "OpcUaDriver: tag" << tagId << "variant decode failed";
         self->publishBad(tagId);
-    else
+    } else {
+        qInfo() << "OpcUaDriver: tag" << tagId << "value=" << v;
         self->publishGood(tagId, v);
+    }
 }
 
 void OpcUaDriver::onPollTimer()
