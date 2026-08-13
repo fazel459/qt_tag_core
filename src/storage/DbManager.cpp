@@ -9,6 +9,16 @@
 namespace
 {
 
+static bool execSql(QSqlDatabase& db, const QString& sql, const char* what)
+{
+    QSqlQuery q(db);
+    if (!q.exec(sql)) {
+        qWarning() << "Migration failed:" << what << "-" << q.lastError().text();
+        return false;
+    }
+    return true;
+}
+
 QVariant field(const QSqlQuery& query, const QString& name)
 {
     const int index = query.record().indexOf(name);
@@ -181,6 +191,9 @@ bool DbManager::initialize(const AppConfig& cfg)
         qCritical() << "Database migration failed";
         return false;
     }
+
+    migrateApiTables();   // ✅ جدول‌های API
+    seedDefaults();       // ✅ داده‌های اولیه
 
     qInfo() << "Connected to database:" << cfg.dbName;
     return true;
@@ -1285,6 +1298,100 @@ QString DbManager::sourceToString(SourceKind source)
     }
 
     return "unknown";
+}
+
+void DbManager::seedDefaults()
+{
+    QSqlQuery q(m_db);
+
+    // ===== درایورهای پیش‌فرض =====
+    if (!q.exec(R"(
+        INSERT INTO drivers (driver_id, name, type, connection_config, polling_interval_ms, enabled) VALUES
+        (1, 'Simulator',  'simulator',  '{}', 1000, true),
+        (2, 'Modbus TCP', 'modbus_tcp',
+         '{"host":"127.0.0.1","port":502,"default_unit_id":1,"inter_request_delay_ms":50,"debug":false}',
+         1000, false),
+        (3, 'Modbus RTU', 'modbus_rtu',
+         '{"port":"COM1","baud_rate":9600,"data_bits":8,"stop_bits":1,"parity":"none","default_unit_id":1}',
+         1000, false),
+        (4, 'OPC UA', 'opc_ua',
+         '{"endpoint":"opc.tcp://127.0.0.1:4840","iterate_ms":100}',
+         1000, false)
+        ON CONFLICT DO NOTHING
+    )")) {
+        qWarning() << "Seed drivers failed:" << q.lastError().text();
+    }
+
+    // ===== تگ‌های نمونه =====
+    if (!q.exec(R"(
+        INSERT INTO tags
+        (tag_id, tag_name, source_type, data_type, eng_units,
+         raw_min, raw_max, eng_min, eng_max, scaling_type,
+         scaling_slope, scaling_offset, deadband, sim_profile,
+         driver_id, address_config, enabled)
+        VALUES
+        (9001, 'SIM_Sine', 'simulator', 'float', 'C',
+         0, 100, 0, 100, 'linear', 1, 0, 0.1, 'sine',
+         1, '{}', true),
+        (9002, 'MODBUS_Card0_S0', 'real_driver', 'uint16', '',
+         0, 4095, 0, 100, 'linear', 1, 0, 0, '',
+         2, '{"card_index":0,"sensor_index":0,"data_type":"uint16"}', false),
+        (9003, 'OPC_Temperature', 'real_driver', 'float', 'C',
+         0, 100, 0, 100, 'linear', 1, 0, 0, '',
+         4, '{"node_id":"ns=2;s=Temperature"}', false)
+        ON CONFLICT DO NOTHING
+    )")) {
+        qWarning() << "Seed tags failed:" << q.lastError().text();
+    }
+
+    qInfo() << "DbManager: default seeds applied (idempotent)";
+}
+
+bool DbManager::migrateApiTables()
+{
+    bool ok = true;
+
+    ok &= execSql(m_db, R"(
+        CREATE TABLE IF NOT EXISTS dashboards (
+            dashboard_id BIGSERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            owner TEXT DEFAULT 'system',
+            dashboard_type TEXT DEFAULT 'simple',
+            is_public BOOLEAN DEFAULT true,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        )
+    )", "dashboards");
+
+    ok &= execSql(m_db, R"(
+        CREATE INDEX IF NOT EXISTS idx_dashboards_owner
+        ON dashboards(owner)
+    )", "idx_dashboards_owner");
+
+    ok &= execSql(m_db, R"(
+        CREATE TABLE IF NOT EXISTS users (
+            user_id BIGSERIAL PRIMARY KEY,
+            username TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            salt TEXT NOT NULL,
+            display_name TEXT DEFAULT '',
+            role TEXT DEFAULT 'operator',
+            is_active BOOLEAN DEFAULT true,
+            last_login_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        )
+    )", "users");
+
+    ok &= execSql(m_db, R"(
+        INSERT INTO system_settings (key, value_text) VALUES
+        ('api.auth.enabled', 'false'),
+        ('api.auth.keys', 'dev-key-123')
+        ON CONFLICT (key) DO NOTHING
+    )", "auth settings");
+
+    return ok;
 }
 
 int DbManager::countTags()

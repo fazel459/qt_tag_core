@@ -23,6 +23,7 @@ debug/ModbusCardManager.o
 debug/ModbusRtuDriver.o
 debug/ModbusTcpDriver.o
 debug/MqttDriver.o
+debug/OpcUaDriver.o
 debug/FilterProcessor.o
 debug/SoftwareFilterFactory.o
 debug/main.o
@@ -38,6 +39,7 @@ debug/SimulatorDriver.o
 debug/RuleEngine.o
 debug/HistorianManager.o
 debug/StorageExceptionFilter.o
+debug/open62541.o
 debug/moc_qmqtt_client.o
 debug/moc_qmqtt_network_p.o
 debug/moc_qmqtt_networkinterface.o
@@ -55,3 +57,4 @@ debug/moc_RestApiHandler.o
 debug/moc_UserManager.o
 debug/moc_WebSocketHandler.o
 debug/moc_WebSocketServer.o
+debug/moc_OpcUaDriver.o

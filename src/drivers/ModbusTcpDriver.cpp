@@ -24,6 +24,7 @@ ModbusTcpDriver::ModbusTcpDriver(
     , m_tags(tags)
     , m_config(config)
 {
+    m_debug = false;
     m_socket.setParent(this);
 
     m_pollTimer.setParent(this);
@@ -62,7 +63,7 @@ ModbusTcpDriver::ModbusTcpDriver(
         m_port = connectionObj.value("port").toInt(502);
         m_timeoutMs = connectionObj.value("timeout_ms").toInt(1000);
         m_defaultUnitId = connectionObj.value("default_unit_id").toInt(1);
-        m_debug = connectionObj.value("debug").toBool(false);
+
         m_interRequestDelayMs = connectionObj.value("inter_request_delay_ms").toInt(50);
     }
 
@@ -125,28 +126,36 @@ ModbusTcpDriver::ModbusTcpDriver(
 ModbusTcpDriver::~ModbusTcpDriver()
 {
     stop();
+    delete m_cardManager;
+    m_cardManager = nullptr;
 }
 
 bool ModbusTcpDriver::start()
 {
+    m_stopped = false;
     connectToDevice();
-
     m_pollTimer.start();
     m_timeoutTimer.start();
 
+    if(m_debug)
+        qDebug()<<"on start";
     return true;
 }
 
 void ModbusTcpDriver::stop()
 {
+    m_stopped = true;                  // ✅
     m_pollTimer.stop();
     m_timeoutTimer.stop();
     m_socket.disconnectFromHost();
     m_pollQueue.clear();
     m_cardPollQueue.clear();
-    m_cardCycleActive = false;
+    m_pollingCards = false;
     m_waitingResponse = false;
     m_pending.valid = false;
+    if(m_debug)
+    qDebug()<<"On Stop";
+
 }
 
 bool ModbusTcpDriver::isConnected() const
@@ -404,32 +413,45 @@ void ModbusTcpDriver::onConnected()
 
 void ModbusTcpDriver::onDisconnected()
 {
+    if(m_debug)
+     qDebug()<<"On Disconnect";
+
     if (m_waitingResponse)
     {
-        publishBad(m_pending.tagId);
+        if (m_currentCard.valid)
+        {
+            for (const SensorInfo& s : m_currentCard.sensors)
+                publishBad(s.tagId);
+            m_currentCard.valid = false;
+        }
+        else
+        {
+            publishBad(m_pending.tagId);
+        }
     }
 
     m_waitingResponse = false;
     m_pending.valid = false;
-
     m_readBuffer.clear();
+    if (m_stopped) return;             // ✅ بعد از stop عمدی، reconnect ممنوع
 
     if (m_reconnectScheduled)
     {
         return;
     }
-
     m_reconnectScheduled = true;
-
-    QTimer::singleShot(3000,this, [this]()
-    {
+    QTimer::singleShot(3000, this, [this]() {   // ✅ با context
         m_reconnectScheduled = false;
-        connectToDevice();
+        if (!m_stopped) connectToDevice();
     });
 }
 
 void ModbusTcpDriver::onReadyRead()
 {
+    if(m_debug)
+        qDebug()<<"onReady";
+
+
     m_readBuffer.append(m_socket.readAll());
 
     if (m_debug)
@@ -552,12 +574,12 @@ void ModbusTcpDriver::sendCardReadRequest(const SensorCard& card)
     m_pending.valid = true;
 
     m_waitingResponse = true;
-
-//    qInfo() << "ModbusTcpDriver: card read request:"
-//            << "card=" << card.cardIndex
-//            << "startAddress=" << card.startAddress
-//            << "totalRegisters=" << card.totalRegisters
-//            << "sensors=" << card.sensors.size();
+    if (m_debug)
+        qInfo() << "ModbusTcpDriver: card read request:"
+                << "card=" << card.cardIndex
+                << "startAddress=" << card.startAddress
+                << "totalRegisters=" << card.totalRegisters
+                << "sensors=" << card.sensors.size();
 }
 
 void ModbusTcpDriver::processCardResponse(const QByteArray& registers, const SensorCard& card)

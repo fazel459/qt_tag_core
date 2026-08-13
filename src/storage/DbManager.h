@@ -123,6 +123,7 @@ private:
     bool migrate();
 
     static QString sourceToString(SourceKind source);
-
+    bool migrateApiTables();   // ✅ جدول‌های لایه API
+    void seedDefaults();       // ✅ داده‌های اولیه (idempotent)
     QSqlDatabase m_db;
 };

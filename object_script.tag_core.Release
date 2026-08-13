@@ -23,6 +23,7 @@ release/ModbusCardManager.o
 release/ModbusRtuDriver.o
 release/ModbusTcpDriver.o
 release/MqttDriver.o
+release/OpcUaDriver.o
 release/FilterProcessor.o
 release/SoftwareFilterFactory.o
 release/main.o
@@ -38,6 +39,7 @@ release/SimulatorDriver.o
 release/RuleEngine.o
 release/HistorianManager.o
 release/StorageExceptionFilter.o
+release/open62541.o
 release/moc_qmqtt_client.o
 release/moc_qmqtt_network_p.o
 release/moc_qmqtt_networkinterface.o
@@ -55,3 +57,4 @@ release/moc_RestApiHandler.o
 release/moc_UserManager.o
 release/moc_WebSocketHandler.o
 release/moc_WebSocketServer.o
+release/moc_OpcUaDriver.o

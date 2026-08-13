@@ -5,6 +5,7 @@
 #include "ModbusTcpDriver.h"
 #include "SimulatorDriverAdapter.h"
 #include "MqttDriver.h"
+#include "OpcUaDriver.h"
 
 ITagDriver* DriverFactory::create(
     const DriverDefinition& driver,
@@ -39,6 +40,9 @@ ITagDriver* DriverFactory::create(
         return new MqttDriver(bus, driver, tags, config);
     }
 
+    if (driver.type == "opc_ua") {
+        return new OpcUaDriver(bus, driver, tags, config);
+    }
 
         qWarning() << "Unknown driver type:" << driver.type;
     return nullptr;

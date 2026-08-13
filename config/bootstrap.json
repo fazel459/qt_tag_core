@@ -7,6 +7,7 @@
     "database": "tagsdb",
     "username": "postgres",
     "password": "459"
+	"debug" : true
   },
 
   "bootstrap": {

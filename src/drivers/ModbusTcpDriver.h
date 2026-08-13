@@ -44,6 +44,7 @@ public:
 
 
     bool m_cardCycleActive = false;
+    bool m_stopped = true;
 private:
     void connectToDevice();
 
@@ -116,7 +117,7 @@ private:
     int m_timeoutMs = 1000;
     int m_defaultUnitId = 1;
 
-    bool m_debug = false;
+    bool m_debug = true;
     bool m_reconnectScheduled = false;
     int m_interRequestDelayMs = 50;
 };

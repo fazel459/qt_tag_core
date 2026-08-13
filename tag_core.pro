@@ -8,6 +8,7 @@ TARGET = tag_core
 TEMPLATE = app
 
 INCLUDEPATH += src
+INCLUDEPATH += 3rdparty/open62541
 include(src/qmqtt/qmqtt.pri)
 
 SOURCES += \
@@ -26,6 +27,7 @@ SOURCES += \
     src/drivers/ModbusRtuDriver.cpp \
     src/drivers/ModbusTcpDriver.cpp \
     src/drivers/MqttDriver.cpp \
+    src/drivers/OpcUaDriver.cpp \
     src/filters/FilterProcessor.cpp \
     src/filters/SoftwareFilterFactory.cpp \
     src/main.cpp \
@@ -41,6 +43,8 @@ SOURCES += \
     src/rules/RuleEngine.cpp \
     src/storage/HistorianManager.cpp \
     src/storage/StorageExceptionFilter.cpp
+
+SOURCES += 3rdparty/open62541/open62541.c
 
 HEADERS += \
     src/api/ApiAuthenticator.h \
@@ -64,6 +68,7 @@ HEADERS += \
     src/drivers/ModbusTcpDriver.h \
     src/drivers/ModbusTypes.h \
     src/drivers/MqttDriver.h \
+    src/drivers/OpcUaDriver.h \
     src/drivers/SimulatorDriverAdapter.h \
     src/filters/FilterProcessor.h \
     src/filters/ISoftwareFilter.h \
@@ -84,4 +89,5 @@ HEADERS += \
     src/scaling/ScalingEngine.h \
     src/drivers/SimulatorDriver.h \
     src/rules/RuleEngine.h
-	
+
+LIBS += -lws2_32
