@@ -14,6 +14,7 @@ SOURCES += \
     src/api/ApiAuthenticator.cpp \
     src/api/DashboardManager.cpp \
     src/api/HttpServer.cpp \
+    src/api/ReportGenerator.cpp \
     src/api/RestApiHandler.cpp \
     src/api/WebSocketHandler.cpp \
     src/api/WebSocketServer.cpp \
@@ -44,6 +45,7 @@ HEADERS += \
     src/api/ApiAuthenticator.h \
     src/api/DashboardManager.h \
     src/api/HttpServer.h \
+    src/api/ReportGenerator.h \
     src/api/RestApiHandler.h \
     src/api/WebSocketHandler.h \
     src/api/WebSocketServer.h \

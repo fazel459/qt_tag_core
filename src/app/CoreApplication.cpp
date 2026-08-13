@@ -3,6 +3,7 @@
 #include "api/WebSocketHandler.h"
 #include "api/HttpServer.h"
 #include "api/RestApiHandler.h"
+#include "api/ReportGenerator.h"
 #include <QCoreApplication>
 #include <QDebug>
 #include <QFile>
@@ -281,6 +282,8 @@ bool CoreApplication::initialize()
         maxArchiveSizeBytes,
         archiveCheckIntervalMs
     );
+
+    m_reportGenerator = std::make_unique<ReportGenerator>(m_db);
     startApiLayer();
     return true;
 }
@@ -336,7 +339,8 @@ void CoreApplication::startApiLayer()
 
     // ✅ REST API Server
     m_httpServer = new HttpServer(this);
-    m_restApiHandler = new RestApiHandler(m_db, m_dashboardManager.get(), this);
+    m_restApiHandler = new RestApiHandler(m_db, m_dashboardManager.get(),
+                                          m_reportGenerator.get(), this);
     configureApiAuth();
 
     m_httpServer->setRequestHandler(

@@ -20,6 +20,7 @@
 #include "../storage/ArchiveManager.h"
 #include "api/WebSocketServer.h"
 #include "../api/DashboardManager.h"
+#include "../api/ReportGenerator.h"
 
 #include <QObject>
 class WebSocketServer;
@@ -73,6 +74,7 @@ private:
     std::unique_ptr<HistorianManager> m_historianManager;
     std::unique_ptr<ArchiveManager> m_archiveManager;
     std::unique_ptr<DashboardManager> m_dashboardManager;
+    std::unique_ptr<ReportGenerator> m_reportGenerator;
 };
 
 

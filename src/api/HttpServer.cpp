@@ -187,15 +187,26 @@ void HttpServer::sendResponse(QTcpSocket* socket, const HttpResponse& response)
         return;
     }
 
-    QJsonObject responseBody;
+    QByteArray body;
+    QString contentType = response.contentType;
 
-    if (response.statusCode >= 400) {
-        responseBody.insert("error", response.errorMessage);
+    // اگر rawBody داشتیم (مثل CSV)، آن را بفرست
+    if (!response.rawBody.isEmpty()) {
+        body = response.rawBody;
+        contentType = response.contentType;
     } else {
-        responseBody = response.jsonBody;
-    }
+        // در غیر این صورت JSON بساز
+        QJsonObject responseBody;
 
-    QByteArray json = QJsonDocument(responseBody).toJson(QJsonDocument::Compact);
+        if (response.statusCode >= 400) {
+            responseBody.insert("error", response.errorMessage);
+        } else {
+            responseBody = response.jsonBody;
+        }
+
+        body = QJsonDocument(responseBody).toJson(QJsonDocument::Compact);
+        contentType = "application/json";
+    }
 
     QString statusText;
     switch (response.statusCode) {
@@ -215,16 +226,26 @@ void HttpServer::sendResponse(QTcpSocket* socket, const HttpResponse& response)
     httpResponse.append(" ");
     httpResponse.append(statusText.toUtf8());
     httpResponse.append("\r\n");
-    httpResponse.append("Content-Type: application/json\r\n");
+    httpResponse.append("Content-Type: ");
+    httpResponse.append(contentType.toUtf8());
+    httpResponse.append("\r\n");
     httpResponse.append("Content-Length: ");
-    httpResponse.append(QByteArray::number(json.size()));
+    httpResponse.append(QByteArray::number(body.size()));
     httpResponse.append("\r\n");
     httpResponse.append("Access-Control-Allow-Origin: *\r\n");
     httpResponse.append("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS\r\n");
     httpResponse.append("Access-Control-Allow-Headers: Content-Type\r\n");
+
+    // ✅ جدید: Content-Disposition برای download
+    if (!response.contentDisposition.isEmpty()) {
+        httpResponse.append("Content-Disposition: ");
+        httpResponse.append(response.contentDisposition.toUtf8());
+        httpResponse.append("\r\n");
+    }
+
     httpResponse.append("Connection: close\r\n");
     httpResponse.append("\r\n");
-    httpResponse.append(json);
+    httpResponse.append(body);
 
     socket->write(httpResponse);
     socket->flush();

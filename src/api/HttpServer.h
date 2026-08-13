@@ -28,6 +28,11 @@ struct HttpResponse {
     QJsonObject jsonBody;
     QString errorMessage;
 
+    // ✅ جدید: برای CSV یا binary
+    QByteArray rawBody;
+    QString contentType = "application/json";
+    QString contentDisposition;  // برای download
+
     static HttpResponse ok(const QJsonObject& body = QJsonObject()) {
         HttpResponse res;
         res.statusCode = 200;
@@ -62,7 +67,18 @@ struct HttpResponse {
         res.errorMessage = message;
         return res;
     }
+
+    // ✅ جدید: برای CSV
+    static HttpResponse csv(const QByteArray& csvData, const QString& filename) {
+        HttpResponse res;
+        res.statusCode = 200;
+        res.rawBody = csvData;
+        res.contentType = "text/csv; charset=utf-8";
+        res.contentDisposition = "attachment; filename=\"" + filename + "\"";
+        return res;
+    }
 };
+
 
 class HttpServer : public QObject
 {

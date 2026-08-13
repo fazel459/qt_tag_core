@@ -1,16 +1,17 @@
 #include "RestApiHandler.h"
 #include "../storage/DbManager.h"
 #include "../core/Models.h"
-
+#include "ReportGenerator.h"
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QDateTime>
 
 
-RestApiHandler::RestApiHandler(DbManager& db, DashboardManager* dashboardManager, QObject *parent)
+RestApiHandler::RestApiHandler(DbManager& db, DashboardManager* dashboardManager,ReportGenerator* reportGenerator, QObject *parent)
     : QObject(parent)
     , m_db(db)
     , m_dashboardManager(dashboardManager)
+    , m_reportGenerator(reportGenerator)
 {
 }
 
@@ -181,6 +182,27 @@ HttpResponse RestApiHandler::handleRequest(const HttpRequest& request)
         return HttpResponse::badRequest("Invalid dashboard id");
     }
 
+    // Reports
+    if (path == "/api/v1/reports/tag-history") {
+        if (request.method == "GET") {
+            return handleTagHistoryReport(request);
+        }
+        return HttpResponse::badRequest("Method not allowed");
+    }
+
+    if (path == "/api/v1/reports/alarms") {
+        if (request.method == "GET") {
+            return handleAlarmReport(request);
+        }
+        return HttpResponse::badRequest("Method not allowed");
+    }
+
+    if (path == "/api/v1/reports/daily-summary") {
+        if (request.method == "GET") {
+            return handleDailySummaryReport(request);
+        }
+        return HttpResponse::badRequest("Method not allowed");
+    }
 
     return HttpResponse::notFound("Endpoint not found: " + path);
 }
@@ -828,6 +850,207 @@ HttpResponse RestApiHandler::handleGetResources(const HttpRequest& request, qint
     result.insert("count", resourcesArray.size());
 
     return HttpResponse::ok(result);
+}
+
+HttpResponse RestApiHandler::handleTagHistoryReport(const HttpRequest& request)
+{
+    if (!m_reportGenerator) {
+        return HttpResponse::serverError("ReportGenerator not initialized");
+    }
+
+    TagHistoryQuery query;
+
+    // Parse tag_ids
+    const QString tagIdsStr = request.queryParam("tag_ids");
+    if (tagIdsStr.isEmpty()) {
+        return HttpResponse::badRequest("Missing 'tag_ids' parameter");
+    }
+    query.tagIds = parseTagIdsParam(tagIdsStr);
+
+    if (query.tagIds.isEmpty()) {
+        return HttpResponse::badRequest("Invalid 'tag_ids' parameter");
+    }
+
+    // Parse from
+    QDateTime defaultFrom = QDateTime::currentDateTimeUtc().addSecs(-3600);
+    query.from = parseDateTimeParam(request.queryParam("from"), defaultFrom);
+
+    // Parse to
+    QDateTime defaultTo = QDateTime::currentDateTimeUtc();
+    query.to = parseDateTimeParam(request.queryParam("to"), defaultTo);
+
+    // Parse interval
+    query.interval = request.queryParam("interval", "raw");
+
+    // Parse limit
+    query.limit = request.queryParam("limit", "10000").toInt();
+    if (query.limit <= 0 || query.limit > 100000) {
+        query.limit = 10000;
+    }
+
+    // Parse format
+    const QString format = request.queryParam("format", "json").toLower();
+
+    // Generate report
+    if (format == "csv") {
+        const QString filename = QString("tag_history_%1.csv")
+            .arg(QDateTime::currentDateTimeUtc().toString("yyyyMMdd_HHmmss"));
+        const QByteArray csvData = m_reportGenerator->generateTagHistoryReport(query, "csv");
+        return HttpResponse::csv(csvData, filename);
+    }
+
+    const QByteArray jsonData = m_reportGenerator->generateTagHistoryReport(query, "json");
+
+    // Parse JSON و برگردان به عنوان QJsonObject
+    QJsonDocument doc = QJsonDocument::fromJson(jsonData);
+    if (doc.isObject()) {
+        return HttpResponse::ok(doc.object());
+    }
+
+    return HttpResponse::serverError("Failed to generate report");
+}
+
+HttpResponse RestApiHandler::handleAlarmReport(const HttpRequest& request)
+{
+    if (!m_reportGenerator) {
+        return HttpResponse::serverError("ReportGenerator not initialized");
+    }
+
+    AlarmReportQuery query;
+
+    // Parse from
+    QDateTime defaultFrom = QDateTime::currentDateTimeUtc().addDays(-1);
+    query.from = parseDateTimeParam(request.queryParam("from"), defaultFrom);
+
+    // Parse to
+    QDateTime defaultTo = QDateTime::currentDateTimeUtc();
+    query.to = parseDateTimeParam(request.queryParam("to"), defaultTo);
+
+    // Parse severity
+    query.severity = request.queryParam("severity");
+
+    // Parse state
+    query.state = request.queryParam("state");
+
+    // Parse tag_id
+    const QString tagIdStr = request.queryParam("tag_id");
+    if (!tagIdStr.isEmpty()) {
+        query.tagId = tagIdStr.toLongLong();
+    }
+
+    // Parse limit
+    query.limit = request.queryParam("limit", "1000").toInt();
+    if (query.limit <= 0 || query.limit > 10000) {
+        query.limit = 1000;
+    }
+
+    // Parse format
+    const QString format = request.queryParam("format", "json").toLower();
+
+    // Generate report
+    if (format == "csv") {
+        const QString filename = QString("alarm_report_%1.csv")
+            .arg(QDateTime::currentDateTimeUtc().toString("yyyyMMdd_HHmmss"));
+        const QByteArray csvData = m_reportGenerator->generateAlarmReport(query, "csv");
+        return HttpResponse::csv(csvData, filename);
+    }
+
+    const QByteArray jsonData = m_reportGenerator->generateAlarmReport(query, "json");
+
+    QJsonDocument doc = QJsonDocument::fromJson(jsonData);
+    if (doc.isObject()) {
+        return HttpResponse::ok(doc.object());
+    }
+
+    return HttpResponse::serverError("Failed to generate report");
+}
+
+HttpResponse RestApiHandler::handleDailySummaryReport(const HttpRequest& request)
+{
+    if (!m_reportGenerator) {
+        return HttpResponse::serverError("ReportGenerator not initialized");
+    }
+
+    DailySummaryQuery query;
+
+    // Parse tag_ids
+    const QString tagIdsStr = request.queryParam("tag_ids");
+    if (tagIdsStr.isEmpty()) {
+        return HttpResponse::badRequest("Missing 'tag_ids' parameter");
+    }
+    query.tagIds = parseTagIdsParam(tagIdsStr);
+
+    if (query.tagIds.isEmpty()) {
+        return HttpResponse::badRequest("Invalid 'tag_ids' parameter");
+    }
+
+    // Parse date
+    const QString dateStr = request.queryParam("date");
+    if (dateStr.isEmpty()) {
+        query.date = QDate::currentDate();
+    } else {
+        query.date = QDate::fromString(dateStr, Qt::ISODate);
+        if (!query.date.isValid()) {
+            return HttpResponse::badRequest("Invalid 'date' parameter. Use YYYY-MM-DD format.");
+        }
+    }
+
+    // Parse format
+    const QString format = request.queryParam("format", "json").toLower();
+
+    // Generate report
+    if (format == "csv") {
+        const QString filename = QString("daily_summary_%1.csv")
+            .arg(query.date.toString("yyyyMMdd"));
+        const QByteArray csvData = m_reportGenerator->generateDailySummaryReport(query, "csv");
+        return HttpResponse::csv(csvData, filename);
+    }
+
+    const QByteArray jsonData = m_reportGenerator->generateDailySummaryReport(query, "json");
+
+    QJsonDocument doc = QJsonDocument::fromJson(jsonData);
+    if (doc.isObject()) {
+        return HttpResponse::ok(doc.object());
+    }
+
+    return HttpResponse::serverError("Failed to generate report");
+}
+
+QVector<qint64> RestApiHandler::parseTagIdsParam(const QString& tagIdsStr) const
+{
+    QVector<qint64> tagIds;
+
+    const QStringList parts = tagIdsStr.split(',', QString::SkipEmptyParts);
+    for (const QString& part : parts) {
+        bool ok = false;
+        const qint64 id = part.trimmed().toLongLong(&ok);
+        if (ok && id > 0) {
+            tagIds.append(id);
+        }
+    }
+
+    return tagIds;
+}
+
+QDateTime RestApiHandler::parseDateTimeParam(const QString& str, const QDateTime& defaultValue) const
+{
+    if (str.isEmpty()) {
+        return defaultValue;
+    }
+
+    // Try ISO format with milliseconds
+    QDateTime dt = QDateTime::fromString(str, Qt::ISODateWithMs);
+    if (dt.isValid()) {
+        return dt.toUTC();
+    }
+
+    // Try ISO format without milliseconds
+    dt = QDateTime::fromString(str, Qt::ISODate);
+    if (dt.isValid()) {
+        return dt.toUTC();
+    }
+
+    return defaultValue;
 }
 
 QJsonObject RestApiHandler::dashboardToJson(const DashboardDefinition& dashboard) const
