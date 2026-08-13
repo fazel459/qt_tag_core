@@ -41,6 +41,9 @@ public:
 
     void writeValue(qint64 tagId, double engineeringValue);
 
+
+
+    bool m_cardCycleActive = false;
 private:
     void connectToDevice();
 
@@ -72,7 +75,9 @@ private:
 private:
 
     void buildCardGroups();
-    void pollCards();
+    void startCardCycle();
+    void pollNextCard();
+    void scheduleAdvance();
     void sendCardReadRequest(const SensorCard& card);
     void processCardResponse(const QByteArray& registers, const SensorCard& card);
 

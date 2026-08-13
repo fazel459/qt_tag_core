@@ -35,14 +35,20 @@ void ModbusCardManager::buildCards(const QVector<TagDefinition>& tags)
             card.unitId = 1;
             card.function = 3;
             card.startAddress = sensor.cardIndex * 16;
-            card.totalRegisters = 0;
+            card.totalRegisters = 16;      // ✅ همیشه کل کارت خوانده می‌شود
             card.valid = true;
-
             cardMap[sensor.cardIndex] = card;
+        }
+        // ✅ اعتبارسنجی: سنسور نباید از مرز ۱۶ اسلات بگذرد
+        if (sensor.registerOffset + sensor.registerCount > 16)
+        {
+            qWarning() << "ModbusCardManager: sensor exceeds card boundary, tag:"
+                       << tag.tagName;
+            continue;
         }
 
         cardMap[sensor.cardIndex].sensors.append(sensor);
-        cardMap[sensor.cardIndex].totalRegisters += sensor.registerCount;
+//        cardMap[sensor.cardIndex].totalRegisters += sensor.registerCount;
     }
 
     // تبدیل hash به vector و مرتب‌سازی
@@ -147,9 +153,7 @@ SensorInfo ModbusCardManager::parseTagAddress(const TagDefinition& tag) const
     }
 
     // محاسبه registerOffset
-    sensor.registerOffset = 0;
-
+    sensor.registerOffset = sensor.sensorIndex;
     sensor.valid = true;
-
     return sensor;
 }
