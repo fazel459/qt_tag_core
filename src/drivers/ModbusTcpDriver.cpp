@@ -421,7 +421,7 @@ void ModbusTcpDriver::onDisconnected()
 
     m_reconnectScheduled = true;
 
-    QTimer::singleShot(3000, [this]()
+    QTimer::singleShot(3000,this, [this]()
     {
         m_reconnectScheduled = false;
         connectToDevice();
