@@ -130,6 +130,7 @@ void ModbusRtuDriver::openSerialPort()
     {
         return;
     }
+    if (m_stopped) return;
 
     m_serialPort.setPortName(m_portName);
     m_serialPort.setBaudRate(m_baudRate);
@@ -176,7 +177,6 @@ void ModbusRtuDriver::openSerialPort()
         qWarning() << "ModbusRtuDriver: failed to open serial port:" << m_portName
                    << m_serialPort.errorString();
 
-        if (m_stopped) return;         // ✅ بعد از stop، تلاش مجدد ممنوع
 
         QTimer::singleShot(3000, this, [this]()   // ✅ با context
         {

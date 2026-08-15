@@ -9,6 +9,8 @@ TEMPLATE = app
 
 INCLUDEPATH += src
 INCLUDEPATH += 3rdparty/open62541
+
+CONFIG += QMQTT_WEBSOCKETS
 include(src/qmqtt/qmqtt.pri)
 
 SOURCES += \
@@ -90,4 +92,9 @@ HEADERS += \
     src/drivers/SimulatorDriver.h \
     src/rules/RuleEngine.h
 
+
+#SOURCES += src/qmqtt/src/mqtt/qmqtt_websocket.cpp
+#HEADERS += src/qmqtt/src/mqtt/qmqtt_websocket_p.h
+#SOURCES += src/qmqtt/src/mqtt/qmqtt_websocketiodevice.cpp
+#HEADERS += src/qmqtt/src/mqtt/qmqtt_websocketiodevice.h
 LIBS += -lws2_32

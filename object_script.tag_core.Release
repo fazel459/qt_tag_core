@@ -8,6 +8,8 @@ release/qmqtt_routesubscription.o
 release/qmqtt_socket.o
 release/qmqtt_timer.o
 release/qmqtt_ssl_socket.o
+release/qmqtt_websocket.o
+release/qmqtt_websocketiodevice.o
 release/ApiAuthenticator.o
 release/DashboardManager.o
 release/HttpServer.o
@@ -50,6 +52,8 @@ release/moc_qmqtt_socketinterface.o
 release/moc_qmqtt_timer_p.o
 release/moc_qmqtt_timerinterface.o
 release/moc_qmqtt_ssl_socket_p.o
+release/moc_qmqtt_websocket_p.o
+release/moc_qmqtt_websocketiodevice_p.o
 release/moc_DashboardManager.o
 release/moc_HttpServer.o
 release/moc_ReportGenerator.o

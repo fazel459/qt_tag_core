@@ -670,7 +670,7 @@ QJsonObject CoreApplication::handleReloadDriversCommand(const QJsonObject& paylo
     // بارگذاری مجدد config
     m_config.tags = m_db.loadTags();
     m_config.drivers = m_db.loadDrivers();
-
+    m_driverManager->updateConfig(m_config);
     // شروع مجدد درایورها
     if (m_driverManager->startAll()) {
         result.insert("ok", true);
