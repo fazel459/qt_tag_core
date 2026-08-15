@@ -12,6 +12,7 @@ class DashboardManager;
 class ReportGenerator;
 class WebSocketHandler;
 class UserManager;
+class DriverManager;
 
 class RestApiHandler : public QObject
 {
@@ -27,6 +28,7 @@ public:
     void setWebSocketHandler(WebSocketHandler* ws);
 
     void setUserManager(UserManager* um);
+    void setDriverManager(DriverManager* dm);
 
 private:
     DbManager& m_db;
@@ -99,6 +101,13 @@ private:
 
     bool authenticateRequest(const HttpRequest& request, UserDefinition& user);
     QString extractBearerToken(const HttpRequest& request) const;
+
+    HttpResponse handleCreateDriver(const HttpRequest& request);
+    HttpResponse handleUpdateDriver(const HttpRequest& request, qint64 driverId);
+    HttpResponse handleDeleteDriver(const HttpRequest& request, qint64 driverId);
+    bool jsonToDriver(const QJsonObject& json, DriverDefinition& def, bool isUpdate, QString& error) const;
+    void refreshDriverManagerConfig();
+    DriverManager* m_driverManager = nullptr;
 
 };
 

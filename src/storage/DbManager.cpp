@@ -2774,6 +2774,74 @@ bool DbManager::touchLastLogin(qint64 userId)
     return query.exec();
 }
 
+DriverDefinition DbManager::loadDriver(qint64 driverId)
+{
+    DriverDefinition d;
+    QSqlQuery query(m_db);
+    query.prepare("SELECT driver_id, name, type, connection_config, polling_interval_ms, enabled "
+                  "FROM drivers WHERE driver_id = :id");
+    query.bindValue(":id", driverId);
+    if (query.exec() && query.next()) {
+        d.driverId = query.value(0).toLongLong();
+        d.name = query.value(1).toString();
+        d.type = query.value(2).toString();
+        d.connectionConfig = query.value(3).toString();
+        d.pollingIntervalMs = query.value(4).toInt();
+        d.enabled = query.value(5).toBool();
+    }
+    return d;
+}
+
+qint64 DbManager::insertDriver(const DriverDefinition& driver)
+{
+    QSqlQuery query(m_db);
+    query.prepare("INSERT INTO drivers (name, type, connection_config, polling_interval_ms, enabled) "
+                  "VALUES (:name, :type, :config, :polling, :enabled) RETURNING driver_id");
+    query.bindValue(":name", driver.name);
+    query.bindValue(":type", driver.type);
+    query.bindValue(":config", driver.connectionConfig.isEmpty() ? "{}" : driver.connectionConfig);
+    query.bindValue(":polling", driver.pollingIntervalMs);
+    query.bindValue(":enabled", driver.enabled);
+    if (!query.exec()) {
+        qWarning() << "Insert driver failed:" << query.lastError().text();
+        return -1;
+    }
+    if (query.next()) return query.value(0).toLongLong();
+    return -1;
+}
+
+bool DbManager::updateDriver(const DriverDefinition& driver)
+{
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE drivers SET name = :name, type = :type, connection_config = :config, "
+                  "polling_interval_ms = :polling, enabled = :enabled WHERE driver_id = :id");
+    query.bindValue(":name", driver.name);
+    query.bindValue(":type", driver.type);
+    query.bindValue(":config", driver.connectionConfig);
+    query.bindValue(":polling", driver.pollingIntervalMs);
+    query.bindValue(":enabled", driver.enabled);
+    query.bindValue(":id", driver.driverId);
+    return query.exec() && query.numRowsAffected() > 0;
+}
+
+bool DbManager::deleteDriver(qint64 driverId)
+{
+    QSqlQuery query(m_db);
+    query.prepare("DELETE FROM drivers WHERE driver_id = :id");
+    query.bindValue(":id", driverId);
+    return query.exec() && query.numRowsAffected() > 0;
+}
+
+int DbManager::tagCountForDriver(qint64 driverId)
+{
+    QSqlQuery query(m_db);
+    query.prepare("SELECT count(*) FROM tags WHERE driver_id = :id");
+    query.bindValue(":id", driverId);
+    if (query.exec() && query.next()) return query.value(0).toInt();
+    return -1;
+}
+
+
 
 
 

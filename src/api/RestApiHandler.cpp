@@ -4,6 +4,7 @@
 #include "ReportGenerator.h"
 #include "WebSocketHandler.h"
 #include "../api/UserManager.h"
+#include "../drivers/DriverManager.h"
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QDateTime>
@@ -30,6 +31,150 @@ void RestApiHandler::setWebSocketHandler(WebSocketHandler* ws)
 
 void RestApiHandler::setUserManager(UserManager* um) { m_userManager = um; }
 
+void RestApiHandler::setDriverManager(DriverManager* dm) { m_driverManager = dm; }
+
+void RestApiHandler::refreshDriverManagerConfig()
+{
+    if (!m_driverManager) return;
+    AppConfig cfg;
+    cfg.drivers = m_db.loadDrivers();
+    cfg.tags = m_db.loadTags();
+    m_driverManager->updateConfig(cfg);
+}
+
+bool RestApiHandler::jsonToDriver(const QJsonObject& json, DriverDefinition& def, bool isUpdate, QString& error) const
+{
+    if (!isUpdate) {
+        if (!json.contains("name") || json.value("name").toString().trimmed().isEmpty()) {
+            error = "name is required"; return false;
+        }
+        if (!json.contains("type")) { error = "type is required"; return false; }
+    }
+
+    if (json.contains("name"))
+        def.name = json.value("name").toString().trimmed();
+    if (json.contains("type"))
+        def.type = json.value("type").toString().trimmed().toLower();
+
+    QStringList validTypes;
+    validTypes << "simulator" << "modbus_tcp" << "modbus_rtu" << "mqtt" << "opc_ua";
+    if (!validTypes.contains(def.type)) {
+        error = "Invalid type. Must be: simulator, modbus_tcp, modbus_rtu, mqtt, opc_ua";
+        return false;
+    }
+
+    if (json.contains("connection_config")) {
+        if (json.value("connection_config").isObject()) {
+            QJsonDocument doc(json.value("connection_config").toObject());
+            def.connectionConfig = QString::fromUtf8(doc.toJson(QJsonDocument::Compact));
+        } else {
+            const QString s = json.value("connection_config").toString();
+            if (!QJsonDocument::fromJson(s.toUtf8()).isObject()) {
+                error = "connection_config must be a valid JSON object"; return false;
+            }
+            def.connectionConfig = s;
+        }
+    }
+
+    if (json.contains("polling_interval_ms")) {
+        int p = json.value("polling_interval_ms").toInt(1000);
+        def.pollingIntervalMs = (p < 100) ? 100 : p;
+    }
+
+    if (json.contains("enabled"))
+        def.enabled = json.value("enabled").toBool(true);
+
+    return true;
+}
+
+HttpResponse RestApiHandler::handleCreateDriver(const HttpRequest& request)
+{
+    if (request.jsonBody.isEmpty())
+        return HttpResponse::badRequest("Request body is required");
+
+    DriverDefinition def;
+    QString error;
+    if (!jsonToDriver(request.jsonBody, def, false, error))
+        return HttpResponse::badRequest(error);
+
+    const qint64 newId = m_db.insertDriver(def);
+    if (newId <= 0)
+        return HttpResponse::serverError("Failed to create driver");
+
+    refreshDriverManagerConfig();
+
+    bool started = false;
+    if (def.enabled && m_driverManager)
+        started = m_driverManager->startDriver(newId);   // ✅ بالا آمدن همان لحظه
+
+    QJsonObject result;
+    result.insert("created", true);
+    result.insert("driver_id", newId);
+    result.insert("started", started);
+    return HttpResponse::created(result);
+}
+
+HttpResponse RestApiHandler::handleUpdateDriver(const HttpRequest& request, qint64 driverId)
+{
+    DriverDefinition existing = m_db.loadDriver(driverId);
+    if (existing.driverId == 0)
+        return HttpResponse::notFound("Driver not found");
+
+    DriverDefinition def = existing;
+    QString error;
+    if (!jsonToDriver(request.jsonBody, def, true, error))
+        return HttpResponse::badRequest(error);
+    def.driverId = driverId;
+
+    if (!m_db.updateDriver(def))
+        return HttpResponse::serverError("Failed to update driver");
+
+    const bool wasRunning = m_driverManager && m_driverManager->isDriverRunning(driverId);
+
+    refreshDriverManagerConfig();
+
+    bool restarted = false;
+    if (m_driverManager) {
+        if (wasRunning)
+            m_driverManager->stopDriver(driverId);      // ✅ restart با کانفیگ جدید
+        if (def.enabled)
+            restarted = m_driverManager->startDriver(driverId);
+    }
+
+    QJsonObject result;
+    result.insert("updated", true);
+    result.insert("driver_id", driverId);
+    result.insert("restarted", restarted);
+    return HttpResponse::ok(result);
+}
+
+HttpResponse RestApiHandler::handleDeleteDriver(const HttpRequest& request, qint64 driverId)
+{
+    Q_UNUSED(request)
+    if (m_db.loadDriver(driverId).driverId == 0)
+        return HttpResponse::notFound("Driver not found");
+
+    const int tagsCount = m_db.tagCountForDriver(driverId);
+    if (tagsCount > 0) {
+        HttpResponse r;
+        r.statusCode = 409;
+        r.errorMessage = QString("Cannot delete driver: %1 tag(s) reference it. Delete or move tags first.").arg(tagsCount);
+        return r;
+    }
+
+    if (m_driverManager)
+        m_driverManager->stopDriver(driverId);
+
+    if (!m_db.deleteDriver(driverId))
+        return HttpResponse::serverError("Failed to delete driver");
+
+    refreshDriverManagerConfig();
+
+    QJsonObject result;
+    result.insert("deleted", true);
+    result.insert("driver_id", driverId);
+    return HttpResponse::ok(result);
+}
 QString RestApiHandler::extractBearerToken(const HttpRequest& request) const
 {
     if (request.headers.contains("authorization")) {
@@ -317,10 +462,19 @@ HttpResponse RestApiHandler::handleRequest(const HttpRequest& request)
 
     // Drivers
     if (path == "/api/v1/drivers") {
-        if (request.method == "GET") {
-            return handleGetDrivers(request);
-        }
+        if (request.method == "GET")  return handleGetDrivers(request);   // handler موجود
+        if (request.method == "POST") return handleCreateDriver(request);
         return HttpResponse::badRequest("Method not allowed");
+    }
+
+    if (path.startsWith("/api/v1/drivers/")) {
+        qint64 driverId = 0;
+        if (parseIdFromPath(path, driverId, "/api/v1/drivers/")) {
+            if (request.method == "PUT")    return handleUpdateDriver(request, driverId);
+            if (request.method == "DELETE") return handleDeleteDriver(request, driverId);
+            return HttpResponse::badRequest("Method not allowed");
+        }
+        return HttpResponse::badRequest("Invalid driver id");
     }
 
     // Dashboards collection

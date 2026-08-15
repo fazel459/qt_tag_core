@@ -374,6 +374,8 @@ void CoreApplication::startApiLayer()
     m_restApiHandler->setUserManager(m_userManager.get());
     m_restApiHandler->setWebSocketHandler(m_wsServer->handler());
 
+    m_restApiHandler->setDriverManager(m_driverManager.get());
+
     qInfo() << "[API] API Layer started";
 }
 

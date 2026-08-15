@@ -118,6 +118,11 @@ public:
     bool updateUserPassword(qint64 userId, const QString& passwordHash, const QString& salt);
     bool touchLastLogin(qint64 userId);
 
+    DriverDefinition loadDriver(qint64 driverId);
+    qint64 insertDriver(const DriverDefinition& driver);
+    bool updateDriver(const DriverDefinition& driver);
+    bool deleteDriver(qint64 driverId);
+    int tagCountForDriver(qint64 driverId);
 
 private:
     bool migrate();
