@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qt Signals & Slots — qt_tag_core</title>
+<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
+<style>
+:root{--bg:#0b1120;--bg2:#111827;--bg3:#1f2937;--txt:#e5e7eb;--txt2:#9ca3af;--mut:#6b7280;--brd:#374151;--acc:#10b981;--acc2:#059669;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--info:#06b6d4;--pur:#8b5cf6;--pink:#ec4899;--code:#050a14;--sw:290px;--sh:0 4px 6px -1px rgba(0,0,0,.4)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Vazir',Tahoma,sans-serif;background:var(--bg);color:var(--txt);line-height:1.8;font-size:15px;overflow-x:hidden}
+body.sidebar-open{overflow:hidden}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:5px}
+.sidebar{position:fixed;top:0;right:0;width:var(--sw);height:100vh;background:var(--bg2);border-left:1px solid var(--brd);overflow-y:auto;padding:20px 0;z-index:100;transition:transform .3s}
+.sidebar-header{padding:0 20px 20px;border-bottom:1px solid var(--brd);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:bold;color:var(--acc)}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--acc),var(--info));border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:21px}
+.sidebar-subtitle{font-size:11px;color:var(--mut);margin-top:4px}
+.sidebar-close{display:none;background:0 0;border:none;color:var(--txt2);font-size:24px;cursor:pointer;line-height:1}
+.sidebar-close:hover{color:var(--err)}
+.nav-section{padding:10px 20px 4px;font-size:11px;color:var(--acc);font-weight:700;letter-spacing:1.5px}
+.nav-link{display:block;padding:7px 20px;color:var(--txt2);text-decoration:none;font-size:13.5px;border-right:3px solid transparent;transition:.2s}
+.nav-link:hover{background:var(--bg3);color:var(--txt);border-right-color:var(--acc)}
+.nav-link.active{background:var(--bg3);color:var(--acc);border-right-color:var(--acc)}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99;opacity:0;visibility:hidden;transition:.3s}
+.overlay.active{opacity:1;visibility:visible}
+.mobile-menu-btn{position:fixed;top:15px;right:15px;z-index:90;background:var(--acc);color:#fff;border:none;width:44px;height:44px;border-radius:8px;font-size:20px;cursor:pointer;box-shadow:var(--sh);display:none;align-items:center;justify-content:center}
+body.sidebar-open .mobile-menu-btn{display:none!important;pointer-events:none!important;opacity:0;visibility:hidden}
+.main-content{margin-right:var(--sw);padding:40px 60px;max-width:calc(100% - var(--sw))}
+.hero{background:linear-gradient(135deg,#064e3b 0%,#0e7490 50%,#7c3aed 100%);border-radius:20px;padding:50px 40px;margin-bottom:40px;position:relative;overflow:hidden;box-shadow:0 20px 40px -10px rgba(16,185,129,.3)}
+.hero h1{font-size:34px;color:#fff;margin-bottom:10px}
+.hero p{color:rgba(255,255,255,.9)}
+.hero-badges{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.hero-badge{background:rgba(255,255,255,.15);backdrop-filter:blur(10px);padding:6px 14px;border-radius:20px;font-size:12.5px;color:#fff;border:1px solid rgba(255,255,255,.2)}
+section{background:var(--bg2);border:1px solid var(--brd);border-radius:16px;padding:30px;margin-bottom:30px;scroll-margin-top:20px}
+section h2{font-size:23px;margin-bottom:18px;padding-bottom:12px;border-bottom:2px solid var(--brd);display:flex;align-items:center;gap:12px}
+section h2 .icon{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--acc),var(--info));display:flex;align-items:center;justify-content:center;color:#fff;font-size:19px}
+section h3{font-size:17px;margin:20px 0 10px}
+.class-card{background:var(--bg3);border:1px solid var(--brd);border-radius:12px;padding:20px;margin:18px 0}
+.class-card:hover{border-color:var(--acc)}
+.class-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.class-name{font-family:Consolas,monospace;font-size:18px;font-weight:bold;color:var(--acc);direction:ltr}
+.badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.b-qobject{background:rgba(139,92,246,.2);color:#c4b5fd;border:1px solid rgba(139,92,246,.3)}
+.b-plain{background:rgba(107,114,128,.2);color:#d1d5db;border:1px solid rgba(107,114,128,.3)}
+.b-mod{background:rgba(6,182,212,.2);color:#67e8f9;border:1px solid rgba(6,182,212,.3)}
+.sig-tag{display:inline-block;padding:2px 10px;border-radius:5px;font-size:11px;font-family:Consolas,monospace;font-weight:700;margin:2px}
+.t-signal{background:rgba(16,185,129,.2);color:#6ee7b7}
+.t-slot{background:rgba(245,158,11,.2);color:#fcd34d}
+.t-method{background:rgba(59,130,246,.2);color:#93c5fd}
+.t-static{background:rgba(236,72,153,.2);color:#f9a8d4}
+.code-block{background:var(--code);border:1px solid var(--brd);border-radius:8px;padding:14px;margin:10px 0;direction:ltr;text-align:left;font-family:Consolas,Monaco,monospace;font-size:12.5px;overflow-x:auto;position:relative;line-height:1.65}
+.code-block pre{margin:0;white-space:pre;color:#cbd5e1}
+.copy-btn{position:absolute;top:8px;left:8px;background:var(--bg3);border:1px solid var(--brd);color:var(--txt2);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-family:'Vazir',sans-serif}
+.copy-btn:hover{background:var(--acc);color:#fff}
+.kw{color:#c4b5fd}.ty{color:#93c5fd}.st{color:#86efac}.nu{color:#fcd34d}.cm{color:#64748b;font-style:italic}
+table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--bg3);border-radius:8px;overflow:hidden}
+th,td{padding:10px 14px;text-align:right;border-bottom:1px solid var(--brd);font-size:13.5px}
+th{background:var(--bg);color:var(--acc);font-weight:600;font-size:12.5px}
+tr:last-child td{border-bottom:none}
+td code,p code,li code{background:var(--code);padding:2px 7px;border-radius:4px;font-size:12px;color:#fcd34d;border:1px solid var(--brd);direction:ltr;display:inline-block;font-family:Consolas,monospace}
+.note{background:rgba(6,182,212,.1);border-right:4px solid var(--info);padding:14px 18px;border-radius:8px;margin:16px 0;font-size:14px}
+.note.success{background:rgba(16,185,129,.1);border-right-color:var(--ok)}
+.note.warning{background:rgba(245,158,11,.1);border-right-color:var(--warn)}
+.note-title{font-weight:bold;margin-bottom:6px}
+ul{padding-right:24px;margin:8px 0}li{margin:5px 0}
+.flow{background:var(--code);border:1px solid var(--brd);border-radius:10px;padding:20px;margin:14px 0;direction:ltr;text-align:center;font-family:Consolas,monospace;font-size:13px;color:#cbd5e1;line-height:2}
+.flow .box{display:inline-block;padding:6px 14px;margin:4px;border-radius:6px}
+.f-emit{background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4)}
+.f-recv{background:rgba(59,130,246,.2);border:1px solid rgba(59,130,246,.4)}
+.arrow{color:var(--acc);display:block;font-size:18px}
+.back-to-top{position:fixed;bottom:30px;left:30px;background:var(--acc);color:#fff;border:none;width:48px;height:48px;border-radius:50%;cursor:pointer;font-size:20px;box-shadow:var(--sh);opacity:0;pointer-events:none;transition:.3s;z-index:50}
+.back-to-top.visible{opacity:1;pointer-events:auto}
+footer{text-align:center;padding:30px;color:var(--mut);font-size:13px;border-top:1px solid var(--brd);margin-top:40px}
+@media(max-width:900px){.sidebar{transform:translateX(100%)}.sidebar.open{transform:translateX(0)}.sidebar-close{display:block}.main-content{margin-right:0;max-width:100%;padding:20px;padding-top:70px}.mobile-menu-btn{display:flex}.hero{padding:30px 20px}.hero h1{font-size:24px}section{padding:20px}}
+@media(min-width:901px){.mobile-menu-btn,.overlay,.sidebar-close{display:none!important;visibility:hidden;pointer-events:none}.sidebar{transform:translateX(0)!important}}
+</style>
+</head>
+<body>
+
+<button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo"><div class="logo-icon">⚡</div><div>Qt Signals & Slots<div class="sidebar-subtitle">qt_tag_core • C++/Qt</div></div></div>
+    <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+  </div>
+  <div class="nav-section">شروع</div>
+  <a href="#map" class="nav-link">🗺 نقشه ارتباطات</a>
+  <a href="#legend" class="nav-link">🎨 راهنمای نشانه‌ها</a>
+  <div class="nav-section">لایه API</div>
+  <a href="#httpserver" class="nav-link"> HttpServer</a>
+  <a href="#wsserver" class="nav-link">🔌 WebSocketServer</a>
+  <a href="#wshandler" class="nav-link">📡 WebSocketHandler</a>
+  <a href="#restapi" class="nav-link">🧩 RestApiHandler</a>
+  <a href="#usermgr" class="nav-link">👤 UserManager</a>
+  <a href="#dashmgr" class="nav-link">📊 DashboardManager</a>
+  <a href="#authenticator" class="nav-link">🔐 ApiAuthenticator</a>
+  <div class="nav-section">هسته و پایپ‌لاین</div>
+  <a href="#tagbus" class="nav-link">🚌 TagBus</a>
+  <a href="#cache" class="nav-link">⚡ RealtimeCache</a>
+  <a href="#deadband" class="nav-link">🎚 DeadbandFilter</a>
+  <a href="#ruleengine" class="nav-link">🚨 RuleEngine</a>
+  <div class="nav-section">ذخیره‌سازی</div>
+  <a href="#batchwriter" class="nav-link">💾 BatchHistorianWriter</a>
+  <a href="#statewriter" class="nav-link">📌 CurrentStateWriter</a>
+  <a href="#historian" class="nav-link">📈 HistorianManager</a>
+  <a href="#archive" class="nav-link">🗄 ArchiveManager</a>
+  <div class="nav-section">درایورها</div>
+  <a href="#idriver" class="nav-link">🔌 ITagDriver</a>
+  <a href="#dfactory" class="nav-link">🏭 DriverFactory</a>
+</aside>
+
+<main class="main-content">
+
+<div class="hero">
+  <h1>⚡ مستند Signals & Slots کلاس‌های qt_tag_core</h1>
+  <p>مرجع کامل کلاس‌های Qt، سیگنال‌ها، اسلات‌ها و متدهای عمومی بر اساس سورس‌کد واقعی</p>
+  <div class="hero-badges">
+    <span class="hero-badge">⚡ C++17 / Qt</span>
+    <span class="hero-badge">📡 ۱۷ کلاس</span>
+    <span class="hero-badge">🔔 Signals/Slots</span>
+    <span class="hero-badge">🏭 از سورس واقعی</span>
+  </div>
+</div>
+
+<section id="map">
+  <h2><span class="icon">🗺</span> ۱. نقشه ارتباطات (Signal → Slot)</h2>
+  <div class="flow">
+    <span class="box f-emit">ITagDriver (Modbus/OPC UA/MQTT)</span>
+    <span class="arrow">↓ publish(topic, TagValue)</span>
+    <span class="box f-recv">TagBus (pub/sub)</span>
+    <span class="arrow">↓ subscribe("tags/#")</span>
+    <span class="box f-recv">RealtimeCache</span> •
+    <span class="box f-recv">RuleEngine</span> •
+    <span class="box f-recv">CurrentStateWriter</span> •
+    <span class="box f-recv">BatchHistorianWriter</span>
+    <span class="arrow">↓</span>
+    <span class="box f-emit">WebSocketHandler.publishTagUpdate()</span>
+    <span class="arrow">↓ broadcast</span>
+    <span class="box f-recv">کلاینت‌های WebSocket</span>
+  </div>
+  <div class="flow">
+    <span class="box f-emit">QTcpServer::newConnection</span> → <span class="box f-recv">HttpServer::onNewConnection</span> (private slot)<br>
+    <span class="box f-emit">QWebSocketServer::newConnection</span> → <span class="box f-recv">WebSocketServer::onNewConnection</span> (private slot)<br>
+    <span class="box f-emit">QTimer::timeout</span> → <span class="box f-recv">WebSocketHandler::heartbeat / flushPendingTagUpdates</span>
+  </div>
+</section>
+
+<section id="legend">
+  <h2><span class="icon">🎨</span> ۲. راهنمای نشانه‌ها</h2>
+  <p>
+    <span class="sig-tag t-signal">signal</span> سیگنال خروجی کلاس —
+    <span class="sig-tag t-slot">slot</span> اسلات (عمومی/خصوصی) —
+    <span class="sig-tag t-method">method</span> متد عمومی —
+    <span class="sig-tag t-static">static</span> متد استاتیک
+  </p>
+  <p>
+    <span class="badge b-qobject">QObject</span> کلاس دارای Q_OBJECT (قابلیت signals/slots) —
+    <span class="badge b-plain">plain C++</span> کلاس ساده بدون متا-آبجکت
+  </p>
+  <div class="note success"><div class="note-title">💡 نکته معماری</div>هسته پایپ‌لاین (TagBus، فیلترها، RuleEngine) عمداً <strong>plain C++</strong> و بدون signal است تا overhead متا-آبجکت حذف شود؛ ارتباط از طریق callback (std::function) انجام می‌شود. لایه API و ذخیره‌سازی QObject هستند.</div>
+</section>
+
+<!-- ============ API LAYER ============ -->
+
+<section id="httpserver">
+  <h2><span class="icon">🌐</span> HttpServer</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">HttpServer</span><span class="badge b-qobject">QObject</span><span class="badge b-mod">api</span></div>
+    <p>سرور HTTP سبک مبتنی بر QTcpServer برای سرو REST API. درخواست‌ها parse شده و به یک handler سپرده می‌شوند.</p>
+    <h3><span class="sig-tag t-signal">signals</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">void</span> <span class="ty">started</span>(<span class="kw">const</span> QString& host, <span class="kw">int</span> port);
+<span class="kw">void</span> <span class="ty">failed</span>(<span class="kw">const</span> QString& message);</pre></div>
+    <h3><span class="sig-tag t-slot">private slots</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">void</span> <span class="ty">onNewConnection</span>();   <span class="cm">// اتصال QTcpServer::newConnection</span>
+<span class="kw">void</span> <span class="ty">onReadyRead</span>();       <span class="cm">// خواندن داده سوکت</span>
+<span class="kw">void</span> <span class="ty">onDisconnected</span>();   <span class="cm">// پاکسازی سوکت</span></pre></div>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">bool</span> <span class="ty">start</span>(<span class="kw">const</span> QString& host, <span class="kw">int</span> port);
+<span class="kw">void</span> <span class="ty">stop</span>();
+<span class="kw">bool</span> <span class="ty">isListening</span>() <span class="kw">const</span>;
+<span class="kw">int</span>  <span class="ty">serverPort</span>() <span class="kw">const</span>;
+<span class="kw">void</span> <span class="ty">setRequestHandler</span>(RequestHandler handler); <span class="cm">// HttpResponse(const HttpRequest&)</span></pre></div>
+  </div>
+</section>
+
+<section id="wsserver">
+  <h2><span class="icon">🔌</span> WebSocketServer</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">WebSocketServer</span><span class="badge b-qobject">QObject</span><span class="badge b-mod">api</span></div>
+    <p>سرور WebSocket (QWebSocketServer) که کلاینت‌ها را به <code>WebSocketHandler</code> می‌سپارد.</p>
+    <h3><span class="sig-tag t-signal">signals</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">void</span> <span class="ty">started</span>(<span class="kw">const</span> QString& host, <span class="kw">int</span> port);
+<span class="kw">void</span> <span class="ty">failed</span>(<span class="kw">const</span> QString& message);</pre></div>
+    <h3><span class="sig-tag t-slot">private slots</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">void</span> <span class="ty">onNewConnection</span>();  <span class="cm">// addClient به handler</span></pre></div>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">bool</span> <span class="ty">start</span>(<span class="kw">const</span> Config& config);  <span class="cm">// Config{enabled,host,port,batchIntervalMs}</span>
+<span class="kw">void</span> <span class="ty">stop</span>();
+<span class="kw">bool</span> <span class="ty">isListening</span>() <span class="kw">const</span>;
+<span class="kw">int</span>  <span class="ty">serverPort</span>() <span class="kw">const</span>;
+WebSocketHandler* <span class="ty">handler</span>() <span class="kw">const</span>;</pre></div>
+  </div>
+</section>
+
+<section id="wshandler">
+  <h2><span class="icon">📡</span> WebSocketHandler</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">WebSocketHandler</span><span class="badge b-qobject">QObject</span><span class="badge b-mod">api</span></div>
+    <p>مدیریت کلاینت‌های WebSocket، subscribe به کانال/تگ/داشبورد، batch کردن updateها و heartbeat.</p>
+    <h3><span class="sig-tag t-signal">signals</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">void</span> <span class="ty">clientCountChanged</span>(<span class="kw">int</span> count);</pre></div>
+    <h3><span class="sig-tag t-slot">private slots</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">void</span> <span class="ty">onTextMessage</span>(<span class="kw">const</span> QString& message);  <span class="cm">// parse JSON → control/command</span>
+<span class="kw">void</span> <span class="ty">onDisconnected</span>();
+<span class="kw">void</span> <span class="ty">onPong</span>(quint64 elapsedTime, <span class="kw">const</span> QByteArray& payload);
+<span class="kw">void</span> <span class="ty">heartbeat</span>();                <span class="cm">// QTimer هر 30s → ping</span>
+<span class="kw">void</span> <span class="ty">flushPendingTagUpdates</span>();  <span class="cm">// QTimer batch → ارسال تجمیعی</span></pre></div>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">void</span> <span class="ty">addClient</span>(QWebSocket* socket);
+<span class="kw">void</span> <span class="ty">setBatchInterval</span>(<span class="kw">int</span> msec);
+<span class="kw">void</span> <span class="ty">publishTagUpdate</span>(<span class="kw">int</span> tagId, <span class="kw">const</span> QJsonObject& payload);
+<span class="kw">void</span> <span class="ty">publishTagUpdate</span>(<span class="kw">const</span> TagValue& value);          <span class="cm">// overload</span>
+<span class="kw">void</span> <span class="ty">publishAlarmEvent</span>(<span class="kw">const</span> QJsonObject& alarm);
+<span class="kw">void</span> <span class="ty">publishAlarmEvent</span>(<span class="kw">const</span> TagValue& value);
+<span class="kw">void</span> <span class="ty">publishSystemStatus</span>(<span class="kw">const</span> QJsonObject& status);
+<span class="kw">void</span> <span class="ty">publishDashboardEvent</span>(<span class="kw">const</span> QString& id, <span class="kw">const</span> QJsonObject& p);
+<span class="kw">void</span> <span class="ty">publishAlarmAck</span>(qint64 alarmId, qint64 tagId, <span class="kw">const</span> QString& user);
+<span class="kw">void</span> <span class="ty">setSnapshotProvider</span>(SnapshotProvider provider);
+<span class="kw">void</span> <span class="ty">sendSnapshotToClient</span>(QWebSocket* socket);
+<span class="kw">void</span> <span class="ty">setCommandHandler</span>(CommandHandler handler);</pre></div>
+    <div class="note"><div class="note-title">📨 پیام‌های خروجی</div><code>hello</code>، <code>pong</code>، <code>ack</code>، <code>error</code>، <code>tag.update</code>، <code>alarm.event</code>، <code>alarm.ack</code>، <code>system.status</code>، <code>dashboard.event</code></div>
+  </div>
+</section>
+
+<section id="restapi">
+  <h2><span class="icon">🧩</span> RestApiHandler</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">RestApiHandler</span><span class="badge b-qobject">QObject</span><span class="badge b-mod">api</span></div>
+    <p>مسیربندی (routing) کامل REST API نسخه v1 — بدون signal؛ ورودی HttpRequest و خروجی HttpResponse.</p>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>HttpResponse <span class="ty">handleRequest</span>(<span class="kw">const</span> HttpRequest& request);  <span class="cm">// dispatcher اصلی</span>
+<span class="kw">void</span> <span class="ty">setAuthenticator</span>(<span class="kw">const</span> ApiAuthenticator::Config& config);
+<span class="kw">void</span> <span class="ty">setWebSocketHandler</span>(WebSocketHandler* ws);
+<span class="kw">void</span> <span class="ty">setUserManager</span>(UserManager* um);</pre></div>
+    <div class="note"><div class="note-title">🗂 گروه‌های handler داخلی</div>Tags • Alarms • Drivers • System • Dashboards • Reports • Users • Auth</div>
+  </div>
+</section>
+
+<section id="usermgr">
+  <h2><span class="icon">👤</span> UserManager</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">UserManager</span><span class="badge b-qobject">QObject</span><span class="badge b-mod">api</span></div>
+    <p>احراز هویت مبتنی بر session توکن، هش رمز با salt و کنترل دسترسی نقش‌محور (RBAC).</p>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">void</span> <span class="ty">ensureDefaultAdmin</span>();
+QJsonObject <span class="ty">login</span>(<span class="kw">const</span> QString& username, <span class="kw">const</span> QString& password);
+<span class="kw">bool</span> <span class="ty">logout</span>(<span class="kw">const</span> QString& token);
+QJsonObject <span class="ty">me</span>(<span class="kw">const</span> QString& token);
+<span class="kw">bool</span> <span class="ty">validateToken</span>(<span class="kw">const</span> QString& token, UserDefinition& outUser);
+<span class="kw">bool</span> <span class="ty">can</span>(<span class="kw">const</span> UserDefinition& user, <span class="kw">const</span> QString& method, <span class="kw">const</span> QString& path) <span class="kw">const</span>;</pre></div>
+    <h3><span class="sig-tag t-static">static methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>QString <span class="ty">hashPassword</span>(<span class="kw">const</span> QString& password, <span class="kw">const</span> QString& salt);
+QString <span class="ty">generateSalt</span>();
+QString <span class="ty">generateToken</span>();</pre></div>
+  </div>
+</section>
+
+<section id="dashmgr">
+  <h2><span class="icon">📊</span> DashboardManager</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">DashboardManager</span><span class="badge b-qobject">QObject</span><span class="badge b-mod">api</span></div>
+    <p>مدیریت داشبوردها: متادیتا در DB + محتوا و منابع به صورت فایل (با sanitize مسیر).</p>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="cm">// CRUD</span>
+QVector&lt;DashboardDefinition&gt; <span class="ty">listDashboards</span>();
+DashboardDefinition <span class="ty">getDashboard</span>(qint64 id);
+qint64 <span class="ty">createDashboard</span>(<span class="kw">const</span> DashboardDefinition& d);
+<span class="kw">bool</span> <span class="ty">updateDashboard</span>(<span class="kw">const</span> DashboardDefinition& d);
+<span class="kw">bool</span> <span class="ty">deleteDashboard</span>(qint64 id);
+<span class="cm">// Content (file-based)</span>
+QString <span class="ty">getDashboardContent</span>(qint64 id);
+<span class="kw">bool</span> <span class="ty">saveDashboardContent</span>(qint64 id, <span class="kw">const</span> QString& content);
+<span class="cm">// Resources</span>
+QByteArray <span class="ty">getResource</span>(qint64 id, <span class="kw">const</span> QString& path);
+<span class="kw">bool</span> <span class="ty">saveResource</span>(qint64 id, <span class="kw">const</span> QString& path, <span class="kw">const</span> QByteArray& data);
+QStringList <span class="ty">listResources</span>(qint64 id);
+<span class="cm">// Validation</span>
+<span class="kw">bool</span> <span class="ty">validateDashboardContent</span>(qint64 id, <span class="kw">const</span> QString& c, QString& err);
+<span class="kw">bool</span> <span class="ty">validateQmlSyntax</span>(<span class="kw">const</span> QString& qml, QString& err);
+<span class="kw">bool</span> <span class="ty">validateJsonConfig</span>(<span class="kw">const</span> QString& json, QString& err);</pre></div>
+  </div>
+</section>
+
+<section id="authenticator">
+  <h2><span class="icon">🔐</span> ApiAuthenticator</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">ApiAuthenticator</span><span class="badge b-plain">plain C++</span><span class="badge b-mod">api</span></div>
+    <p>احراز هویت API Key با لیست مسیرهای عمومی. به صورت پیش‌فرض غیرفعال است (مناسب تست).</p>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">void</span> <span class="ty">setConfig</span>(<span class="kw">const</span> Config& config);  <span class="cm">// Config{enabled, apiKeys, publicPaths}</span>
+<span class="kw">bool</span> <span class="ty">isEnabled</span>() <span class="kw">const</span>;
+<span class="kw">bool</span> <span class="ty">isPublicPath</span>(<span class="kw">const</span> QString& path) <span class="kw">const</span>;
+<span class="kw">bool</span> <span class="ty">authenticate</span>(<span class="kw">const</span> HttpRequest& request) <span class="kw">const</span>;
+QString <span class="ty">extractApiKey</span>(<span class="kw">const</span> HttpRequest& request) <span class="kw">const</span>;
+<span class="kw">bool</span> <span class="ty">isValidApiKey</span>(<span class="kw">const</span> QString& key) <span class="kw">const</span>;</pre></div>
+  </div>
+</section>
+
+<!-- ============ CORE ============ -->
+
+<section id="tagbus">
+  <h2><span class="icon">🚌</span> TagBus</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">TagBus</span><span class="badge b-plain">plain C++</span><span class="badge b-mod">tagbus</span></div>
+    <p>پیام‌رسان pub/sub سبک با پشتیبانی wildcard (<code>#</code> و <code>prefix/#</code>). جایگزین signal برای مسیر داده پربسامد.</p>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">void</span> <span class="ty">subscribe</span>(<span class="kw">const</span> QString& filter, Handler handler); <span class="cm">// Handler = fn(const BusMessage&)</span>
+<span class="kw">void</span> <span class="ty">publish</span>(<span class="kw">const</span> QString& topic, <span class="kw">const</span> TagValue& value);</pre></div>
+    <h3>مثال اتصال</h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>bus.subscribe(<span class="st">"tags/#"</span>, []( <span class="kw">const</span> BusMessage& m ){
+    <span class="kw">if</span> (m.topic.endsWith(<span class="st">"/update"</span>)) { <span class="cm">/* پردازش */</span> }
+});</pre></div>
+  </div>
+</section>
+
+<section id="cache">
+  <h2><span class="icon">⚡</span> RealtimeCache</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">RealtimeCache</span><span class="badge b-plain">plain C++</span><span class="badge b-mod">realtime</span></div>
+    <p>کش آخرین مقدار هر تگ با subscribe خودکار به <code>tags/#</code>.</p>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">explicit</span> <span class="ty">RealtimeCache</span>(TagBus& bus);  <span class="cm">// subscribe و نگه‌داری m_latestValues[tagId]</span></pre></div>
+  </div>
+</section>
+
+<section id="deadband">
+  <h2><span class="icon">🎚</span> DeadbandFilter</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">DeadbandFilter</span><span class="badge b-plain">plain C++</span><span class="badge b-mod">ingestion</span></div>
+    <p>فیلتر deadband: فقط تغییرات معنادار یا heartbeat هر ۳۰ ثانیه publish می‌شوند.</p>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">bool</span> <span class="ty">shouldPublish</span>(<span class="kw">const</span> TagDefinition& tag, <span class="kw">const</span> TagValue& value);</pre></div>
+    <div class="note"><div class="note-title">📋 منطق انتشار</div>اولین مقدار • تغییر quality • |Δvalue| ≥ deadband • گذشت ۳۰ ثانیه (heartbeat)</div>
+  </div>
+</section>
+
+<section id="ruleengine">
+  <h2><span class="icon">🚨</span> RuleEngine</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">RuleEngine</span><span class="badge b-plain">plain C++</span><span class="badge b-mod">rules</span></div>
+    <p>موتور آلارم: آستانه‌های LL/L/H/HH با هیسترزیس و on/off delay + قوانین range/rate/stuck/boolean/bad-quality.</p>
+    <h3><span class="sig-tag t-method">constructor</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="ty">RuleEngine</span>(TagBus& bus, DbManager& db, <span class="kw">const</span> AppConfig& config);
+<span class="cm">// خودکار به bus subscribe می‌شود → onTagValue</span></pre></div>
+    <h3>ارزیاب‌های داخلی (private)</h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">void</span> <span class="ty">onTagValue</span>(<span class="kw">const</span> TagValue& v);
+<span class="kw">void</span> <span class="ty">evaluateThresholdLevels</span>(...);
+<span class="kw">void</span> <span class="ty">evaluateRangeViolation</span>(...);
+<span class="kw">void</span> <span class="ty">evaluateRateOfChange</span>(...);
+<span class="kw">void</span> <span class="ty">evaluateStuckValue</span>(...);
+<span class="kw">void</span> <span class="ty">evaluateBoolean</span>(...);
+<span class="kw">bool</span> <span class="ty">handleBadQuality</span>(...);
+<span class="kw">void</span> <span class="ty">publishAlarmEvent</span>(...);  <span class="cm">// انتشار به TagBus</span></pre></div>
+  </div>
+</section>
+
+<!-- ============ STORAGE ============ -->
+
+<section id="batchwriter">
+  <h2><span class="icon">💾</span> BatchHistorianWriter</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">BatchHistorianWriter</span><span class="badge b-qobject">QObject</span><span class="badge b-mod">storage</span></div>
+    <p>نویسنده batch تاریخچه: بافر TagValueها و flush دوره‌ای (QTimer) یا هنگام پر شدن بافر.</p>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="ty">BatchHistorianWriter</span>(DbManager& db, <span class="kw">int</span> flushIntervalMs, <span class="kw">int</span> maxBufferSize, QObject* parent = <span class="kw">nullptr</span>);
+<span class="kw">void</span> <span class="ty">enqueue</span>(<span class="kw">const</span> TagValue& value);
+<span class="kw">void</span> <span class="ty">flush</span>();  <span class="cm">// نوشتن batch در DB</span></pre></div>
+  </div>
+</section>
+
+<section id="statewriter">
+  <h2><span class="icon">📌</span> CurrentStateWriter</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">CurrentStateWriter</span><span class="badge b-qobject">QObject</span><span class="badge b-mod">storage</span></div>
+    <p>نگه‌دارنده آخرین وضعیت هر تگ و flush دوره‌ای در جدول current state (آخرین مقدار برنده است).</p>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="ty">CurrentStateWriter</span>(TagBus& bus, DbManager& db, <span class="kw">int</span> flushIntervalMs, QObject* parent = <span class="kw">nullptr</span>);
+<span class="kw">void</span> <span class="ty">enqueue</span>(<span class="kw">const</span> TagValue& value);
+<span class="kw">void</span> <span class="ty">flush</span>();</pre></div>
+  </div>
+</section>
+
+<section id="historian">
+  <h2><span class="icon">📈</span> HistorianManager</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">HistorianManager</span><span class="badge b-qobject">QObject</span><span class="badge b-mod">storage</span></div>
+    <p>پرس‌وجوی داده تاریخی تجمیعی (continuous aggregates) در بازه‌های ۱ دقیقه/۵ دقیقه/۱ ساعت/۱ روز.</p>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>QVector&lt;AggregatePoint&gt; <span class="ty">query1Min</span>(qint64 tagId, <span class="kw">const</span> QDateTime& s, <span class="kw">const</span> QDateTime& e);
+QVector&lt;AggregatePoint&gt; <span class="ty">query5Min</span>(...);
+QVector&lt;AggregatePoint&gt; <span class="ty">query1Hour</span>(...);
+QVector&lt;AggregatePoint&gt; <span class="ty">query1Day</span>(...);
+<span class="kw">void</span> <span class="ty">refreshContinuousAggregates</span>();
+<span class="kw">void</span> <span class="ty">refreshContinuousAggregate</span>(<span class="kw">const</span> QString& viewName);
+<span class="kw">void</span> <span class="ty">refreshContinuousAggregate</span>(<span class="kw">const</span> QString& view, <span class="kw">const</span> QDateTime& s, <span class="kw">const</span> QDateTime& e);</pre></div>
+  </div>
+</section>
+
+<section id="archive">
+  <h2><span class="icon">🗄</span> ArchiveManager</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">ArchiveManager</span><span class="badge b-qobject">QObject</span><span class="badge b-mod">storage</span></div>
+    <p>بایگانی داده‌های قدیمی برای کنترل حجم DB + امکان بازیابی.</p>
+    <h3><span class="sig-tag t-method">public methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="ty">ArchiveManager</span>(DbManager& db, <span class="kw">const</span> QString& archivePath, qint64 maxSizeBytes, <span class="kw">int</span> checkIntervalMs, QObject* parent = <span class="kw">nullptr</span>);
+<span class="kw">void</span> <span class="ty">checkAndArchive</span>();
+<span class="kw">bool</span> <span class="ty">archiveTable</span>(<span class="kw">const</span> QString& tableName, <span class="kw">const</span> QDateTime& endTime);
+<span class="kw">bool</span> <span class="ty">restoreArchive</span>(<span class="kw">const</span> QString& filePath, <span class="kw">const</span> QString& tableName);
+QString <span class="ty">archivePath</span>() <span class="kw">const</span>;</pre></div>
+  </div>
+</section>
+
+<!-- ============ DRIVERS ============ -->
+
+<section id="idriver">
+  <h2><span class="icon">🔌</span> ITagDriver (Interface)</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">ITagDriver</span><span class="badge b-plain">abstract</span><span class="badge b-mod">drivers</span></div>
+    <p>اینترفیس مشترک همه درایورها (Modbus TCP، OPC UA، MQTT، Simulator).</p>
+    <h3><span class="sig-tag t-method">pure virtual methods</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">virtual</span> QString <span class="ty">driverType</span>() <span class="kw">const</span> = <span class="nu">0</span>;
+<span class="kw">virtual</span> <span class="kw">bool</span> <span class="ty">start</span>() = <span class="nu">0</span>;
+<span class="kw">virtual</span> <span class="kw">void</span> <span class="ty">stop</span>() = <span class="nu">0</span>;
+<span class="kw">virtual</span> <span class="kw">bool</span> <span class="ty">isConnected</span>() <span class="kw">const</span> = <span class="nu">0</span>;</pre></div>
+  </div>
+</section>
+
+<section id="dfactory">
+  <h2><span class="icon">🏭</span> DriverFactory</h2>
+  <div class="class-card">
+    <div class="class-head"><span class="class-name">DriverFactory</span><span class="badge b-plain">plain C++</span><span class="badge b-mod">drivers</span></div>
+    <p>کارخانه ساخت درایور بر اساس <code>DriverDefinition.type</code>.</p>
+    <h3><span class="sig-tag t-static">static method</span></h3>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre><span class="kw">static</span> ITagDriver* <span class="ty">create</span>(
+    <span class="kw">const</span> DriverDefinition& driver,
+    <span class="kw">const</span> QVector&lt;TagDefinition&gt;& tags,
+    TagBus& bus,
+    <span class="kw">const</span> AppConfig& config
+);</pre></div>
+  </div>
+</section>
+
+<footer>⚡ مستند Signals & Slots — qt_tag_core | نسخه 0.1.0 | ۲۰۲۶-۰۸-۱۵</footer>
+</main>
+
+<button class="back-to-top" id="backToTop">↑</button>
+
+<script>
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('active');document.body.classList.add('sidebar-open')}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('active');document.body.classList.remove('sidebar-open')}
+function toggleSidebar(){document.getElementById('sidebar').classList.contains('open')?closeSidebar():openSidebar()}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSidebar()});
+document.querySelectorAll('.copy-btn').forEach(b=>b.addEventListener('click',function(){navigator.clipboard.writeText(this.parentElement.querySelector('pre').innerText).then(()=>{this.textContent='کپی شد!';setTimeout(()=>this.textContent='کپی',2000)})}));
+const secs=document.querySelectorAll('section[id]'),links=document.querySelectorAll('.nav-link'),bt=document.getElementById('backToTop');
+window.addEventListener('scroll',()=>{let c='';secs.forEach(s=>{if(pageYOffset>=s.offsetTop-100)c=s.id});links.forEach(l=>{l.classList.toggle('active',l.getAttribute('href')==='#'+c)});bt.classList.toggle('visible',pageYOffset>500)});
+links.forEach(l=>l.addEventListener('click',()=>{if(innerWidth<=900)closeSidebar()}));
+document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',function(e){e.preventDefault();const t=document.querySelector(this.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'})}));
+addEventListener('resize',()=>{if(innerWidth>900)closeSidebar()});
+bt.addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
+</script>
+</body>
+</html>

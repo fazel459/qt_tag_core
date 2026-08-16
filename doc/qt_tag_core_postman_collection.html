@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Postman Collection — qt_tag_core API v2</title>
+<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
+<style>
+:root{--bg:#0b1120;--bg2:#111827;--bg3:#1f2937;--txt:#e5e7eb;--txt2:#9ca3af;--mut:#6b7280;--brd:#374151;--acc:#10b981;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--info:#06b6d4;--code:#050a14;--sw:290px;--sh:0 4px 6px -1px rgba(0,0,0,.4)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Vazir',Tahoma,sans-serif;background:var(--bg);color:var(--txt);line-height:1.8;font-size:15px;overflow-x:hidden}
+body.sidebar-open{overflow:hidden}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:5px}
+.sidebar{position:fixed;top:0;right:0;width:var(--sw);height:100vh;background:var(--bg2);border-left:1px solid var(--brd);overflow-y:auto;padding:20px 0;z-index:100;transition:transform .3s}
+.sidebar-header{padding:0 20px 20px;border-bottom:1px solid var(--brd);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:bold;color:var(--acc)}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--acc),var(--info));border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
+.sidebar-subtitle{font-size:11px;color:var(--mut);margin-top:4px}
+.sidebar-close{display:none;background:0 0;border:none;color:var(--txt2);font-size:24px;cursor:pointer;line-height:1}
+.nav-section{padding:10px 20px 4px;font-size:11px;color:var(--acc);font-weight:700;letter-spacing:1.5px}
+.nav-link{display:block;padding:7px 20px;color:var(--txt2);text-decoration:none;font-size:13.5px;border-right:3px solid transparent;transition:.2s}
+.nav-link:hover{background:var(--bg3);color:var(--txt);border-right-color:var(--acc)}
+.nav-link.active{background:var(--bg3);color:var(--acc);border-right-color:var(--acc)}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99;opacity:0;visibility:hidden;transition:.3s}
+.overlay.active{opacity:1;visibility:visible}
+.mobile-menu-btn{position:fixed;top:15px;right:15px;z-index:90;background:var(--acc);color:#fff;border:none;width:44px;height:44px;border-radius:8px;font-size:20px;cursor:pointer;box-shadow:var(--sh);display:none;align-items:center;justify-content:center}
+body.sidebar-open .mobile-menu-btn{display:none!important;pointer-events:none!important;opacity:0;visibility:hidden}
+.main-content{margin-right:var(--sw);padding:40px 60px;max-width:calc(100% - var(--sw))}
+.hero{background:linear-gradient(135deg,#064e3b 0%,#0e7490 50%,#7c3aed 100%);border-radius:16px;padding:50px 40px;margin-bottom:40px;position:relative;overflow:hidden}
+.hero h1{font-size:34px;color:#fff;margin-bottom:10px}
+.hero p{color:rgba(255,255,255,.9)}
+.hero-badges{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.hero-badge{background:rgba(255,255,255,.15);padding:6px 14px;border-radius:20px;font-size:12.5px;color:#fff;border:1px solid rgba(255,255,255,.2)}
+section{background:var(--bg2);border:1px solid var(--brd);border-radius:16px;padding:30px;margin-bottom:30px;scroll-margin-top:20px}
+section h2{font-size:23px;margin-bottom:18px;padding-bottom:12px;border-bottom:2px solid var(--brd);display:flex;align-items:center;gap:12px}
+section h2 .icon{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--acc),var(--info));display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+section h3{font-size:17px;margin:20px 0 10px}
+section h4{font-size:15px;margin:14px 0 8px;color:var(--txt2)}
+.step{background:var(--bg3);border:1px solid var(--brd);border-radius:10px;padding:14px 18px;margin:12px 0;display:flex;gap:14px;align-items:flex-start}
+.step-num{min-width:32px;height:32px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0}
+.code-block{background:var(--code);border:1px solid var(--brd);border-radius:8px;padding:16px;margin:12px 0;direction:ltr;text-align:left;font-family:Consolas,Monaco,monospace;font-size:12px;overflow-x:auto;position:relative;line-height:1.6}
+.code-block pre{margin:0;white-space:pre;color:#cbd5e1}
+.copy-btn{position:absolute;top:8px;left:8px;background:var(--bg3);border:1px solid var(--brd);color:var(--txt2);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-family:'Vazir',sans-serif}
+.copy-btn:hover{background:var(--acc);color:#fff}
+table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--bg3);border-radius:8px;overflow:hidden}
+th,td{padding:10px 14px;text-align:right;border-bottom:1px solid var(--brd);font-size:13.5px}
+th{background:var(--bg);color:var(--acc);font-weight:600;font-size:12.5px}
+tr:last-child td{border-bottom:none}
+td code,p code,li code{background:var(--code);padding:2px 7px;border-radius:4px;font-size:12px;color:#fcd34d;border:1px solid var(--brd);direction:ltr;display:inline-block;font-family:Consolas,monospace}
+.m{padding:3px 10px;border-radius:5px;font-size:11px;font-weight:800;font-family:Consolas,monospace;color:#fff}
+.m-GET{background:var(--ok)}.m-POST{background:#3b82f6}.m-PUT{background:var(--warn)}.m-DELETE{background:var(--err)}
+.note{background:rgba(6,182,212,.1);border-right:4px solid var(--info);padding:14px 18px;border-radius:8px;margin:16px 0;font-size:14px}
+.note.warning{background:rgba(245,158,11,.1);border-right-color:var(--warn)}
+.note.success{background:rgba(16,185,129,.1);border-right-color:var(--ok)}
+.note-title{font-weight:bold;margin-bottom:6px}
+ul,ol{padding-right:24px;margin:8px 0}li{margin:5px 0}
+.new-badge{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;margin-right:8px}
+.back-to-top{position:fixed;bottom:30px;left:30px;background:var(--acc);color:#fff;border:none;width:48px;height:48px;border-radius:50%;cursor:pointer;font-size:20px;box-shadow:var(--sh);opacity:0;pointer-events:none;transition:.3s;z-index:50}
+.back-to-top.visible{opacity:1;pointer-events:auto}
+footer{text-align:center;padding:30px;color:var(--mut);font-size:13px;border-top:1px solid var(--brd);margin-top:40px}
+@media(max-width:900px){.sidebar{transform:translateX(100%)}.sidebar.open{transform:translateX(0)}.sidebar-close{display:block}.main-content{margin-right:0;max-width:100%;padding:20px;padding-top:70px}.mobile-menu-btn{display:flex}.hero{padding:30px 20px}.hero h1{font-size:24px}section{padding:20px}}
+@media(min-width:901px){.mobile-menu-btn,.overlay,.sidebar-close{display:none!important;visibility:hidden;pointer-events:none}.sidebar{transform:translateX(0)!important}}
+</style>
+</head>
+<body>
+
+<button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo"><div class="logo-icon">📦</div><div>Postman Collection<div class="sidebar-subtitle">qt_tag_core API v2</div></div></div>
+    <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+  </div>
+  <div class="nav-section">شروع</div>
+  <a href="#import" class="nav-link">📥 راهنمای Import</a>
+  <a href="#env" class="nav-link">⚙️ Variables</a>
+  <a href="#json" class="nav-link">📄 Collection JSON</a>
+  <div class="nav-section">مرجع</div>
+  <a href="#ref-auth" class="nav-link">🔑 Auth</a>
+  <a href="#ref-tags" class="nav-link">🏷 Tags</a>
+  <a href="#ref-alarms" class="nav-link">🚨 Alarms</a>
+  <a href="#ref-drivers" class="nav-link">🔌 Drivers <span class="new-badge">جدید</span></a>
+  <a href="#ref-dashboards" class="nav-link">📊 Dashboards</a>
+  <a href="#ref-reports" class="nav-link">📈 Reports</a>
+  <a href="#ref-users" class="nav-link">👥 Users</a>
+  <a href="#ref-system" class="nav-link">⚙️ System</a>
+  <a href="#ref-ws" class="nav-link">🌐 WebSocket <span class="new-badge">جدید</span></a>
+  <div class="nav-section">تکمیلی</div>
+  <a href="#scripts" class="nav-link">🧪 Test Scripts</a>
+  <a href="#tips" class="nav-link">💡 نکات</a>
+</aside>
+
+<main class="main-content">
+
+<div class="hero">
+  <h1>📦 Postman Collection — qt_tag_core API v2</h1>
+  <p>کالکشن کامل با Driver CRUD جدید + مستندات WebSocket</p>
+  <div class="hero-badges">
+    <span class="hero-badge">📦 Postman v2.1</span>
+    <span class="hero-badge">🔐 Token Auto-Save</span>
+    <span class="hero-badge">🗂 ۹ فولدر</span>
+    <span class="hero-badge">🔌 Driver CRUD</span>
+    <span class="hero-badge">🌐 WebSocket Ref</span>
+  </div>
+</div>
+
+<section id="import">
+  <h2><span class="icon">📥</span> ۱. راهنمای Import</h2>
+  <div class="step"><div class="step-num">1</div><div>JSON را از بخش <a href="#json" style="color:var(--acc)">Collection JSON</a> کپی کنید.</div></div>
+  <div class="step"><div class="step-num">2</div><div>در Postman: <code>Import</code> → <code>Raw text</code> → Paste → <code>Import</code></div></div>
+  <div class="step"><div class="step-num">3</div><div>ابتدا <strong>Login</strong> را اجرا کنید — توکن خودکار ذخیره می‌شود.</div></div>
+  <div class="note success"><div class="note-title">✅ خودکارسازی</div>اسکریپت‌ها <code>token</code>، <code>tag_id</code>، <code>dashboard_id</code>، <code>user_id</code> و <code>driver_id</code> را خودکار ذخیره می‌کنند.</div>
+</section>
+
+<section id="env">
+  <h2><span class="icon">⚙️</span> ۲. Variables</h2>
+  <table>
+    <tr><th>متغیر</th><th>پیش‌فرض</th><th>توضیح</th></tr>
+    <tr><td><code>base_url</code></td><td><code>http://localhost:8080/api/v1</code></td><td>آدرس پایه</td></tr>
+    <tr><td><code>token</code></td><td><em>خالی</em></td><td>خودکار پس از Login</td></tr>
+    <tr><td><code>tag_id</code></td><td><code>1</code></td><td>خودکار پس از Create Tag</td></tr>
+    <tr><td><code>driver_id</code></td><td><code>1</code></td><td>خودکار پس از Create Driver</td></tr>
+    <tr><td><code>alarm_id</code></td><td><code>1</code></td><td>برای ack</td></tr>
+    <tr><td><code>dashboard_id</code></td><td><em>خالی</em></td><td>خودکار پس از Create Dashboard</td></tr>
+    <tr><td><code>user_id</code></td><td><em>خالی</em></td><td>خودکار پس از Create User</td></tr>
+    <tr><td><code>report_tag_ids</code></td><td><code>1,2,3</code></td><td>برای گزارش‌ها</td></tr>
+  </table>
+</section>
+
+<section id="json">
+  <h2><span class="icon">📄</span> ۳. Collection JSON</h2>
+  <div class="note"><div class="note-title">📋 مشخصات</div>۹ فولدر • ۳۹ درخواست • Driver CRUD جدید • Schema: v2.1</div>
+  <div class="code-block">
+    <button class="copy-btn">کپی</button>
+<pre>{
+  "info": {
+    "name": "qt_tag_core API v2",
+    "description": "Complete REST API collection for qt_tag_core v2 (C++/Qt SCADA). Includes Driver CRUD. Login first to auto-save token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080/api/v1" },
+    { "key": "token", "value": "" },
+    { "key": "tag_id", "value": "1" },
+    { "key": "driver_id", "value": "1" },
+    { "key": "alarm_id", "value": "1" },
+    { "key": "dashboard_id", "value": "" },
+    { "key": "user_id", "value": "" },
+    { "key": "report_tag_ids", "value": "1,2,3" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (auto-save token)",
+          "event": [{ "listen": "test", "script": { "exec": ["var res = pm.response.json();", "if (res.token) { pm.collectionVariables.set('token', res.token); }", "pm.test('login ok', function(){ pm.response.to.have.status(200); });"], "type": "text/javascript" } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"your-password\"\n}" }, "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] } }
+        },
+        { "name": "Get Me", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/auth/me", "host": ["{{base_url}}"], "path": ["auth", "me"] } } },
+        { "name": "Logout", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/auth/logout", "host": ["{{base_url}}"], "path": ["auth", "logout"] } } }
+      ]
+    },
+    {
+      "name": "Tags",
+      "item": [
+        { "name": "List Tags", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/tags", "host": ["{{base_url}}"], "path": ["tags"] } } },
+        { "name": "Get Tag", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/tags/{{tag_id}}", "host": ["{{base_url}}"], "path": ["tags", "{{tag_id}}"] } } },
+        {
+          "name": "Create Tag",
+          "event": [{ "listen": "test", "script": { "exec": ["var r = pm.response.json();", "if (r.tag_id) { pm.collectionVariables.set('tag_id', r.tag_id); }"], "type": "text/javascript" } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"tag_id\": 100,\n  \"tag_name\": \"NEW.TAG.PV\",\n  \"source_type\": \"simulator\",\n  \"data_type\": \"float\",\n  \"eng_units\": \"°C\",\n  \"raw_min\": 0,\n  \"raw_max\": 100,\n  \"eng_min\": 0,\n  \"eng_max\": 100,\n  \"driver_id\": 0,\n  \"enabled\": true\n}" }, "url": { "raw": "{{base_url}}/tags", "host": ["{{base_url}}"], "path": ["tags"] } }
+        },
+        { "name": "Update Tag", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"eng_units\": \"°F\"\n}" }, "url": { "raw": "{{base_url}}/tags/{{tag_id}}", "host": ["{{base_url}}"], "path": ["tags", "{{tag_id}}"] } } },
+        { "name": "Delete Tag", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/tags/{{tag_id}}", "host": ["{{base_url}}"], "path": ["tags", "{{tag_id}}"] } } },
+        { "name": "Get Tag Current", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/tags/{{tag_id}}/current", "host": ["{{base_url}}"], "path": ["tags", "{{tag_id}}", "current"] } } },
+        { "name": "Get Tag History", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/tags/{{tag_id}}/history?from=2026-08-15T00:00:00Z&to=2026-08-15T23:59:59Z&interval=raw&limit=1000", "host": ["{{base_url}}"], "path": ["tags", "{{tag_id}}", "history"], "query": [{ "key": "from", "value": "2026-08-15T00:00:00Z" }, { "key": "to", "value": "2026-08-15T23:59:59Z" }, { "key": "interval", "value": "raw" }, { "key": "limit", "value": "1000" }] } } }
+      ]
+    },
+    {
+      "name": "Alarms",
+      "item": [
+        { "name": "List Alarms", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/alarms?limit=100&offset=0", "host": ["{{base_url}}"], "path": ["alarms"], "query": [{ "key": "limit", "value": "100" }, { "key": "offset", "value": "0" }] } } },
+        { "name": "Acknowledge Alarm", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{ \"user_name\": \"operator1\" }" }, "url": { "raw": "{{base_url}}/alarms/{{alarm_id}}/ack", "host": ["{{base_url}}"], "path": ["alarms", "{{alarm_id}}", "ack"] } } }
+      ]
+    },
+    {
+      "name": "Drivers (CRUD)",
+      "item": [
+        { "name": "List Drivers", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/drivers", "host": ["{{base_url}}"], "path": ["drivers"] } } },
+        {
+          "name": "Create Driver (auto-start)",
+          "event": [{ "listen": "test", "script": { "exec": ["var r = pm.response.json();", "if (r.driver_id) { pm.collectionVariables.set('driver_id', r.driver_id); }"], "type": "text/javascript" } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"PLC-01\",\n  \"type\": \"modbus_tcp\",\n  \"connection_config\": {\n    \"host\": \"192.168.1.10\",\n    \"port\": 502,\n    \"unit_id\": 1\n  },\n  \"polling_interval_ms\": 500,\n  \"enabled\": true\n}" }, "url": { "raw": "{{base_url}}/drivers", "host": ["{{base_url}}"], "path": ["drivers"] } }
+        },
+        { "name": "Update Driver (auto-restart)", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"polling_interval_ms\": 200,\n  \"enabled\": true\n}" }, "url": { "raw": "{{base_url}}/drivers/{{driver_id}}", "host": ["{{base_url}}"], "path": ["drivers", "{{driver_id}}"] } } },
+        { "name": "Delete Driver (check 409)", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/drivers/{{driver_id}}", "host": ["{{base_url}}"], "path": ["drivers", "{{driver_id}}"] } } }
+      ]
+    },
+    {
+      "name": "Dashboards",
+      "item": [
+        { "name": "List Dashboards", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/dashboards", "host": ["{{base_url}}"], "path": ["dashboards"] } } },
+        { "name": "Get Dashboard", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/dashboards/{{dashboard_id}}", "host": ["{{base_url}}"], "path": ["dashboards", "{{dashboard_id}}"] } } },
+        {
+          "name": "Create Dashboard",
+          "event": [{ "listen": "test", "script": { "exec": ["var r = pm.response.json();", "if (r.dashboard_id) { pm.collectionVariables.set('dashboard_id', r.dashboard_id); }"], "type": "text/javascript" } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Main Overview\",\n  \"description\": \"Test\",\n  \"dashboard_type\": \"simple\",\n  \"is_public\": true\n}" }, "url": { "raw": "{{base_url}}/dashboards", "host": ["{{base_url}}"], "path": ["dashboards"] } }
+        },
+        { "name": "Update Dashboard", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated\"\n}" }, "url": { "raw": "{{base_url}}/dashboards/{{dashboard_id}}", "host": ["{{base_url}}"], "path": ["dashboards", "{{dashboard_id}}"] } } },
+        { "name": "Delete Dashboard", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/dashboards/{{dashboard_id}}", "host": ["{{base_url}}"], "path": ["dashboards", "{{dashboard_id}}"] } } },
+        { "name": "Get Content", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/dashboards/{{dashboard_id}}/content", "host": ["{{base_url}}"], "path": ["dashboards", "{{dashboard_id}}", "content"] } } },
+        { "name": "Save Content", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{ \"content\": \"<dashboard/>\" }" }, "url": { "raw": "{{base_url}}/dashboards/{{dashboard_id}}/content", "host": ["{{base_url}}"], "path": ["dashboards", "{{dashboard_id}}", "content"] } } },
+        { "name": "List Resources", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/dashboards/{{dashboard_id}}/resources", "host": ["{{base_url}}"], "path": ["dashboards", "{{dashboard_id}}", "resources"] } } }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        { "name": "Tag History (JSON)", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/reports/tag-history?tag_ids={{report_tag_ids}}&format=json", "host": ["{{base_url}}"], "path": ["reports", "tag-history"], "query": [{ "key": "tag_ids", "value": "{{report_tag_ids}}" }, { "key": "format", "value": "json" }] } } },
+        { "name": "Tag History (CSV)", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/reports/tag-history?tag_ids={{report_tag_ids}}&format=csv", "host": ["{{base_url}}"], "path": ["reports", "tag-history"], "query": [{ "key": "tag_ids", "value": "{{report_tag_ids}}" }, { "key": "format", "value": "csv" }] } } },
+        { "name": "Alarms Report", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/reports/alarms?severity=high&format=json", "host": ["{{base_url}}"], "path": ["reports", "alarms"], "query": [{ "key": "severity", "value": "high" }, { "key": "format", "value": "json" }] } } },
+        { "name": "Daily Summary", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/reports/daily-summary?tag_ids={{report_tag_ids}}&format=json", "host": ["{{base_url}}"], "path": ["reports", "daily-summary"], "query": [{ "key": "tag_ids", "value": "{{report_tag_ids}}" }, { "key": "format", "value": "json" }] } } }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        { "name": "List Users", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/users", "host": ["{{base_url}}"], "path": ["users"] } } },
+        {
+          "name": "Create User",
+          "event": [{ "listen": "test", "script": { "exec": ["var r = pm.response.json();", "if (r.user_id) { pm.collectionVariables.set('user_id', r.user_id); }"], "type": "text/javascript" } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"username\": \"operator1\",\n  \"password\": \"secure-pass\",\n  \"display_name\": \"Operator\",\n  \"role\": \"operator\"\n}" }, "url": { "raw": "{{base_url}}/users", "host": ["{{base_url}}"], "path": ["users"] } }
+        },
+        { "name": "Update User", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"role\": \"viewer\",\n  \"is_active\": true\n}" }, "url": { "raw": "{{base_url}}/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["users", "{{user_id}}"] } } },
+        { "name": "Change Password", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{ \"new_password\": \"new-pass\" }" }, "url": { "raw": "{{base_url}}/users/{{user_id}}/password", "host": ["{{base_url}}"], "path": ["users", "{{user_id}}", "password"] } } },
+        { "name": "Delete User", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["users", "{{user_id}}"] } } }
+      ]
+    },
+    {
+      "name": "System",
+      "item": [
+        { "name": "Health (no auth)", "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] } } },
+        { "name": "System Status", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{base_url}}/system/status", "host": ["{{base_url}}"], "path": ["system", "status"] } } }
+      ]
+    }
+  ]
+}</pre>
+  </div>
+</section>
+
+<section id="ref-auth"><h2><span class="icon">🔑</span> ۴. مرجع — Auth</h2><table><tr><th>متد</th><th>مسیر</th><th>توضیح</th></tr><tr><td><span class="m m-POST">POST</span></td><td><code>/auth/login</code></td><td>ورود + auto-token</td></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/auth/me</code></td><td>کاربر جاری</td></tr><tr><td><span class="m m-POST">POST</span></td><td><code>/auth/logout</code></td><td>خروج</td></tr></table></section>
+
+<section id="ref-tags"><h2><span class="icon">🏷</span> ۵. مرجع — Tags</h2><table><tr><th>متد</th><th>مسیر</th><th>توضیح</th></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/tags</code></td><td>لیست</td></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/tags/:id</code></td><td>دریافت</td></tr><tr><td><span class="m m-POST">POST</span></td><td><code>/tags</code></td><td>ایجاد</td></tr><tr><td><span class="m m-PUT">PUT</span></td><td><code>/tags/:id</code></td><td>ویرایش</td></tr><tr><td><span class="m m-DELETE">DEL</span></td><td><code>/tags/:id</code></td><td>حذف</td></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/tags/:id/current</code></td><td>آخرین مقدار</td></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/tags/:id/history</code></td><td>تاریخچه</td></tr></table></section>
+
+<section id="ref-alarms"><h2><span class="icon">🚨</span> ۶. مرجع — Alarms</h2><table><tr><th>متد</th><th>مسیر</th><th>توضیح</th></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/alarms</code></td><td>لیست</td></tr><tr><td><span class="m m-POST">POST</span></td><td><code>/alarms/:id/ack</code></td><td>تأیید</td></tr></table></section>
+
+<section id="ref-drivers">
+  <h2><span class="icon">🔌</span> ۷. مرجع — Drivers <span class="new-badge">CRUD جدید</span></h2>
+  <table><tr><th>متد</th><th>مسیر</th><th>نقش</th><th>توضیح</th></tr>
+  <tr><td><span class="m m-GET">GET</span></td><td><code>/drivers</code></td><td>همه</td><td>لیست</td></tr>
+  <tr><td><span class="m m-POST">POST</span></td><td><code>/drivers</code></td><td>admin</td><td>ایجاد + استارت خودکار</td></tr>
+  <tr><td><span class="m m-PUT">PUT</span></td><td><code>/drivers/:id</code></td><td>admin</td><td>ویرایش + ری‌استارت خودکار</td></tr>
+  <tr><td><span class="m m-DELETE">DEL</span></td><td><code>/drivers/:id</code></td><td>admin</td><td>حذف (409 اگر تگ متصل باشد)</td></tr></table>
+  <h4>انواع درایور</h4>
+  <table><tr><th>type</th><th>پروتکل</th></tr>
+  <tr><td><code>simulator</code></td><td>شبیه‌ساز</td></tr>
+  <tr><td><code>modbus_tcp</code></td><td>Modbus TCP</td></tr>
+  <tr><td><code>modbus_rtu</code></td><td>Modbus RTU (سریال)</td></tr>
+  <tr><td><code>mqtt</code></td><td>MQTT</td></tr>
+  <tr><td><code>opc_ua</code></td><td>OPC UA</td></tr></table>
+</section>
+
+<section id="ref-dashboards"><h2><span class="icon">📊</span> ۸. مرجع — Dashboards</h2><table><tr><th>متد</th><th>مسیر</th><th>توضیح</th></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/dashboards</code></td><td>لیست</td></tr><tr><td><span class="m m-POST">POST</span></td><td><code>/dashboards</code></td><td>ایجاد</td></tr><tr><td><span class="m m-PUT">PUT</span></td><td><code>/dashboards/:id</code></td><td>ویرایش</td></tr><tr><td><span class="m m-DELETE">DEL</span></td><td><code>/dashboards/:id</code></td><td>حذف</td></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/dashboards/:id/content</code></td><td>محتوا</td></tr><tr><td><span class="m m-PUT">PUT</span></td><td><code>/dashboards/:id/content</code></td><td>ذخیره محتوا</td></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/dashboards/:id/resources</code></td><td>منابع</td></tr></table></section>
+
+<section id="ref-reports"><h2><span class="icon">📈</span> ۹. مرجع — Reports</h2><table><tr><th>متد</th><th>مسیر</th><th>پارامتر کلیدی</th></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/reports/tag-history</code></td><td><code>tag_ids</code> اجباری</td></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/reports/alarms</code></td><td>severity, state</td></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/reports/daily-summary</code></td><td><code>tag_ids</code> اجباری، date</td></tr></table></section>
+
+<section id="ref-users"><h2><span class="icon">👥</span> ۱۰. مرجع — Users</h2><table><tr><th>متد</th><th>مسیر</th><th>توضیح</th></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/users</code></td><td>لیست</td></tr><tr><td><span class="m m-POST">POST</span></td><td><code>/users</code></td><td>ایجاد</td></tr><tr><td><span class="m m-PUT">PUT</span></td><td><code>/users/:id</code></td><td>ویرایش</td></tr><tr><td><span class="m m-PUT">PUT</span></td><td><code>/users/:id/password</code></td><td>تغییر رمز</td></tr><tr><td><span class="m m-DELETE">DEL</span></td><td><code>/users/:id</code></td><td>حذف</td></tr></table></section>
+
+<section id="ref-system"><h2><span class="icon">⚙️</span> ۱۱. مرجع — System</h2><table><tr><th>متد</th><th>مسیر</th><th>توضیح</th></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/health</code></td><td>بدون auth</td></tr><tr><td><span class="m m-GET">GET</span></td><td><code>/system/status</code></td><td>وضعیت</td></tr></table></section>
+
+<section id="ref-ws">
+  <h2><span class="icon">🌐</span> ۱۲. مرجع — WebSocket <span class="new-badge">جدید</span></h2>
+  <div class="note warning"><div class="note-title">⚠️ محدودیت Postman</div>Postman پشتیبانی محدودی از WebSocket دارد. برای تست کامل، از مرورگر یا ابزارهایی مثل <code>wscat</code> یا کتابخانه‌های JS استفاده کنید. در زیر مثال‌های آماده آورده شده است.</div>
+
+  <h3>URL‌های اتصال</h3>
+  <table><tr><th>URL</th><th>عملکرد</th></tr>
+  <tr><td><code>ws://localhost:8080/ws</code></td><td>اتصال ساده</td></tr>
+  <tr><td><code>ws://localhost:8080/ws/alarms/all</code></td><td>اشتراک همه آلارم‌ها</td></tr>
+  <tr><td><code>ws://localhost:8080/ws/tags/batch?ids=1,2,3</code></td><td>اشتراک تگ‌ها (batch)</td></tr>
+  <tr><td><code>ws://localhost:8080/ws/dashboard/main?ids=1,2</code></td><td>اشتراک داشبورد</td></tr></table>
+
+  <h3>مثال JavaScript — اتصال و subscribe</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>const ws = new WebSocket('ws://localhost:8080/ws/tags/batch?ids=1,2,3');
+
+ws.onopen = () => console.log('Connected');
+
+ws.onmessage = (e) => {
+  const msg = JSON.parse(e.data);
+  switch (msg.type) {
+    case 'hello':
+      console.log('Session:', msg.session);
+      break;
+    case 'tags.batch':
+      msg.updates.forEach(u => console.log(`Tag ${u.tag_id}: ${u.value} [${u.quality}]`));
+      break;
+    case 'tags.snapshot':
+      console.log('Snapshot:', msg.tags);
+      break;
+    case 'alarm.event':
+      console.log(`ALARM [${msg.severity}] ${msg.category}:`, msg);
+      break;
+    case 'alarm.ack':
+      console.log('Alarm acked by:', msg.user_name);
+      break;
+    case 'response':
+      console.log(msg.ok ? 'CMD OK:' : 'CMD ERR:', msg.data || msg.error);
+      break;
+    case 'error':
+      console.error('WS Error:', msg.message);
+      break;
+  }
+};
+
+// Heartbeat: سرور هر 30s ping می‌فرستد، مرورگر خودکار pong می‌دهد</pre></div>
+
+  <h3>مثال JavaScript — ارسال Command</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>// نوشتن مقدار روی تگ
+ws.send(JSON.stringify({
+  type: 'command',
+  id: 'cmd-' + Date.now(),
+  op: 'write_tag',
+  payload: { tag_id: 1, value: 75.5 }
+}));
+
+// پاسخ در msg.type === 'response' دریافت می‌شود</pre></div>
+
+  <h3>مثال JavaScript — Subscribe/Unsubscribe دستی</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>// Subscribe
+ws.send(JSON.stringify({
+  op: 'subscribe',
+  channel: ['alarms/all', 'system/status'],
+  tags: [1, 2, 3],
+  dashboard: ['main'],
+  delivery: 'batch'
+}));
+
+// Unsubscribe
+ws.send(JSON.stringify({
+  op: 'unsubscribe',
+  tags: [1, 2]
+}));
+
+// تغییر حالت دریافت
+ws.send(JSON.stringify({ op: 'options', delivery: 'event' }));
+
+// Snapshot
+ws.send(JSON.stringify({ op: 'get_snapshot', tags: [1, 2, 3] }));</pre></div>
+
+  <h3>لیست کامل پیام‌ها</h3>
+  <table>
+    <tr><th>جهت</th><th>نوع</th><th>توضیح</th></tr>
+    <tr><td>← server</td><td><code>hello</code></td><td>هنگام اتصال</td></tr>
+    <tr><td>← server</td><td><code>pong</code></td><td>پاسخ ping</td></tr>
+    <tr><td>← server</td><td><code>ack</code></td><td>تأیید subscribe/unsubscribe/options</td></tr>
+    <tr><td>← server</td><td><code>error</code></td><td>خطا</td></tr>
+    <tr><td>← server</td><td><code>tag.update</code></td><td>بروزرسانی تگ (event mode)</td></tr>
+    <tr><td>← server</td><td><code>tags.batch</code></td><td>بروزرسانی تجمیعی (batch mode)</td></tr>
+    <tr><td>← server</td><td><code>tags.snapshot</code></td><td>Snapshot تگ‌ها</td></tr>
+    <tr><td>← server</td><td><code>alarm.event</code></td><td>رویداد آلارم</td></tr>
+    <tr><td>← server</td><td><code>alarm.ack</code></td><td>تأیید آلارم</td></tr>
+    <tr><td>← server</td><td><code>system.status</code></td><td>وضعیت سیستم</td></tr>
+    <tr><td>← server</td><td><code>dashboard.event</code></td><td>رویداد داشبورد</td></tr>
+    <tr><td>← server</td><td><code>response</code></td><td>پاسخ command</td></tr>
+    <tr><td>client →</td><td><code>ping</code></td><td>Heartbeat</td></tr>
+    <tr><td>client →</td><td><code>subscribe</code></td><td>اشتراک</td></tr>
+    <tr><td>client →</td><td><code>unsubscribe</code></td><td>لغو اشتراک</td></tr>
+    <tr><td>client →</td><td><code>options</code></td><td>تغییر delivery mode</td></tr>
+    <tr><td>client →</td><td><code>get_snapshot</code></td><td>درخواست snapshot</td></tr>
+    <tr><td>client →</td><td><code>command</code></td><td>ارسال دستور</td></tr>
+  </table>
+</section>
+
+<section id="scripts">
+  <h2><span class="icon">🧪</span> ۱۳. Test Scripts</h2>
+  <h4>Login — ذخیره token</h4>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>var res = pm.response.json();
+if (res.token) { pm.collectionVariables.set('token', res.token); }
+pm.test('login ok', function(){ pm.response.to.have.status(200); });</pre></div>
+  <h4>Create Driver — ذخیره driver_id</h4>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>var r = pm.response.json();
+if (r.driver_id) { pm.collectionVariables.set('driver_id', r.driver_id); }
+pm.test('driver created', function(){ pm.expect(r.created).to.be.true; });</pre></div>
+  <h4>Delete Driver — بررسی 409</h4>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>if (pm.response.code === 409) {
+  console.log('Driver has tags attached - cannot delete');
+} else {
+  pm.test('deleted', function(){ pm.response.to.have.status(200); });
+}</pre></div>
+</section>
+
+<section id="tips">
+  <h2><span class="icon">💡</span> ۱۴. نکات</h2>
+  <ul>
+    <li>ترتیب Runner: <code>Login → Create Driver → Create Tag → Get Current → ...</code></li>
+    <li>پورت پیش‌فرض: <code>8080</code></li>
+    <li>حداقل <code>polling_interval_ms</code>: 100ms (مقادیر کمتر به 100 تبدیل می‌شوند)</li>
+    <li>حذف درایور با تگ‌های متصل → خطای <code>409</code></li>
+    <li>ایجاد درایور با <code>enabled: true</code> → استارت خودکار (فیلد <code>started</code> در پاسخ)</li>
+    <li>ویرایش درایور در حال اجرا → توقف + ری‌استارت (فیلد <code>restarted</code> در پاسخ)</li>
+    <li>API Key = نقش admin</li>
+    <li>برای WebSocket از <code>wscat -c ws://localhost:8080/ws</code> استفاده کنید</li>
+  </ul>
+</section>
+
+<footer>📦 Postman Collection — qt_tag_core API v2 | ۲۰۲۶-۰۸-۱۵</footer>
+</main>
+
+<button class="back-to-top" id="backToTop">↑</button>
+
+<script>
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('active');document.body.classList.add('sidebar-open')}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('active');document.body.classList.remove('sidebar-open')}
+function toggleSidebar(){document.getElementById('sidebar').classList.contains('open')?closeSidebar():openSidebar()}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSidebar()});
+document.querySelectorAll('.copy-btn').forEach(b=>b.addEventListener('click',function(){navigator.clipboard.writeText(this.parentElement.querySelector('pre').innerText).then(()=>{this.textContent='کپی شد!';setTimeout(()=>this.textContent='کپی',2000)})}));
+const secs=document.querySelectorAll('section[id]'),links=document.querySelectorAll('.nav-link'),bt=document.getElementById('backToTop');
+window.addEventListener('scroll',()=>{let c='';secs.forEach(s=>{if(pageYOffset>=s.offsetTop-100)c=s.id});links.forEach(l=>{l.classList.toggle('active',l.getAttribute('href')==='#'+c)});bt.classList.toggle('visible',pageYOffset>500)});
+links.forEach(l=>l.addEventListener('click',()=>{if(innerWidth<=900)closeSidebar()}));
+document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',function(e){e.preventDefault();const t=document.querySelector(this.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'})}));
+addEventListener('resize',()=>{if(innerWidth>900)closeSidebar()});
+bt.addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
+</script>
+</body>
+</html>

@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مستندات API — qt_tag_core (v2)</title>
+<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
+<style>
+:root{--bg:#0b1120;--bg2:#111827;--bg3:#1f2937;--card:#1a2332;--txt:#e5e7eb;--txt2:#9ca3af;--mut:#6b7280;--brd:#374151;--acc:#10b981;--acc2:#059669;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--info:#06b6d4;--pur:#8b5cf6;--pink:#ec4899;--code:#050a14;--sw:290px;--sh:0 4px 6px -1px rgba(0,0,0,.4)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Vazir',Tahoma,sans-serif;background:var(--bg);color:var(--txt);line-height:1.8;font-size:15px;overflow-x:hidden}
+body.sidebar-open{overflow:hidden}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:5px}
+.sidebar{position:fixed;top:0;right:0;width:var(--sw);height:100vh;background:var(--bg2);border-left:1px solid var(--brd);overflow-y:auto;padding:20px 0;z-index:100;transition:transform .3s}
+.sidebar-header{padding:0 20px 20px;border-bottom:1px solid var(--brd);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:bold;color:var(--acc)}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--acc),var(--info));border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px}
+.sidebar-subtitle{font-size:11px;color:var(--mut);margin-top:4px}
+.sidebar-close{display:none;background:0 0;border:none;color:var(--txt2);font-size:24px;cursor:pointer;line-height:1}
+.sidebar-close:hover{color:var(--err)}
+.nav-section{padding:10px 20px 4px;font-size:11px;color:var(--acc);font-weight:700;letter-spacing:1.5px}
+.nav-link{display:block;padding:7px 20px;color:var(--txt2);text-decoration:none;font-size:13.5px;border-right:3px solid transparent;transition:.2s}
+.nav-link:hover{background:var(--bg3);color:var(--txt);border-right-color:var(--acc)}
+.nav-link.active{background:var(--bg3);color:var(--acc);border-right-color:var(--acc);font-weight:500}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99;opacity:0;visibility:hidden;transition:.3s}
+.overlay.active{opacity:1;visibility:visible}
+.mobile-menu-btn{position:fixed;top:15px;right:15px;z-index:90;background:var(--acc);color:#fff;border:none;width:44px;height:44px;border-radius:8px;font-size:20px;cursor:pointer;box-shadow:var(--sh);display:none;align-items:center;justify-content:center}
+body.sidebar-open .mobile-menu-btn{display:none!important;pointer-events:none!important;opacity:0;visibility:hidden}
+.main-content{margin-right:var(--sw);padding:40px 60px;max-width:calc(100% - var(--sw))}
+.hero{background:linear-gradient(135deg,#064e3b 0%,#0e7490 50%,#7c3aed 100%);border-radius:20px;padding:50px 40px;margin-bottom:40px;position:relative;overflow:hidden;box-shadow:0 20px 40px -10px rgba(16,185,129,.3)}
+.hero h1{font-size:36px;color:#fff;margin-bottom:12px}
+.hero .subtitle{font-size:16px;color:rgba(255,255,255,.9)}
+.hero-badges{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.hero-badge{background:rgba(255,255,255,.15);backdrop-filter:blur(10px);padding:6px 14px;border-radius:20px;font-size:12.5px;color:#fff;border:1px solid rgba(255,255,255,.2)}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-bottom:40px}
+.info-card{background:var(--card);border:1px solid var(--brd);border-radius:12px;padding:18px;position:relative;overflow:hidden}
+.info-card::before{content:'';position:absolute;top:0;right:0;width:4px;height:100%;background:var(--acc)}
+.info-card-title{font-size:11px;color:var(--mut);margin-bottom:8px;letter-spacing:1px;font-weight:600}
+.info-card-value{font-size:14px;font-family:Consolas,Monaco,monospace;direction:ltr;text-align:left;word-break:break-all}
+section{background:var(--bg2);border:1px solid var(--brd);border-radius:16px;padding:32px;margin-bottom:30px;scroll-margin-top:20px}
+section h2{font-size:24px;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid var(--brd);display:flex;align-items:center;gap:12px}
+section h2 .icon{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--acc),var(--info));display:flex;align-items:center;justify-content:center;color:#fff;font-size:19px}
+section h3{font-size:18px;margin:24px 0 12px}
+section h4{font-size:15px;margin:14px 0 8px;color:var(--txt2)}
+.endpoint{background:var(--bg3);border:1px solid var(--brd);border-radius:12px;padding:20px;margin:18px 0;transition:.2s}
+.endpoint:hover{border-color:var(--acc);box-shadow:0 4px 12px rgba(16,185,129,.1)}
+.endpoint-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.method-badge{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:800;font-family:Consolas,monospace;letter-spacing:1px;min-width:65px;text-align:center;color:#fff}
+.method-GET{background:linear-gradient(135deg,#10b981,#059669)}
+.method-POST{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+.method-PUT{background:linear-gradient(135deg,#f59e0b,#d97706)}
+.method-DELETE{background:linear-gradient(135deg,#ef4444,#dc2626)}
+.endpoint-path{font-family:Consolas,monospace;font-size:15.5px;direction:ltr;text-align:left;flex:1;font-weight:600}
+.access-badge{padding:3px 10px;border-radius:4px;font-size:11px;font-weight:500}
+.access-public{background:rgba(16,185,129,.2);color:#6ee7b7;border:1px solid rgba(16,185,129,.3)}
+.access-auth{background:rgba(59,130,246,.2);color:#93c5fd;border:1px solid rgba(59,130,246,.3)}
+.access-operator{background:rgba(245,158,11,.2);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
+.access-admin{background:rgba(239,68,68,.2);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
+.code-block{background:var(--code);border:1px solid var(--brd);border-radius:8px;padding:16px;margin:12px 0;direction:ltr;text-align:left;font-family:Consolas,Monaco,monospace;font-size:12.5px;overflow-x:auto;position:relative;line-height:1.65}
+.code-block pre{margin:0;white-space:pre;color:#cbd5e1}
+.copy-btn{position:absolute;top:8px;left:8px;background:var(--bg3);border:1px solid var(--brd);color:var(--txt2);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-family:'Vazir',sans-serif}
+.copy-btn:hover{background:var(--acc);color:#fff}
+.json-key{color:#93c5fd}.json-string{color:#86efac}.json-number{color:#fcd34d}.json-boolean{color:#c4b5fd}.json-null{color:#f87171}.json-comment{color:#64748b;font-style:italic}
+table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--bg3);border-radius:8px;overflow:hidden}
+th,td{padding:11px 16px;text-align:right;border-bottom:1px solid var(--brd)}
+th{background:var(--bg);color:var(--acc);font-weight:600;font-size:13px}
+td{font-size:13.5px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(16,185,129,.05)}
+td code,p code,li code{background:var(--code);padding:2px 7px;border-radius:4px;font-size:12px;color:#fcd34d;border:1px solid var(--brd);direction:ltr;display:inline-block;font-family:Consolas,monospace}
+.note{background:rgba(6,182,212,.1);border-right:4px solid var(--info);padding:14px 18px;border-radius:8px;margin:16px 0;font-size:14px}
+.note.warning{background:rgba(245,158,11,.1);border-right-color:var(--warn)}
+.note.danger{background:rgba(239,68,68,.1);border-right-color:var(--err)}
+.note.success{background:rgba(16,185,129,.1);border-right-color:var(--ok)}
+.note-title{font-weight:bold;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+ul,ol{padding-right:24px;margin:8px 0}li{margin:5px 0}
+.status-200{color:var(--ok);font-weight:bold}.status-201{color:var(--ok);font-weight:bold}.status-400{color:var(--warn);font-weight:bold}.status-401{color:var(--err);font-weight:bold}.status-403{color:var(--pink);font-weight:bold}.status-404{color:var(--mut);font-weight:bold}.status-409{color:var(--warn);font-weight:bold}.status-500{color:var(--err);font-weight:bold}
+.role-tag{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:500}
+.role-admin{background:rgba(239,68,68,.2);color:#fca5a5}
+.role-operator{background:rgba(245,158,11,.2);color:#fcd34d}
+.role-viewer{background:rgba(16,185,129,.2);color:#6ee7b7}
+.ws-msg-type{display:inline-block;padding:3px 10px;border-radius:5px;font-size:12px;font-family:Consolas,monospace;font-weight:600;margin:2px}
+.ws-client{background:rgba(59,130,246,.2);color:#93c5fd}
+.ws-server{background:rgba(16,185,129,.2);color:#6ee7b7}
+.ws-event{background:rgba(139,92,246,.2);color:#c4b5fd}
+.ws-url{background:rgba(245,158,11,.2);color:#fcd34d}
+.new-badge{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;margin-right:8px}
+.back-to-top{position:fixed;bottom:30px;left:30px;background:var(--acc);color:#fff;border:none;width:48px;height:48px;border-radius:50%;cursor:pointer;font-size:20px;box-shadow:var(--sh);opacity:0;pointer-events:none;transition:.3s;z-index:50}
+.back-to-top.visible{opacity:1;pointer-events:auto}
+footer{text-align:center;padding:30px;color:var(--mut);font-size:13px;border-top:1px solid var(--brd);margin-top:40px}
+@media(max-width:900px){.sidebar{transform:translateX(100%)}.sidebar.open{transform:translateX(0)}.sidebar-close{display:block}.main-content{margin-right:0;max-width:100%;padding:20px;padding-top:70px}.mobile-menu-btn{display:flex}.hero{padding:30px 20px}.hero h1{font-size:24px}section{padding:20px}}
+@media(min-width:901px){.mobile-menu-btn,.overlay,.sidebar-close{display:none!important;visibility:hidden;pointer-events:none}.sidebar{transform:translateX(0)!important}}
+</style>
+</head>
+<body>
+
+<button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo"><div class="logo-icon">⚡</div><div>qt_tag_core<div class="sidebar-subtitle">REST API v2 • Qt/C++</div></div></div>
+    <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+  </div>
+  <div class="nav-section">شروع</div>
+  <a href="#overview" class="nav-link">🏗 معماری</a>
+  <a href="#auth" class="nav-link">🔐 احراز هویت</a>
+  <a href="#models" class="nav-link">📦 مدل‌ها</a>
+  <div class="nav-section">REST API</div>
+  <a href="#auth-endpoints" class="nav-link">🔑 Auth</a>
+  <a href="#tags-endpoints" class="nav-link">🏷 Tags</a>
+  <a href="#alarms-endpoints" class="nav-link">🚨 Alarms</a>
+  <a href="#drivers-endpoints" class="nav-link">🔌 Drivers <span class="new-badge">جدید</span></a>
+  <a href="#dashboards-endpoints" class="nav-link">📊 Dashboards</a>
+  <a href="#reports-endpoints" class="nav-link">📈 Reports</a>
+  <a href="#users-endpoints" class="nav-link">👥 Users</a>
+  <a href="#system-endpoints" class="nav-link">⚙️ System</a>
+  <div class="nav-section">Real-time</div>
+  <a href="#websocket" class="nav-link">🌐 WebSocket <span class="new-badge">جدید</span></a>
+  <a href="#ws-routing" class="nav-link">🔀 URL Routing</a>
+  <a href="#ws-control" class="nav-link">🎮 Control Messages</a>
+  <a href="#ws-commands" class="nav-link">⚡ Commands</a>
+  <a href="#ws-events" class="nav-link">📨 Server Events</a>
+  <div class="nav-section">تکمیلی</div>
+  <a href="#errors" class="nav-link">❌ کدهای خطا</a>
+  <a href="#config" class="nav-link">⚙️ پیکربندی</a>
+  <a href="#examples" class="nav-link">📚 مثال‌ها</a>
+</aside>
+
+<main class="main-content">
+
+<div class="hero">
+  <h1>⚡ مستندات API کتابخانه qt_tag_core</h1>
+  <p class="subtitle">هسته C++/Qt برای SCADA صنعتی — Modbus TCP/RTU، OPC UA، MQTT، WebSocket real-time</p>
+  <div class="hero-badges">
+    <span class="hero-badge">⚡ C++17 / Qt</span>
+    <span class="hero-badge">🔌 Modbus TCP/RTU</span>
+    <span class="hero-badge">🏭 OPC UA</span>
+    <span class="hero-badge">📡 MQTT</span>
+    <span class="hero-badge">🐘 PostgreSQL</span>
+    <span class="hero-badge">🌐 WebSocket</span>
+    <span class="hero-badge">📊 REST API v2</span>
+  </div>
+</div>
+
+<div class="info-grid">
+  <div class="info-card"><div class="info-card-title">REST Base URL</div><div class="info-card-value">http://localhost:8080/api/v1</div></div>
+  <div class="info-card"><div class="info-card-title">WebSocket</div><div class="info-card-value">ws://localhost:8080/ws</div></div>
+  <div class="info-card"><div class="info-card-title">پروتکل‌ها</div><div class="info-card-value">HTTP/1.1 • JSON • WebSocket</div></div>
+  <div class="info-card"><div class="info-card-title">نسخه</div><div class="info-card-value">v2 (0.1.0)</div></div>
+</div>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <h2><span class="icon">🏗</span> ۱. معماری</h2>
+  <div class="code-block"><pre>Client (Flutter / Web / HMI)
+       ↕
+REST API (HttpServer) + WebSocket Server
+       ↕
+Core: TagBus → RuleEngine → DeadbandFilter → Writers
+       ↕
+DriverManager → ITagDriver (Modbus/OPC UA/MQTT/Simulator)
+       ↕
+Storage: DbManager → BatchHistorianWriter → CurrentStateWriter → ArchiveManager</pre></div>
+
+  <h3>نقش‌های کاربری</h3>
+  <table>
+    <tr><th>نقش</th><th>دسترسی‌ها</th></tr>
+    <tr><td><span class="role-tag role-viewer">viewer</span></td><td>فقط GET</td></tr>
+    <tr><td><span class="role-tag role-operator">operator</span></td><td>viewer + تأیید آلارم‌ها</td></tr>
+    <tr><td><span class="role-tag role-admin">admin</span></td><td>همه دسترسی‌ها (CRUD کامل)</td></tr>
+  </table>
+  <div class="note"><div class="note-title">🔐 API Key = Admin</div>اگر از <code>X-API-Key</code> استفاده کنید، نقش <code>admin</code> با نام کاربری <code>api-key</code> اختصاص می‌یابد.</div>
+</section>
+
+<!-- AUTH -->
+<section id="auth">
+  <h2><span class="icon">🔐</span> ۲. احراز هویت</h2>
+  <h3>روش ۱: Bearer Token</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>Authorization: Bearer &lt;TOKEN&gt;</pre></div>
+  <h3>روش ۲: API Key</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>X-API-Key: your-api-key-here</pre></div>
+  <div class="note warning"><div class="note-title">⚠️ Public Paths</div><code>/api/v1/health</code> ، <code>/health</code> ، <code>/api/v1/auth/login</code> ، <code>OPTIONS *</code></div>
+</section>
+
+<!-- MODELS -->
+<section id="models">
+  <h2><span class="icon">📦</span> ۳. مدل‌های داده</h2>
+  <h3>۳.۱ TagDefinition</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"tag_id"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"tag_name"</span>: <span class="json-string">"SIM.UNIT02.PUMP101.FIC-101.PV"</span>,
+  <span class="json-key">"source_type"</span>: <span class="json-string">"simulator"</span>,
+  <span class="json-key">"data_type"</span>: <span class="json-string">"float"</span>,
+  <span class="json-key">"eng_units"</span>: <span class="json-string">"°C"</span>,
+  <span class="json-key">"raw_min"</span>: <span class="json-number">0.0</span>, <span class="json-key">"raw_max"</span>: <span class="json-number">100.0</span>,
+  <span class="json-key">"eng_min"</span>: <span class="json-number">0.0</span>, <span class="json-key">"eng_max"</span>: <span class="json-number">100.0</span>,
+  <span class="json-key">"scaling_type"</span>: <span class="json-string">"linear"</span>,
+  <span class="json-key">"slope"</span>: <span class="json-number">1.0</span>, <span class="json-key">"offset"</span>: <span class="json-number">0.0</span>,
+  <span class="json-key">"deadband"</span>: <span class="json-number">0.0</span>,
+  <span class="json-key">"storage_deadband"</span>: <span class="json-number">-1.0</span>,
+  <span class="json-key">"alarm_hysteresis"</span>: <span class="json-number">-1.0</span>,
+  <span class="json-key">"heartbeat_interval_ms"</span>: <span class="json-number">-1</span>,
+  <span class="json-key">"software_filter"</span>: <span class="json-string">"none"</span>,
+  <span class="json-key">"sim_profile"</span>: <span class="json-string">"sine"</span>,
+  <span class="json-key">"driver_id"</span>: <span class="json-number">0</span>,
+  <span class="json-key">"address_config"</span>: <span class="json-string">"{}"</span>,
+  <span class="json-key">"enabled"</span>: <span class="json-boolean">true</span>,
+  <span class="json-key">"clamp_enabled"</span>: <span class="json-boolean">true</span>
+}</pre></div>
+
+  <h3>۳.۲ DriverDefinition</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"driver_id"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"name"</span>: <span class="json-string">"PLC-01"</span>,
+  <span class="json-key">"type"</span>: <span class="json-string">"modbus_tcp"</span>,
+  <span class="json-key">"connection_config"</span>: { <span class="json-comment">/* بسته به نوع */</span> },
+  <span class="json-key">"polling_interval_ms"</span>: <span class="json-number">1000</span>,
+  <span class="json-key">"enabled"</span>: <span class="json-boolean">true</span>
+}</pre></div>
+
+  <h3>۳.۳ TagValue</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"tag_id"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"value"</span>: <span class="json-number">45.5</span>,
+  <span class="json-key">"raw_value"</span>: <span class="json-number">45.5</span>,
+  <span class="json-key">"quality"</span>: <span class="json-string">"good | uncertain | bad"</span>,
+  <span class="json-key">"source"</span>: <span class="json-number">0</span>,
+  <span class="json-key">"sequence"</span>: <span class="json-number">12345</span>,
+  <span class="json-key">"ts"</span>: <span class="json-string">"2026-08-15T10:00:00.000Z"</span>
+}</pre></div>
+
+  <h3>۳.۴ AlarmNotification</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"alarm_id"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"tag_id"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"alarm_type"</span>: <span class="json-string">"high"</span>,
+  <span class="json-key">"severity"</span>: <span class="json-string">"info | low | medium | high | critical"</span>,
+  <span class="json-key">"state"</span>: <span class="json-string">"active | acknowledged | cleared"</span>,
+  <span class="json-key">"value"</span>: <span class="json-number">95.5</span>,
+  <span class="json-key">"threshold"</span>: <span class="json-number">80.0</span>,
+  <span class="json-key">"category"</span>: <span class="json-string">"analog | digital"</span>,
+  <span class="json-key">"timestamp"</span>: <span class="json-string">"ISO8601"</span>
+}</pre></div>
+</section>
+
+<!-- AUTH ENDPOINTS -->
+<section id="auth-endpoints">
+  <h2><span class="icon">🔑</span> ۴. Auth</h2>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method-badge method-POST">POST</span><span class="endpoint-path">/api/v1/auth/login</span><span class="access-badge access-public">عمومی</span></div>
+    <h4>ورود</h4>
+    <div class="code-block"><button class="copy-btn">کپی</button><pre>{ <span class="json-key">"username"</span>: <span class="json-string">"admin"</span>, <span class="json-key">"password"</span>: <span class="json-string">"your-password"</span> }</pre></div>
+    <h4>Response (200):</h4>
+    <div class="code-block"><button class="copy-btn">کپی</button><pre>{ <span class="json-key">"token"</span>: <span class="json-string">"..."</span>, <span class="json-key">"user_id"</span>: <span class="json-number">1</span>, <span class="json-key">"username"</span>: <span class="json-string">"admin"</span>, <span class="json-key">"role"</span>: <span class="json-string">"admin"</span> }</pre></div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/auth/me</span><span class="access-badge access-auth">Bearer</span></div>
+    <h4>کاربر جاری</h4>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method-badge method-POST">POST</span><span class="endpoint-path">/api/v1/auth/logout</span><span class="access-badge access-auth">Bearer</span></div>
+    <h4>خروج</h4>
+  </div>
+</section>
+
+<!-- TAGS -->
+<section id="tags-endpoints">
+  <h2><span class="icon">🏷</span> ۵. Tags</h2>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/tags</span><span class="access-badge access-auth">Bearer</span></div><h4>لیست همه تگ‌ها</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/tags/{id}</span><span class="access-badge access-auth">Bearer</span></div><h4>دریافت یک تگ</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-POST">POST</span><span class="endpoint-path">/api/v1/tags</span><span class="access-badge access-admin">admin</span></div><h4>ایجاد تگ — <code>tag_id</code> و <code>tag_name</code> اجباری</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-PUT">PUT</span><span class="endpoint-path">/api/v1/tags/{id}</span><span class="access-badge access-admin">admin</span></div><h4>به‌روزرسانی تگ</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-DELETE">DELETE</span><span class="endpoint-path">/api/v1/tags/{id}</span><span class="access-badge access-admin">admin</span></div><h4>حذف تگ</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/tags/{id}/current</span><span class="access-badge access-auth">Bearer</span></div><h4>آخرین مقدار</h4></div>
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/tags/{id}/history</span><span class="access-badge access-auth">Bearer</span></div>
+    <h4>تاریخچه</h4>
+    <table><tr><th>پارامتر</th><th>پیش‌فرض</th><th>توضیح</th></tr>
+    <tr><td><code>from</code></td><td>۱ ساعت قبل</td><td>ISO8601</td></tr>
+    <tr><td><code>to</code></td><td>کنون</td><td>ISO8601</td></tr>
+    <tr><td><code>interval</code></td><td><code>raw</code></td><td>1m, 5m, 1h, 1d</td></tr>
+    <tr><td><code>limit</code></td><td>1000</td><td>حداکثر رکورد</td></tr></table>
+  </div>
+</section>
+
+<!-- ALARMS -->
+<section id="alarms-endpoints">
+  <h2><span class="icon">🚨</span> ۶. Alarms</h2>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/alarms?limit=100&offset=0</span><span class="access-badge access-auth">Bearer</span></div><h4>لیست آلارم‌ها</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-POST">POST</span><span class="endpoint-path">/api/v1/alarms/{id}/ack</span><span class="access-badge access-operator">operator+</span></div><h4>تأیید آلارم</h4>
+    <div class="code-block"><button class="copy-btn">کپی</button><pre>{ <span class="json-key">"user_name"</span>: <span class="json-string">"operator1"</span> }</pre></div>
+    <div class="note success"><div class="note-title">📡 WebSocket</div>پس از ack، رویداد <code>alarm.ack</code> به کانال‌های <code>alarms/all</code>، <code>alarms/analog</code> و <code>alarms/digital</code> broadcast می‌شود.</div>
+  </div>
+</section>
+
+<!-- DRIVERS (جدید - کامل) -->
+<section id="drivers-endpoints">
+  <h2><span class="icon">🔌</span> ۷. Drivers <span class="new-badge">CRUD کامل</span></h2>
+
+  <div class="note success"><div class="note-title">🆕 تغییرات جدید</div>درایورها اکنون CRUD کامل دارند. ایجاد → استارت خودکار، ویرایش → ری‌استارت خودکار، حذف → توقف + بررسی وابستگی تگ‌ها.</div>
+
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/drivers</span><span class="access-badge access-auth">Bearer</span></div>
+    <h4>لیست درایورها</h4>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"drivers"</span>: [
+    {
+      <span class="json-key">"driver_id"</span>: <span class="json-number">1</span>,
+      <span class="json-key">"name"</span>: <span class="json-string">"PLC-01"</span>,
+      <span class="json-key">"type"</span>: <span class="json-string">"modbus_tcp"</span>,
+      <span class="json-key">"polling_interval_ms"</span>: <span class="json-number">1000</span>,
+      <span class="json-key">"enabled"</span>: <span class="json-boolean">true</span>,
+      <span class="json-key">"connection_config"</span>: { <span class="json-key">"host"</span>: <span class="json-string">"192.168.1.10"</span>, <span class="json-key">"port"</span>: <span class="json-number">502</span> }
+    }
+  ],
+  <span class="json-key">"count"</span>: <span class="json-number">3</span>
+}</pre></div>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method-badge method-POST">POST</span><span class="endpoint-path">/api/v1/drivers</span><span class="access-badge access-admin">admin</span><span class="new-badge">جدید</span></div>
+    <h4>ایجاد درایور + استارت خودکار</h4>
+    <h4>Body:</h4>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"name"</span>: <span class="json-string">"PLC-02"</span>,                    <span class="json-comment">// اجباری</span>
+  <span class="json-key">"type"</span>: <span class="json-string">"modbus_tcp"</span>,               <span class="json-comment">// اجباری</span>
+  <span class="json-key">"connection_config"</span>: {
+    <span class="json-key">"host"</span>: <span class="json-string">"192.168.1.20"</span>,
+    <span class="json-key">"port"</span>: <span class="json-number">502</span>,
+    <span class="json-key">"unit_id"</span>: <span class="json-number">1</span>
+  },
+  <span class="json-key">"polling_interval_ms"</span>: <span class="json-number">500</span>,         <span class="json-comment">// حداقل 100ms</span>
+  <span class="json-key">"enabled"</span>: <span class="json-boolean">true</span>
+}</pre></div>
+    <h4>Response (201):</h4>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{ <span class="json-key">"created"</span>: <span class="json-boolean">true</span>, <span class="json-key">"driver_id"</span>: <span class="json-number">4</span>, <span class="json-key">"started"</span>: <span class="json-boolean">true</span> }</pre></div>
+    <table>
+      <tr><th>کد</th><th>دلیل</th></tr>
+      <tr><td><span class="status-400">400</span></td><td><code>name</code> یا <code>type</code> نامعتبر / type پشتیبانی‌نشده</td></tr>
+      <tr><td><span class="status-500">500</span></td><td>خطای دیتابیس</td></tr>
+    </table>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method-badge method-PUT">PUT</span><span class="endpoint-path">/api/v1/drivers/{id}</span><span class="access-badge access-admin">admin</span><span class="new-badge">جدید</span></div>
+    <h4>به‌روزرسانی + ری‌استارت خودکار</h4>
+    <p>اگر درایور در حال اجرا باشد، متوقف و با کانفیگ جدید ری‌استارت می‌شود.</p>
+    <h4>Body (فیلدهای اختیاری):</h4>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{ <span class="json-key">"name"</span>: <span class="json-string">"PLC-02-renamed"</span>, <span class="json-key">"polling_interval_ms"</span>: <span class="json-number">200</span>, <span class="json-key">"enabled"</span>: <span class="json-boolean">true</span> }</pre></div>
+    <h4>Response (200):</h4>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{ <span class="json-key">"updated"</span>: <span class="json-boolean">true</span>, <span class="json-key">"driver_id"</span>: <span class="json-number">4</span>, <span class="json-key">"restarted"</span>: <span class="json-boolean">true</span> }</pre></div>
+    <table>
+      <tr><th>کد</th><th>دلیل</th></tr>
+      <tr><td><span class="status-400">400</span></td><td>type نامعتبر / connection_config نامعتبر</td></tr>
+      <tr><td><span class="status-404">404</span></td><td>درایور یافت نشد</td></tr>
+      <tr><td><span class="status-500">500</span></td><td>خطای دیتابیس</td></tr>
+    </table>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header"><span class="method-badge method-DELETE">DELETE</span><span class="endpoint-path">/api/v1/drivers/{id}</span><span class="access-badge access-admin">admin</span><span class="new-badge">جدید</span></div>
+    <h4>حذف درایور + توقف</h4>
+    <div class="note danger"><div class="note-title">⚠️ محدودیت</div>اگر تگ‌هایی به این درایور متصل باشند، خطای <code>409</code> برمی‌گردد. ابتدا تگ‌ها را حذف یا منتقل کنید.</div>
+    <h4>Response (200):</h4>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{ <span class="json-key">"deleted"</span>: <span class="json-boolean">true</span>, <span class="json-key">"driver_id"</span>: <span class="json-number">4</span> }</pre></div>
+    <h4>Response (409):</h4>
+    <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{ <span class="json-key">"error"</span>: <span class="json-string">"Cannot delete driver: 5 tag(s) reference it. Delete or move tags first."</span> }</pre></div>
+    <table>
+      <tr><th>کد</th><th>دلیل</th></tr>
+      <tr><td><span class="status-404">404</span></td><td>درایور یافت نشد</td></tr>
+      <tr><td><span class="status-409">409</span></td><td>تگ‌هایی به درایور متصل هستند</td></tr>
+      <tr><td><span class="status-500">500</span></td><td>خطای دیتابیس</td></tr>
+    </table>
+  </div>
+
+  <h3>انواع درایور (<code>type</code>)</h3>
+  <table>
+    <tr><th>مقدار</th><th>پروتکل</th><th>کاربرد</th></tr>
+    <tr><td><code>simulator</code></td><td>شبیه‌ساز</td><td>تست و توسعه</td></tr>
+    <tr><td><code>modbus_tcp</code></td><td>Modbus TCP</td><td>PLC‌های شبکه‌ای</td></tr>
+    <tr><td><code>modbus_rtu</code></td><td>Modbus RTU</td><td>پورت سریال RS-485</td></tr>
+    <tr><td><code>mqtt</code></td><td>MQTT</td><td>IoT / بروکر پیام</td></tr>
+    <tr><td><code>opc_ua</code></td><td>OPC UA</td><td>اتوماسیون صنعتی</td></tr>
+  </table>
+
+  <h3>ساختار connection_config بر اساس نوع</h3>
+  <h4>modbus_tcp</h4>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>{ <span class="json-key">"host"</span>: <span class="json-string">"192.168.1.10"</span>, <span class="json-key">"port"</span>: <span class="json-number">502</span>, <span class="json-key">"unit_id"</span>: <span class="json-number">1</span> }</pre></div>
+  <h4>modbus_rtu</h4>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>{ <span class="json-key">"port"</span>: <span class="json-string">"COM3"</span>, <span class="json-key">"baud_rate"</span>: <span class="json-number">9600</span>, <span class="json-key">"data_bits"</span>: <span class="json-number">8</span>, <span class="json-key">"parity"</span>: <span class="json-string">"none"</span>, <span class="json-key">"unit_id"</span>: <span class="json-number">1</span> }</pre></div>
+  <h4>mqtt</h4>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>{ <span class="json-key">"broker"</span>: <span class="json-string">"tcp://broker.hivemq.com"</span>, <span class="json-key">"port"</span>: <span class="json-number">1883</span>, <span class="json-key">"client_id"</span>: <span class="json-string">"qt_tag_core"</span>, <span class="json-key">"base_topic"</span>: <span class="json-string">"scada/tags"</span> }</pre></div>
+  <h4>opc_ua</h4>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>{ <span class="json-key">"endpoint_url"</span>: <span class="json-string">"opc.tcp://192.168.1.20:4840"</span>, <span class="json-key">"security_policy"</span>: <span class="json-string">"None"</span> }</pre></div>
+  <h4>simulator</h4>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>{ <span class="json-key">"seed"</span>: <span class="json-number">42</span>, <span class="json-key">"noise"</span>: <span class="json-number">0.5</span> }</pre></div>
+</section>
+
+<!-- DASHBOARDS -->
+<section id="dashboards-endpoints">
+  <h2><span class="icon">📊</span> ۸. Dashboards</h2>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/dashboards</span><span class="access-badge access-auth">Bearer</span></div><h4>لیست</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/dashboards/{id}</span><span class="access-badge access-auth">Bearer</span></div><h4>دریافت</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-POST">POST</span><span class="endpoint-path">/api/v1/dashboards</span><span class="access-badge access-admin">admin</span></div><h4>ایجاد — type: simple | qml | html</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-PUT">PUT</span><span class="endpoint-path">/api/v1/dashboards/{id}</span><span class="access-badge access-admin">admin</span></div><h4>به‌روزرسانی</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-DELETE">DELETE</span><span class="endpoint-path">/api/v1/dashboards/{id}</span><span class="access-badge access-admin">admin</span></div><h4>حذف</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/dashboards/{id}/content</span><span class="access-badge access-auth">Bearer</span></div><h4>محتوا</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-PUT">PUT</span><span class="endpoint-path">/api/v1/dashboards/{id}/content</span><span class="access-badge access-admin">admin</span></div><h4>ذخیره محتوا</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/dashboards/{id}/resources</span><span class="access-badge access-auth">Bearer</span></div><h4>منابع</h4></div>
+</section>
+
+<!-- REPORTS -->
+<section id="reports-endpoints">
+  <h2><span class="icon">📈</span> ۹. Reports</h2>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/reports/tag-history</span><span class="access-badge access-auth">Bearer</span></div><h4>تاریخچه تگ‌ها — <code>tag_ids</code> اجباری، format: json | csv</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/reports/alarms</span><span class="access-badge access-auth">Bearer</span></div><h4>گزارش آلارم‌ها — فیلتر severity, state, tag_id</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/reports/daily-summary</span><span class="access-badge access-auth">Bearer</span></div><h4>خلاصه روزانه — <code>tag_ids</code> اجباری، date: YYYY-MM-DD</h4></div>
+</section>
+
+<!-- USERS -->
+<section id="users-endpoints">
+  <h2><span class="icon">👥</span> ۱۰. Users</h2>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/users</span><span class="access-badge access-admin">admin</span></div><h4>لیست</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-POST">POST</span><span class="endpoint-path">/api/v1/users</span><span class="access-badge access-admin">admin</span></div><h4>ایجاد — role: admin | operator | viewer</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-PUT">PUT</span><span class="endpoint-path">/api/v1/users/{id}</span><span class="access-badge access-admin">admin</span></div><h4>به‌روزرسانی</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-PUT">PUT</span><span class="endpoint-path">/api/v1/users/{id}/password</span><span class="access-badge access-admin">admin</span></div><h4>تغییر رمز</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-DELETE">DELETE</span><span class="endpoint-path">/api/v1/users/{id}</span><span class="access-badge access-admin">admin</span></div><h4>حذف</h4></div>
+</section>
+
+<!-- SYSTEM -->
+<section id="system-endpoints">
+  <h2><span class="icon">⚙️</span> ۱۱. System</h2>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/health</span><span class="access-badge access-public">عمومی</span></div><h4>Health Check</h4></div>
+  <div class="endpoint"><div class="endpoint-header"><span class="method-badge method-GET">GET</span><span class="endpoint-path">/api/v1/system/status</span><span class="access-badge access-auth">Bearer</span></div><h4>وضعیت سیستم</h4></div>
+</section>
+
+<!-- WEBSOCKET (جدید - کامل) -->
+<section id="websocket">
+  <h2><span class="icon">🌐</span> ۱۲. WebSocket API <span class="new-badge">به‌روز</span></h2>
+  <p><strong>Base URL:</strong> <code>ws://localhost:8080/ws</code></p>
+  <p>پروتکل: JSON text frames • Heartbeat: هر ۳۰ ثانیه • Disconnect: بدون pong تا ۹۰ ثانیه</p>
+</section>
+
+<section id="ws-routing">
+  <h2><span class="icon">🔀</span> ۱۲.۱ URL Routing (هنگام اتصال)</h2>
+  <p>هنگام اتصال WebSocket، می‌توانید در URL مسیر subscribe را مشخص کنید:</p>
+  <table>
+    <tr><th>URL</th><th>عملکرد</th></tr>
+    <tr><td><code>ws://host/ws/alarms/analog</code></td><td>اشتراک آلارم‌های آنالوگ</td></tr>
+    <tr><td><code>ws://host/ws/alarms/digital</code></td><td>اشتراک آلارم‌های دیجیتال</td></tr>
+    <tr><td><code>ws://host/ws/alarms/all</code></td><td>اشتراک همه آلارم‌ها</td></tr>
+    <tr><td><code>ws://host/ws/system/status</code></td><td>اشتراک وضعیت سیستم</td></tr>
+    <tr><td><code>ws://host/ws/tags/batch?ids=1,2,3</code></td><td>اشتراک تگ‌ها در حالت batch</td></tr>
+    <tr><td><code>ws://host/ws/dashboard/{id}?ids=1,2,3</code></td><td>اشتراک داشبورد + تگ‌هایش</td></tr>
+  </table>
+  <div class="note"><div class="note-title">💡</div>پس از اتصال، سرور پیام <code>hello</code> و سپس <code>tags.snapshot</code> (در صورت subscribe تگ) ارسال می‌کند.</div>
+</section>
+
+<section id="ws-control">
+  <h2><span class="icon">🎮</span> ۱۲.۲ Control Messages (Client → Server)</h2>
+
+  <h3>ping</h3>
+  <span class="ws-msg-type ws-client">client → server</span>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>{ <span class="json-key">"op"</span>: <span class="json-string">"ping"</span> }</pre></div>
+  <span class="ws-msg-type ws-server">server → client</span>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>{ <span class="json-key">"type"</span>: <span class="json-string">"pong"</span>, <span class="json-key">"ts"</span>: <span class="json-string">"..."</span> }</pre></div>
+
+  <h3>subscribe / unsubscribe</h3>
+  <span class="ws-msg-type ws-client">client → server</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"op"</span>: <span class="json-string">"subscribe"</span>,
+  <span class="json-key">"channel"</span>: [<span class="json-string">"alarms/all"</span>],
+  <span class="json-key">"tags"</span>: [<span class="json-number">1</span>, <span class="json-number">2</span>, <span class="json-number">3</span>],
+  <span class="json-key">"dashboard"</span>: [<span class="json-string">"main"</span>],
+  <span class="json-key">"delivery"</span>: <span class="json-string">"batch"</span>
+}</pre></div>
+  <div class="note"><div class="note-title">📋 کانال‌های مجاز</div><code>alarms/analog</code> ، <code>alarms/digital</code> ، <code>alarms/all</code> ، <code>system/status</code></div>
+  <div class="note success"><div class="note-title">📸 Snapshot خودکار</div>هنگام subscribe تگ‌ها، snapshot فعلی آن‌ها بلافاصله ارسال می‌شود.</div>
+
+  <h3>options (تغییر حالت دریافت)</h3>
+  <span class="ws-msg-type ws-client">client → server</span>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>{ <span class="json-key">"op"</span>: <span class="json-string">"options"</span>, <span class="json-key">"delivery"</span>: <span class="json-string">"batch"</span> }</pre></div>
+  <ul>
+    <li><code>event</code> — هر تغییر بلافاصله ارسال می‌شود (پیش‌فرض)</li>
+    <li><code>batch</code> — تغییرات تجمیع و هر <code>batch_interval_ms</code> (پیش‌فرض 100ms) ارسال می‌شوند</li>
+  </ul>
+
+  <h3>get_snapshot</h3>
+  <span class="ws-msg-type ws-client">client → server</span>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>{ <span class="json-key">"op"</span>: <span class="json-string">"get_snapshot"</span>, <span class="json-key">"tags"</span>: [<span class="json-number">1</span>, <span class="json-number">2</span>] }</pre></div>
+  <p>اگر <code>tags</code> ذکر نشود، snapshot همه تگ‌های subscribed ارسال می‌شود.</p>
+</section>
+
+<section id="ws-commands">
+  <h2><span class="icon">⚡</span> ۱۲.۳ Command System <span class="new-badge">جدید</span></h2>
+  <p>سیستم command/response برای ارسال دستورات به سرور (مثل نوشتن مقدار تگ، کنترل درایور و...):</p>
+
+  <h3>ارسال دستور</h3>
+  <span class="ws-msg-type ws-client">client → server</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"type"</span>: <span class="json-string">"command"</span>,
+  <span class="json-key">"id"</span>: <span class="json-string">"cmd-001"</span>,
+  <span class="json-key">"op"</span>: <span class="json-string">"write_tag"</span>,
+  <span class="json-key">"payload"</span>: { <span class="json-key">"tag_id"</span>: <span class="json-number">1</span>, <span class="json-key">"value"</span>: <span class="json-number">75.5</span> }
+}</pre></div>
+
+  <h3>پاسخ موفق</h3>
+  <span class="ws-msg-type ws-server">server → client</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"type"</span>: <span class="json-string">"response"</span>,
+  <span class="json-key">"id"</span>: <span class="json-string">"cmd-001"</span>,
+  <span class="json-key">"ok"</span>: <span class="json-boolean">true</span>,
+  <span class="json-key">"data"</span>: { <span class="json-key">"written"</span>: <span class="json-boolean">true</span> },
+  <span class="json-key">"ts"</span>: <span class="json-string">"..."</span>
+}</pre></div>
+
+  <h3>پاسخ خطا</h3>
+  <span class="ws-msg-type ws-server">server → client</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"type"</span>: <span class="json-string">"response"</span>,
+  <span class="json-key">"id"</span>: <span class="json-string">"cmd-001"</span>,
+  <span class="json-key">"ok"</span>: <span class="json-boolean">false</span>,
+  <span class="json-key">"error"</span>: <span class="json-string">"Tag not found"</span>,
+  <span class="json-key">"ts"</span>: <span class="json-string">"..."</span>
+}</pre></div>
+</section>
+
+<section id="ws-events">
+  <h2><span class="icon">📨</span> ۱۲.۴ Server Events</h2>
+
+  <h3>hello (اتوماتیک هنگام اتصال)</h3>
+  <span class="ws-msg-type ws-server">server → client</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"type"</span>: <span class="json-string">"hello"</span>,
+  <span class="json-key">"server"</span>: <span class="json-string">"TagCore"</span>,
+  <span class="json-key">"heartbeat_ms"</span>: <span class="json-number">30000</span>,
+  <span class="json-key">"batch_interval_ms"</span>: <span class="json-number">100</span>,
+  <span class="json-key">"session"</span>: {
+    <span class="json-key">"channels"</span>: [], <span class="json-key">"tags"</span>: [], <span class="json-key">"dashboards"</span>: [],
+    <span class="json-key">"delivery"</span>: <span class="json-string">"event"</span>
+  },
+  <span class="json-key">"ts"</span>: <span class="json-string">"..."</span>
+}</pre></div>
+
+  <h3>tag.update (حالت event)</h3>
+  <span class="ws-msg-type ws-event">event</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"type"</span>: <span class="json-string">"tag.update"</span>,
+  <span class="json-key">"tag_id"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"value"</span>: <span class="json-number">45.5</span>,
+  <span class="json-key">"raw_value"</span>: <span class="json-number">45.5</span>,
+  <span class="json-key">"quality"</span>: <span class="json-string">"good"</span>,
+  <span class="json-key">"source"</span>: <span class="json-string">"0"</span>,
+  <span class="json-key">"sequence"</span>: <span class="json-number">12345</span>,
+  <span class="json-key">"ts"</span>: <span class="json-string">"..."</span>
+}</pre></div>
+
+  <h3>tags.batch (حالت batch)</h3>
+  <span class="ws-msg-type ws-event">event</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"type"</span>: <span class="json-string">"tags.batch"</span>,
+  <span class="json-key">"updates"</span>: [
+    { <span class="json-key">"tag_id"</span>: <span class="json-number">1</span>, <span class="json-key">"value"</span>: <span class="json-number">45.5</span>, <span class="json-key">"quality"</span>: <span class="json-string">"good"</span> },
+    { <span class="json-key">"tag_id"</span>: <span class="json-number">2</span>, <span class="json-key">"value"</span>: <span class="json-number">23.1</span>, <span class="json-key">"quality"</span>: <span class="json-string">"good"</span> }
+  ],
+  <span class="json-key">"ts"</span>: <span class="json-string">"..."</span>
+}</pre></div>
+
+  <h3>tags.snapshot</h3>
+  <span class="ws-msg-type ws-event">event</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"type"</span>: <span class="json-string">"tags.snapshot"</span>,
+  <span class="json-key">"tags"</span>: [
+    { <span class="json-key">"tag_id"</span>: <span class="json-number">1</span>, <span class="json-key">"value"</span>: <span class="json-number">45.5</span>, <span class="json-key">"quality"</span>: <span class="json-string">"good"</span> }
+  ],
+  <span class="json-key">"ts"</span>: <span class="json-string">"..."</span>
+}</pre></div>
+
+  <h3>alarm.event</h3>
+  <span class="ws-msg-type ws-event">event</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"type"</span>: <span class="json-string">"alarm.event"</span>,
+  <span class="json-key">"alarm_id"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"tag_id"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"severity"</span>: <span class="json-string">"high"</span>,
+  <span class="json-key">"category"</span>: <span class="json-string">"analog"</span>,
+  <span class="json-key">"value"</span>: <span class="json-number">95.5</span>,
+  <span class="json-key">"threshold"</span>: <span class="json-number">80.0</span>,
+  <span class="json-key">"ts"</span>: <span class="json-string">"..."</span>
+}</pre></div>
+  <div class="note"><div class="note-title">📡 کانال‌ها</div>به <code>alarms/{category}</code> و <code>alarms/all</code> broadcast می‌شود.</div>
+
+  <h3>alarm.ack</h3>
+  <span class="ws-msg-type ws-event">event</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"type"</span>: <span class="json-string">"alarm.ack"</span>,
+  <span class="json-key">"alarm_id"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"tag_id"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"user_name"</span>: <span class="json-string">"operator1"</span>,
+  <span class="json-key">"ts"</span>: <span class="json-string">"..."</span>
+}</pre></div>
+
+  <h3>system.status</h3>
+  <span class="ws-msg-type ws-event">event</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{ <span class="json-key">"type"</span>: <span class="json-string">"system.status"</span>, <span class="json-key">"status"</span>: <span class="json-string">"running"</span>, <span class="json-key">"ts"</span>: <span class="json-string">"..."</span> }</pre></div>
+
+  <h3>dashboard.event</h3>
+  <span class="ws-msg-type ws-event">event</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{ <span class="json-key">"type"</span>: <span class="json-string">"dashboard.event"</span>, <span class="json-key">"dashboard_id"</span>: <span class="json-string">"main"</span>, <span class="json-key">"ts"</span>: <span class="json-string">"..."</span> }</pre></div>
+
+  <h3>ack (تأیید عملیات)</h3>
+  <span class="ws-msg-type ws-server">server → client</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{ <span class="json-key">"type"</span>: <span class="json-string">"ack"</span>, <span class="json-key">"op"</span>: <span class="json-string">"subscribe"</span>, <span class="json-key">"ts"</span>: <span class="json-string">"..."</span> }</pre></div>
+
+  <h3>error</h3>
+  <span class="ws-msg-type ws-server">server → client</span>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{ <span class="json-key">"type"</span>: <span class="json-string">"error"</span>, <span class="json-key">"message"</span>: <span class="json-string">"Unsupported op: xxx"</span>, <span class="json-key">"ts"</span>: <span class="json-string">"..."</span> }</pre></div>
+</section>
+
+<!-- ERRORS -->
+<section id="errors">
+  <h2><span class="icon">❌</span> ۱۳. کدهای خطا</h2>
+  <table>
+    <tr><th>کد</th><th>معنی</th></tr>
+    <tr><td><span class="status-200">200</span></td><td>OK</td></tr>
+    <tr><td><span class="status-201">201</span></td><td>Created</td></tr>
+    <tr><td><span class="status-400">400</span></td><td>Bad Request</td></tr>
+    <tr><td><span class="status-401">401</span></td><td>Unauthorized</td></tr>
+    <tr><td><span class="status-403">403</span></td><td>Forbidden</td></tr>
+    <tr><td><span class="status-404">404</span></td><td>Not Found</td></tr>
+    <tr><td><span class="status-409">409</span></td><td>Conflict (مثلاً حذف درایور با تگ‌های متصل)</td></tr>
+    <tr><td><span class="status-500">500</span></td><td>Server Error</td></tr>
+  </table>
+  <h4>ساختار پاسخ خطا</h4>
+  <div class="code-block"><button class="copy-btn">کپی</button><pre>{ <span class="json-key">"error"</span>: <span class="json-string">"Detailed error message"</span> }</pre></div>
+</section>
+
+<!-- CONFIG -->
+<section id="config">
+  <h2><span class="icon">⚙️</span> ۱۴. پیکربندی</h2>
+  <h3>bootstrap.json</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>{
+  <span class="json-key">"database"</span>: {
+    <span class="json-key">"driver"</span>: <span class="json-string">"auto"</span>,
+    <span class="json-key">"host"</span>: <span class="json-string">"localhost"</span>,
+    <span class="json-key">"port"</span>: <span class="json-number">5432</span>,
+    <span class="json-key">"database"</span>: <span class="json-string">"tagsdb"</span>,
+    <span class="json-key">"username"</span>: <span class="json-string">"postgres"</span>,
+    <span class="json-key">"password"</span>: <span class="json-string">"postgres"</span>
+  },
+  <span class="json-key">"bootstrap"</span>: {
+    <span class="json-key">"import_from_json_if_db_empty"</span>: <span class="json-boolean">true</span>,
+    <span class="json-key">"import_file"</span>: <span class="json-string">"config/app.json"</span>
+  }
+}</pre></div>
+</section>
+
+<!-- EXAMPLES -->
+<section id="examples">
+  <h2><span class="icon">📚</span> ۱۵. مثال‌ها</h2>
+
+  <h3>ایجاد درایور Modbus TCP</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>curl -X POST http://localhost:8080/api/v1/drivers \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "PLC-01",
+    "type": "modbus_tcp",
+    "connection_config": { "host": "192.168.1.10", "port": 502, "unit_id": 1 },
+    "polling_interval_ms": 500,
+    "enabled": true
+  }'</pre></div>
+
+  <h3>اتصال WebSocket با subscribe اولیه</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>const ws = new WebSocket('ws://localhost:8080/ws/tags/batch?ids=1,2,3');
+
+ws.onmessage = (e) => {
+  const msg = JSON.parse(e.data);
+  switch (msg.type) {
+    case 'hello': console.log('Connected:', msg.session); break;
+    case 'tags.batch': msg.updates.forEach(u => console.log(`Tag ${u.tag_id}: ${u.value}`)); break;
+    case 'tags.snapshot': console.log('Snapshot:', msg.tags); break;
+    case 'alarm.event': console.log('ALARM:', msg.severity, msg.category); break;
+    case 'response': console.log(msg.ok ? 'OK:' : 'ERR:', msg); break;
+  }
+};</pre></div>
+
+  <h3>ارسال Command از طریق WebSocket</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>ws.send(JSON.stringify({
+  type: 'command',
+  id: 'cmd-' + Date.now(),
+  op: 'write_tag',
+  payload: { tag_id: 1, value: 75.5 }
+}));</pre></div>
+
+  <h3>حذف درایور (با بررسی خطای 409)</h3>
+  <div class="code-block"><button class="copy-btn">کپی</button>
+<pre>curl -X DELETE http://localhost:8080/api/v1/drivers/1 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+// اگر خطا:
+// { "error": "Cannot delete driver: 5 tag(s) reference it..." }</pre></div>
+</section>
+
+<footer>⚡ مستندات API qt_tag_core | نسخه v2 | ۲۰۲۶-۰۸-۱۵</footer>
+</main>
+
+<button class="back-to-top" id="backToTop">↑</button>
+
+<script>
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('active');document.body.classList.add('sidebar-open')}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('active');document.body.classList.remove('sidebar-open')}
+function toggleSidebar(){document.getElementById('sidebar').classList.contains('open')?closeSidebar():openSidebar()}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSidebar()});
+document.querySelectorAll('.copy-btn').forEach(b=>b.addEventListener('click',function(){navigator.clipboard.writeText(this.parentElement.querySelector('pre').innerText).then(()=>{this.textContent='کپی شد!';setTimeout(()=>this.textContent='کپی',2000)})}));
+const secs=document.querySelectorAll('section[id]'),links=document.querySelectorAll('.nav-link'),bt=document.getElementById('backToTop');
+window.addEventListener('scroll',()=>{let c='';secs.forEach(s=>{if(pageYOffset>=s.offsetTop-100)c=s.id});links.forEach(l=>{l.classList.toggle('active',l.getAttribute('href')==='#'+c)});bt.classList.toggle('visible',pageYOffset>500)});
+links.forEach(l=>l.addEventListener('click',()=>{if(innerWidth<=900)closeSidebar()}));
+document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',function(e){e.preventDefault();const t=document.querySelector(this.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'})}));
+addEventListener('resize',()=>{if(innerWidth>900)closeSidebar()});
+bt.addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
+</script>
+</body>
+</html>

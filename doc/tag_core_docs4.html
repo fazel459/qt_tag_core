@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tag Core - مستندات فنی کامل</title>
+<style>
+  :root{
+    --bg:#0d1520; --panel:#141f2e; --panel2:#1a2838; --border:#24384d;
+    --text:#dbe7f3; --muted:#8fa5ba; --accent:#22d3ee; --accent2:#34d399;
+    --warn:#fbbf24; --danger:#f87171; --code-bg:#0a111b; --purple:#c084fc;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:"Segoe UI",Tahoma,Vazirmatn,sans-serif; background:var(--bg); color:var(--text); line-height:1.8;}
+  .layout{display:flex; min-height:100vh;}
+  aside{width:280px; background:var(--panel); border-left:1px solid var(--border); position:sticky; top:0; height:100vh; overflow-y:auto; padding:20px 14px; flex-shrink:0;}
+  aside .logo{font-size:22px; font-weight:800; color:var(--accent); padding:6px 10px 16px; border-bottom:1px solid var(--border); margin-bottom:14px;}
+  aside .logo small{display:block; color:var(--muted); font-size:11px; font-weight:400;}
+  aside a{display:block; color:var(--muted); text-decoration:none; font-size:13px; padding:6px 12px; border-radius:8px; margin:1px 0; transition:.2s;}
+  aside a:hover{background:var(--panel2); color:var(--accent);}
+  aside a.h{color:var(--text); font-weight:700; margin-top:12px; font-size:14px;}
+  aside a.sub{padding-right:26px; font-size:12.5px;}
+  main{flex:1; padding:36px 46px; max-width:1200px;}
+  h1{font-size:30px; color:#fff; margin-bottom:6px;}
+  h1 span{color:var(--accent);}
+  h2{font-size:24px; color:var(--accent); margin:52px 0 16px; padding-bottom:10px; border-bottom:2px solid var(--border);}
+  h3{font-size:17px; color:var(--accent2); margin:26px 0 10px;}
+  h4{font-size:14.5px; color:var(--purple); margin:18px 0 8px;}
+  p{margin:10px 0;}
+  .sub{color:var(--muted); font-size:14px;}
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; margin:18px 0;}
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; transition:.2s;}
+  .card:hover{border-color:var(--accent); transform:translateY(-2px);}
+  .card b{color:var(--accent); display:block; margin-bottom:6px; font-size:15px;}
+  .card p{font-size:13px; color:var(--muted); margin:0;}
+  .badge{display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; background:rgba(52,211,153,.15); color:var(--accent2); border:1px solid var(--accent2); margin-left:6px;}
+  .badge.todo{background:rgba(251,191,36,.12); color:var(--warn); border-color:var(--warn);}
+  table{width:100%; border-collapse:collapse; margin:16px 0; font-size:13px; background:var(--panel); border-radius:10px; overflow:hidden;}
+  th{background:var(--panel2); color:var(--accent); text-align:right; padding:10px 14px;}
+  td{padding:9px 14px; border-top:1px solid var(--border);}
+  td code{color:var(--accent2);}
+  tr:hover td{background:rgba(34,211,238,.04);}
+  pre{background:var(--code-bg); border:1px solid var(--border); border-radius:10px; padding:16px; overflow-x:auto; direction:ltr; text-align:left; font-family:"Cascadia Code",Consolas,monospace; font-size:12.8px; line-height:1.65; margin:14px 0; color:#c9e4f5;}
+  code.inline{background:var(--code-bg); border:1px solid var(--border); border-radius:6px; padding:1px 7px; direction:ltr; font-family:Consolas,monospace; font-size:12.5px; color:var(--accent2);}
+  .k{color:#7dd3fc;} .s{color:#a5f3a5;} .c{color:#64748b;} .n{color:#fbbf24;} .p{color:#c084fc;}
+  .m{display:inline-block; min-width:52px; text-align:center; padding:1px 8px; border-radius:6px; font-size:11.5px; font-weight:700; font-family:Consolas,monospace;}
+  .m.get{background:rgba(52,211,153,.18); color:var(--accent2);}
+  .m.post{background:rgba(34,211,238,.18); color:var(--accent);}
+  .m.put{background:rgba(251,191,36,.18); color:var(--warn);}
+  .m.del{background:rgba(248,113,113,.18); color:var(--danger);}
+  .diagram{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:18px; margin:20px 0; text-align:center;}
+  .diagram img{max-width:100%; border-radius:10px;}
+  .flow{display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px; margin:16px 0;}
+  .flow .node{background:var(--panel2); border:1px solid var(--accent); color:var(--accent); padding:8px 16px; border-radius:10px; font-size:13px; font-weight:700;}
+  .flow .arr{color:var(--accent); font-size:18px;}
+  .note{background:rgba(251,191,36,.08); border-right:4px solid var(--warn); padding:12px 16px; border-radius:8px; margin:14px 0; font-size:13.5px;}
+  .note.ok{background:rgba(52,211,153,.08); border-right:4px solid var(--accent2);}
+  .note.info{background:rgba(34,211,238,.08); border-right:4px solid var(--accent);}
+  .tree{direction:ltr; text-align:left;}
+  .testbox{background:var(--panel); border:1px solid var(--accent2); border-radius:12px; padding:16px; margin:16px 0;}
+  .testbox .t{color:var(--accent2); font-weight:700; margin-bottom:8px; font-size:14px;}
+  footer{margin-top:60px; padding:20px 0; border-top:1px solid var(--border); color:var(--muted); font-size:13px; text-align:center;}
+  @media(max-width:950px){ aside{display:none;} main{padding:20px;} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside>
+  <div class="logo">⚙ Tag Core<small>SCADA / Historian Core — v0.3.0</small></div>
+  <a class="h" href="#overview">۱. نمای کلی</a>
+  <a class="sub" href="#arch">معماری سیستم</a>
+  <a class="sub" href="#stack">فناوری‌ها</a>
+  <a class="h" href="#core">۲. قابلیت‌های Core</a>
+  <a class="sub" href="#modbus">Modbus Polling</a>
+  <a class="sub" href="#opcua">OPC UA Driver</a>
+  <a class="sub" href="#drivers">درایورها</a>
+  <a class="sub" href="#pipeline">Processing Pipeline</a>
+  <a class="sub" href="#rules">Rule Engine</a>
+  <a class="h" href="#api">۳. لایه API</a>
+  <a class="sub" href="#ws">WebSocket Server</a>
+  <a class="sub" href="#cmd">Command Channel</a>
+  <a class="sub" href="#alarmsync">Alarm Sync</a>
+  <a class="sub" href="#rest">REST API</a>
+  <a class="sub" href="#drivers-api">Driver CRUD</a>
+  <a class="sub" href="#users">User Management</a>
+  <a class="sub" href="#dash">Dashboard API</a>
+  <a class="sub" href="#report">Report Generation</a>
+  <a class="sub" href="#auth">Authentication</a>
+  <a class="h" href="#test">۴. راهنمای تست</a>
+  <a class="sub" href="#t-drivers">تست Driver CRUD</a>
+  <a class="sub" href="#t-opcua">تست OPC UA</a>
+  <a class="h" href="#trouble">۵. عیب‌یابی</a>
+  <a class="h" href="#next">۶. مراحل بعدی</a>
+</aside>
+
+<main>
+
+<h1>⚙ Tag <span>Core</span> — مستندات فنی کامل</h1>
+<p class="sub">نسخه 0.3.0 &nbsp;|&nbsp; آخرین به‌روزرسانی: August 2026 &nbsp;|&nbsp; Qt 5.12.9 / MinGW 7.3 / Windows</p>
+
+<h2 id="overview">۱. نمای کلی پروژه</h2>
+<p>Tag Core یک هسته مرکزی SCADA/Historian است که داده‌های صنعتی را از درایورهای مختلف دریافت، پردازش، ذخیره و از طریق API های WebSocket و REST در اختیار GUI های مستقل قرار می‌دهد.</p>
+
+<div class="cards">
+  <div class="card"><b>📥 Ingestion</b><p>Modbus TCP/RTU، MQTT، Simulator، OPC UA</p></div>
+  <div class="card"><b>🧮 Processing</b><p>Scaling، Filtering، Rounding، Deadband</p></div>
+  <div class="card"><b>🚨 Rules & Alarms</b><p>۹ نوع آلارم + Alarm Sync بین client ها</p></div>
+  <div class="card"><b>🗄 Historian</b><p>TimescaleDB + Continuous Aggregates</p></div>
+  <div class="card"><b>🔌 API Layer</b><p>WebSocket + REST + Command Channel</p></div>
+  <div class="card"><b>👤 Users</b><p>Login/Token + Role-based access</p></div>
+  <div class="card"><b>📊 Dashboards</b><p>File-based با QML/HTML/JSON</p></div>
+  <div class="card"><b>🎛 Driver Mgmt</b><p>CRUD کامل درایورها + start/stop/reload</p></div>
+</div>
+
+<h3 id="arch">معماری سیستم</h3>
+<div class="diagram"><img src="architecture.png" alt="Tag Core Architecture"></div>
+
+<h3 id="stack">فناوری‌ها</h3>
+<table>
+  <tr><th>بخش</th><th>فناوری</th><th>توضیح</th></tr>
+  <tr><td>زبان</td><td><code>C++ (Qt 5.12.9)</code></td><td>MinGW 7.3 64-bit / Windows</td></tr>
+  <tr><td>دیتابیس</td><td><code>PostgreSQL + TimescaleDB</code></td><td>درایور QPSQL</td></tr>
+  <tr><td>WebSocket</td><td><code>Qt WebSockets</code></td><td>پورت 8081</td></tr>
+  <tr><td>REST</td><td><code>QTcpServer (custom HTTP)</code></td><td>پورت 8082</td></tr>
+  <tr><td>OPC UA</td><td><code>open62541 v1.1.6</code></td><td>amalgamation (open62541.c/h)</td></tr>
+  <tr><td>MQTT</td><td><code>qmqtt</code></td><td>نیازمند <code>CONFIG += QMQTT_WEBSOCKETS</code></td></tr>
+</table>
+
+<h2 id="core">۲. قابلیت‌های Core</h2>
+
+<h3 id="modbus">Modbus Polling (معماری کارت‌ها)</h3>
+<div class="note info">هر کارت = ۱۶ اسلات ثابت، هر سنسور = ۱ رجیستر (۲ بایت). کل کارت همیشه ۱۶ رجیستر می‌فرستد.</div>
+
+<h4>آدرس‌دهی (Slot-based)</h4>
+<pre>cardIndex  = address / 16
+sensorIndex = address % 16
+card.startAddress  = cardIndex * 16
+card.totalRegisters = 16            <span class="c"># همیشه کل کارت</span>
+sensor.registerOffset = sensorIndex <span class="c"># اسلات ثابت</span>
+decode: byteOffset = registerOffset * 2</pre>
+
+<h4>State Machine پولینگ (ترتیبی)</h4>
+<div class="flow">
+  <div class="node">onPollTimer</div><div class="arr">→</div>
+  <div class="node">startCardCycle</div><div class="arr">→</div>
+  <div class="node">کارت۰</div><div class="arr">→</div>
+  <div class="node">پاسخ</div><div class="arr">→</div>
+  <div class="node">scheduleAdvance</div><div class="arr">→</div>
+  <div class="node">کارت۱ ...</div><div class="arr">→</div>
+  <div class="node">🛑 صبر تا تیک بعدی</div>
+</div>
+
+<h4>قوانین زمان‌بندی</h4>
+<table>
+  <tr><th>قانون</th><th>پیاده‌سازی</th></tr>
+  <tr><td>پیشروی با پاسخ، نه ساعت</td><td><code>scheduleAdvance()</code> بعد از هر پاسخ/تایم‌اوت</td></tr>
+  <tr><td>یک تراکنش باز در هر لحظه</td><td>گارد <code>m_waitingResponse</code></td></tr>
+  <tr><td>پایان سیکل = صبر تا اینتروال</td><td><code>m_pollingCards=false</code> وقتی صف خالی شد</td></tr>
+  <tr><td>کارت خراب سیکل را قطع نکند</td><td>تایم‌اوت → publishBad سنسورهای کارت → کارت بعدی</td></tr>
+  <tr><td>stop بدون reconnect خودکار</td><td>فلگ <code>m_stopped</code> + singleShot با context</td></tr>
+</table>
+
+<h3 id="opcua">OPC UA Driver</h3>
+<table>
+  <tr><th>آیتم</th><th>مقدار</th></tr>
+  <tr><td>type در drivers</td><td><code>opc_ua</code></td></tr>
+  <tr><td>connection_config</td><td><code>{"endpoint":"opc.tcp://host:4840","iterate_ms":100}</code></td></tr>
+  <tr><td>address_config تگ</td><td><code>{"node_id":"ns=1;s=Temperature"}</code></td></tr>
+  <tr><td>حالت دریافت</td><td>Subscription (data change) + fallback به Polling</td></tr>
+  <tr><td>Reconnect</td><td>خودکار بعد از ۳ ثانیه</td></tr>
+</table>
+<div class="note">⚠️ Namespace: در open62541 فقط ns=0 و ns=1 پیش‌فرض وجود دارند. استفاده از ns=2 بدون ثبت Namespace باعث <code>BadNodeIdUnknown</code> می‌شود. برای تست از ns=1 استفاده کن.</div>
+
+<h4>سرور تست (کامپایل با همان MinGW)</h4>
+<pre>gcc -O2 test_server.c 3rdparty\open62541\open62541.c -I3rdparty\open62541 -lws2_32 -o test_server.exe</pre>
+
+<h3 id="drivers">درایورها</h3>
+<table>
+  <tr><th>درایور</th><th>پروتکل</th><th>قابلیت‌ها</th><th>وضعیت</th></tr>
+  <tr><td>SimulatorDriver</td><td>شبیه‌سازی</td><td>sine / bad_quality / stuck</td><td><span class="badge">✅</span></td></tr>
+  <tr><td>ModbusTcpDriver</td><td>Modbus TCP</td><td>FC3/4/5/6/16، Batch Read، Write</td><td><span class="badge">✅</span></td></tr>
+  <tr><td>ModbusRtuDriver</td><td>Modbus RTU</td><td>QSerialPort، CRC16، Batch Read</td><td><span class="badge">✅</span></td></tr>
+  <tr><td>MqttDriver</td><td>MQTT</td><td>subscribe، JSON/raw payload</td><td><span class="badge">✅</span></td></tr>
+  <tr><td>OpcUaDriver</td><td>OPC UA</td><td>open62541، Subscription + Polling</td><td><span class="badge">✅</span></td></tr>
+</table>
+
+<h3 id="pipeline">Processing Pipeline</h3>
+<table>
+  <tr><th>ماژول</th><th>کارکرد</th></tr>
+  <tr><td>ScalingEngine</td><td>linear + min_max + reverseScale برای write</td></tr>
+  <tr><td>SoftwareFilterChain</td><td>moving_average, exponential, median, debounce, outlier</td></tr>
+  <tr><td>StorageExceptionFilter</td><td>deadband + heartbeat + quality bypass</td></tr>
+  <tr><td>BatchHistorianWriter</td><td>transaction-based insert</td></tr>
+  <tr><td>CurrentStateWriter</td><td>batch upsert به tag_current_state</td></tr>
+</table>
+
+<h3 id="rules">Rule Engine (۹ نوع آلارم)</h3>
+<div class="cards">
+  <div class="card"><b>Threshold</b><p>HighHigh/High/Low/LowLow با hysteresis + on/off delay</p></div>
+  <div class="card"><b>Range Violation</b><p>خارج از بازه مجاز</p></div>
+  <div class="card"><b>Rate of Change</b><p>تغییر سریع مقدار</p></div>
+  <div class="card"><b>Stuck Value</b><p>ثابت ماندن مقدار</p></div>
+  <div class="card"><b>Boolean State</b><p>وضعیت دیجیتال</p></div>
+  <div class="card"><b>Bad Quality</b><p>کیفیت نامعتبر</p></div>
+</div>
+
+<h2 id="api">۳. لایه API</h2>
+
+<h3 id="ws">WebSocket Server</h3>
+<p>کانال‌ها: <code class="inline">/ws/alarms/*</code>، <code class="inline">/ws/tags/batch?ids=...</code>، <code class="inline">/ws/dashboard/{id}</code>، <code class="inline">/ws/system/status</code></p>
+<p>پیام‌های سرور: <code class="inline">hello, tags.snapshot, tag.update, tags.batch, alarm.event, alarm.ack, system.status, response, pong</code></p>
+
+<h3 id="cmd">Command Channel</h3>
+<p>عملیات‌ها: <code class="inline">write_tag, ack_alarm, get_current, reload_drivers, start_driver, stop_driver, list_drivers, load_dashboard</code></p>
+<pre>{ <span class="s">"type"</span>:<span class="s">"command"</span>, <span class="s">"id"</span>:<span class="s">"req-1"</span>, <span class="s">"op"</span>:<span class="s">"write_tag"</span>, <span class="s">"payload"</span>:{<span class="s">"tag_id"</span>:<span class="n">1</span>,<span class="s">"value"</span>:<span class="n">55</span>} }
+{ <span class="s">"type"</span>:<span class="s">"response"</span>, <span class="s">"id"</span>:<span class="s">"req-1"</span>, <span class="s">"ok"</span>:<span class="k">true</span>, <span class="s">"data"</span>:{...} }</pre>
+
+<h3 id="alarmsync">Alarm Sync</h3>
+<pre>{ <span class="s">"type"</span>:<span class="s">"alarm.ack"</span>, <span class="s">"alarm_id"</span>:<span class="n">123</span>, <span class="s">"tag_id"</span>:<span class="n">5</span>, <span class="s">"user_name"</span>:<span class="s">"operator"</span>, <span class="s">"ts"</span>:<span class="s">"..."</span> }</pre>
+<p>ack از REST یا WS → broadcast به کانال‌های alarms/all + analog + digital. رویدادهای raised/cleared از قبل via TagBus sync بودند.</p>
+
+<h3 id="rest">REST API (خلاصه)</h3>
+<table>
+  <tr><th>گروه</th><th>Endpoint ها</th></tr>
+  <tr><td>Tags</td><td><code>GET/POST /api/v1/tags</code>، <code>GET/PUT/DEL /{id}</code>، <code>/{id}/current</code>، <code>/{id}/history</code></td></tr>
+  <tr><td>Alarms</td><td><code>GET /api/v1/alarms</code>، <code>POST /{id}/ack</code></td></tr>
+  <tr><td>Dashboards</td><td><code>GET/POST /api/v1/dashboards</code>، <code>/{id}</code>، <code>/{id}/content</code>، <code>/{id}/resources</code></td></tr>
+  <tr><td>Reports</td><td><code>GET /api/v1/reports/tag-history|alarms|daily-summary</code></td></tr>
+  <tr><td>Users</td><td><code>POST /api/v1/auth/login|logout</code>، <code>GET /auth/me</code>، CRUD <code>/users</code></td></tr>
+</table>
+
+<h3 id="drivers-api">Driver Management API (CRUD)</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>توضیح</th></tr>
+  <tr><td><span class="m get">GET</span></td><td><code>/api/v1/drivers</code></td><td>لیست درایورها</td></tr>
+  <tr><td><span class="m post">POST</span></td><td><code>/api/v1/drivers</code></td><td>ساخت درایور (+ start خودکار اگر enabled)</td></tr>
+  <tr><td><span class="m put">PUT</span></td><td><code>/api/v1/drivers/{id}</code></td><td>ویرایش (+ restart خودکار اگر فعال)</td></tr>
+  <tr><td><span class="m del">DEL</span></td><td><code>/api/v1/drivers/{id}</code></td><td>حذف (اگر تگ داشته باشد → 409)</td></tr>
+</table>
+
+<h4>نمونه Request</h4>
+<pre>{ <span class="s">"name"</span>:<span class="s">"Modbus TCP Test"</span>, <span class="s">"type"</span>:<span class="s">"modbus_tcp"</span>,
+  <span class="s">"connection_config"</span>:{<span class="s">"host"</span>:<span class="s">"127.0.0.1"</span>,<span class="s">"port"</span>:<span class="n">502</span>},
+  <span class="s">"polling_interval_ms"</span>:<span class="n">1000</span>, <span class="s">"enabled"</span>:<span class="k">false</span> }</pre>
+
+<h4>رفتار runtime</h4>
+<table>
+  <tr><th>عمل</th><th>رفتار</th></tr>
+  <tr><td>POST با enabled:true</td><td>درایور همان لحظه start می‌شود</td></tr>
+  <tr><td>PUT روی درایور فعال</td><td>stop + start خودکار (restart با کانفیگ جدید)</td></tr>
+  <tr><td>DELETE با تگ</td><td>❌ 409 — اول تگ‌ها را حذف/جابه‌جا کن</td></tr>
+  <tr><td>DELETE موفق</td><td>درایور stop و سپس از DB حذف می‌شود</td></tr>
+</table>
+<p>اعتبارسنجی: type باید یکی از <code class="inline">simulator/modbus_tcp/modbus_rtu/mqtt/opc_ua</code> باشد و connection_config یک JSON object معتبر.</p>
+
+<h3 id="users">User Management</h3>
+<p>کاربر پیش‌فرض: <b>admin / admin123</b>. رمز با salt + SHA-256. نقش‌ها: admin (همه)، operator (همه جز /users)، viewer (فقط GET). ارسال token: <code class="inline">Authorization: Bearer &lt;token&gt;</code></p>
+
+<h3 id="dash">Dashboard API (File-based)</h3>
+<p>انواع: <code class="inline">simple</code> (JSON)، <code class="inline">qml</code>، <code class="inline">html</code>. فایل‌ها در <code class="inline">dashboards/{id}/</code>. خروجی content همیشه string است.</p>
+
+<h3 id="report">Report Generation</h3>
+<p>فرمت: <code class="inline">json</code> یا <code class="inline">csv</code> (با BOM برای Excel). interval: <code class="inline">raw, 1 minute, 5 minutes, 1 hour, 1 day</code></p>
+
+<h3 id="auth">Authentication</h3>
+<div class="note ok">پیش‌فرض <b>غیرفعال</b> (حالت development). فعال‌سازی: <code>UPDATE system_settings SET value_text='true' WHERE key='api.auth.enabled';</code></div>
+
+<h2 id="test">۴. راهنمای تست</h2>
+
+<div class="testbox" id="t-drivers">
+  <div class="t">🎛 تست Driver CRUD (PowerShell)</div>
+<pre><span class="c"># ساخت</span>
+$body = @{ name=<span class="s">"Modbus TCP Test"</span>; type=<span class="s">"modbus_tcp"</span>;
+  connection_config=@{host=<span class="s">"127.0.0.1"</span>; port=<span class="n">502</span>}; enabled=$false } | ConvertTo-Json -Depth 5
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/drivers"</span> -Method Post -Body $body -ContentType <span class="s">"application/json"</span>
+
+<span class="c"># فعال‌سازی (restart خودکار)</span>
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/drivers/7"</span> -Method Put `
+  -Body (@{enabled=$true} | ConvertTo-Json) -ContentType <span class="s">"application/json"</span>
+
+<span class="c"># حذف</span>
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/drivers/7"</span> -Method Delete</pre>
+</div>
+
+<div class="testbox" id="t-opcua">
+  <div class="t">🔌 تست OPC UA</div>
+<pre><span class="c"># ۱) سرور تست</span>
+test_server.exe        <span class="c"># خروجی: Add Temperature node: Good</span>
+
+<span class="c"># ۲) فعال‌سازی و restart</span>
+UPDATE drivers SET enabled = true WHERE type = <span class="s">'opc_ua'</span>;
+
+<span class="c"># ۳) بررسی مقدار</span>
+Invoke-RestMethod -Uri <span class="s">"http://127.0.0.1:8082/api/v1/tags/5001/current"</span></pre>
+</div>
+
+<h2 id="trouble">۵. عیب‌یابی</h2>
+<table>
+  <tr><th>مشکل</th><th>علت</th><th>راه‌حل</th></tr>
+  <tr><td>undefined reference <code>QMQTT::WebSocket</code></td><td>QT += websockets بدون سورس‌های WS در qmqtt</td><td><code>CONFIG += QMQTT_WEBSOCKETS</code> در .pro</td></tr>
+  <tr><td>OPC UA: <code>BadNodeIdUnknown</code></td><td>Namespace ثبت‌نشده (ns=2)</td><td>از ns=1 استفاده کن یا Namespace ثبت کن</td></tr>
+  <tr><td>Seed درایور ساخته نشد</td><td>تضاد driver_id با داده موجود</td><td>seed نوع‌محور (WHERE NOT EXISTS type)</td></tr>
+  <tr><td>duplicate key <code>tag_name</code></td><td>ON CONFLICT فقط روی tag_id</td><td><code>ON CONFLICT DO NOTHING</code></td></tr>
+  <tr><td>لوپ بی‌پایان Modbus</td><td>پر شدن مجدد صف کارت‌ها</td><td>تفکیک startCardCycle / pollNextCard</td></tr>
+  <tr><td>stop_driver بی‌اثر</td><td>reconnect خودکار بعد از stop</td><td>فلگ m_stopped + singleShot با context</td></tr>
+  <tr><td><code>sizeof incomplete type</code></td><td>unique_ptr + forward decl</td><td>include کامل هدر</td></tr>
+  <tr><td><code>toInteger</code> not found</td><td>Qt 5.15+</td><td><code>toVariant().toLongLong()</code></td></tr>
+</table>
+
+<h2 id="next">۶. مراحل بعدی</h2>
+<div class="cards">
+  <div class="card"><b>🔒 SSL/TLS</b><p>HTTPS و WSS برای production</p></div>
+  <div class="card"><b>📦 Template System</b><p>داشبوردهای از پیش تعریف شده</p></div>
+  <div class="card"><b>📄 OpenAPI</b><p>مستندات Swagger</p></div>
+  <div class="card"><b>🧪 تست سخت‌افزار</b><p>Modbus RTU/TCP روی دستگاه واقعی</p></div>
+</div>
+
+<footer>Tag Core — SCADA/Historian Core &nbsp;|&nbsp; مستندات v0.3.0: August 2026</footer>
+</main>
+</div>
+</body>
+</html>
