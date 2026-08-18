@@ -36,6 +36,9 @@ struct SensorInfo
     QString dataType = "uint16";
     QString wordOrder = "high_first";
     bool valid = false;
+
+    int unitId = 1;        // ✅ slave id کارت
+    int baseAddress = 0;   // ✅ رجیستر شروع بلوک سنسورها داخل slave (معمولاً 0)
 };
 
 struct SensorCard

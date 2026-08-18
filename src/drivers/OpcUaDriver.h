@@ -71,4 +71,5 @@ private:
     bool m_subscriptionTried = false;
     bool m_usePolling = false;
     UA_UInt32 m_subscriptionId = 0;
+    bool m_connectPending = false;
 };

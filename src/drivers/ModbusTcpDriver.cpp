@@ -569,7 +569,7 @@ void ModbusTcpDriver::sendCardReadRequest(const SensorCard& card)
     m_currentCard = card;
 
     m_pending.transactionId = m_transactionId;
-    m_pending.tagId = card.cardIndex;  // برای تشخیص، tagId را cardIndex می‌گذاریم
+    m_pending.tagId = -1;
     m_pending.sentAt = QDateTime::currentDateTimeUtc();
     m_pending.valid = true;
 
@@ -586,40 +586,25 @@ void ModbusTcpDriver::processCardResponse(const QByteArray& registers, const Sen
 {
     for (const SensorInfo& sensor : card.sensors)
     {
-        const int byteOffset = sensor.registerOffset * 2;   // ✅ اسلات ثابت
+        const int byteOffset = sensor.registerOffset * 2;      // ✅ اسلات ثابت
         const int byteCount  = sensor.registerCount * 2;
 
-        // محافظ: اگر فریم کوتاه‌تر از اسلات بود، سنسور bad شود
-        if (registers.size() < byteOffset + byteCount)
-        {
-            qWarning() << "ModbusTcpDriver: card data shorter than sensor slot:"
-                       << "card=" << card.cardIndex
-                       << "tagId=" << sensor.tagId
-                       << "need=" << (byteOffset + byteCount)
-                       << "got=" << registers.size();
+        if (registers.size() < byteOffset + byteCount) {
             publishBad(sensor.tagId);
             continue;
         }
 
         const QByteArray sensorRegisters = registers.mid(byteOffset, byteCount);
-
         ModbusTagConfig cfg;
         cfg.tagId = sensor.tagId;
         cfg.dataType = sensor.dataType;
         cfg.wordOrder = sensor.wordOrder;
 
         const double rawValue = decodeRegisters(sensorRegisters, cfg);
-        if (std::isnan(rawValue))
-        {
-            publishBad(sensor.tagId);
-        }
-        else
-        {
-            publishGood(cfg, rawValue);
-        }
+        if (std::isnan(rawValue)) publishBad(sensor.tagId);
+        else publishGood(cfg, rawValue);
     }
 }
-
 
 
 void ModbusTcpDriver::sendNextRequest()
@@ -758,7 +743,7 @@ void ModbusTcpDriver::processFrame(const QByteArray& frame)
     }
 
     // ===== ۲) Card Response =====
-    if (m_currentCard.valid && m_currentCard.cardIndex == m_pending.tagId)
+    if (m_currentCard.valid )
     {
         const quint8 byteCount = bytes[8];
         if (frame.size() < 9 + byteCount)
@@ -991,7 +976,9 @@ ModbusTagConfig ModbusTcpDriver::parseTagConfig(const TagDefinition& tag) const
     cfg.address = obj.value("address").toInt(-1);
 
     if (cfg.address < 0)
+
     {
+        cfg.address = obj.value("sensor_index").toInt(-1);
         return cfg;
     }
 

@@ -12,64 +12,43 @@ void ModbusCardManager::buildCards(const QVector<TagDefinition>& tags)
 {
     m_cards.clear();
     m_sensorMap.clear();
-
     QHash<int, SensorCard> cardMap;
 
     for (const TagDefinition& tag : tags)
     {
         const SensorInfo sensor = parseTagAddress(tag);
-
-        if (!sensor.valid)
-        {
-            qWarning() << "ModbusCardManager: invalid address config for tag:"
-                       << tag.tagName;
+        if (!sensor.valid) {
+            qWarning() << "ModbusCardManager: invalid address config for tag:" << tag.tagName;
             continue;
         }
-
         m_sensorMap[tag.tagId] = sensor;
 
-        if (!cardMap.contains(sensor.cardIndex))
-        {
+        // ✅ کارت = slave id
+        if (!cardMap.contains(sensor.unitId)) {
             SensorCard card;
-            card.cardIndex = sensor.cardIndex;
-            card.unitId = 1;
+            card.cardIndex = sensor.unitId;
+            card.unitId = sensor.unitId;          // ✅ درخواست به slave درست می‌رود
             card.function = 3;
-            card.startAddress = sensor.cardIndex * 16;
-            card.totalRegisters = 16;      // ✅ همیشه کل کارت خوانده می‌شود
+            card.startAddress = sensor.baseAddress;
+            card.totalRegisters = 16;             // ✅ همیشه کل کارت
             card.valid = true;
-            cardMap[sensor.cardIndex] = card;
+            cardMap[sensor.unitId] = card;
         }
-        // ✅ اعتبارسنجی: سنسور نباید از مرز ۱۶ اسلات بگذرد
-        if (sensor.registerOffset + sensor.registerCount > 16)
-        {
-            qWarning() << "ModbusCardManager: sensor exceeds card boundary, tag:"
-                       << tag.tagName;
-            continue;
-        }
-
-        cardMap[sensor.cardIndex].sensors.append(sensor);
-//        cardMap[sensor.cardIndex].totalRegisters += sensor.registerCount;
+        cardMap[sensor.unitId].sensors.append(sensor);
     }
 
-    // تبدیل hash به vector و مرتب‌سازی
     for (auto it = cardMap.begin(); it != cardMap.end(); ++it)
-    {
         m_cards.append(it.value());
-    }
 
     std::sort(m_cards.begin(), m_cards.end(),
-        [](const SensorCard& a, const SensorCard& b)
-        {
-            return a.cardIndex < b.cardIndex;
-        });
+              [](const SensorCard& a, const SensorCard& b)
+              { return a.cardIndex < b.cardIndex; });
 
     qInfo() << "ModbusCardManager: built" << m_cards.size() << "cards";
-
-    for (const SensorCard& card : m_cards)
-    {
-        qInfo() << "  Card" << card.cardIndex
+    for (const SensorCard& card : m_cards) {
+        qInfo() << "  Card(slave)" << card.cardIndex
+                << "- unitId:" << card.unitId
                 << "- startAddress:" << card.startAddress
-                << "- totalRegisters:" << card.totalRegisters
                 << "- sensors:" << card.sensors.size();
     }
 }
@@ -102,58 +81,39 @@ SensorInfo ModbusCardManager::parseTagAddress(const TagDefinition& tag) const
     sensor.tagId = tag.tagId;
 
     const QJsonDocument doc = QJsonDocument::fromJson(tag.addressConfig.toUtf8());
-
-    if (!doc.isObject())
-    {
-        return sensor;
-    }
-
+    if (!doc.isObject()) return sensor;
     const QJsonObject obj = doc.object();
 
-    // روش 1: card_index و sensor_index مستقیم
-    if (obj.contains("card_index") && obj.contains("sensor_index"))
-    {
-        sensor.cardIndex = obj.value("card_index").toInt(0);
-        sensor.sensorIndex = obj.value("sensor_index").toInt(0);
-    }
-    // روش 2: محاسبه از روی address
-    else if (obj.contains("address"))
-    {
-        const int address = obj.value("address").toInt(-1);
+    // ۱) slave id کارت (هر کارت = یک slave)
+    int unitId = obj.value("unit_id").toInt(-1);
+    if (unitId < 0) unitId = obj.value("card_index").toInt(-1);   // سازگاری قدیمی
+    if (unitId < 1 || unitId > 247) return sensor;
+    sensor.unitId = unitId;
 
-        if (address < 0)
-        {
-            return sensor;
-        }
+    // ۲) اسلات سنسور داخل کارت (0..15)
+    int slot = -1;
+    if (obj.contains("sensor_index"))     slot = obj.value("sensor_index").toInt(-1);
+    else if (obj.contains("address"))     slot = obj.value("address").toInt(-1) % 16;
+    if (slot < 0 || slot > 15) return sensor;
+    sensor.sensorIndex = slot;
 
-        sensor.cardIndex = address / 16;
-        sensor.sensorIndex = address % 16;
-    }
-    else
-    {
-        return sensor;
-    }
+    // ۳) رجیستر شروع بلوک داخل slave (اختیاری، پیش‌فرض 0)
+    sensor.baseAddress = obj.value("start_address").toInt(0);
 
     sensor.dataType = obj.value("data_type").toString("uint16");
     sensor.wordOrder = obj.value("word_order").toString("high_first");
 
-    // محاسبه registerCount بر اساس dataType
     if (sensor.dataType == "int16" || sensor.dataType == "uint16")
-    {
         sensor.registerCount = 1;
-    }
     else if (sensor.dataType == "int32" || sensor.dataType == "uint32" ||
              sensor.dataType == "float32" || sensor.dataType == "float")
-    {
         sensor.registerCount = 2;
-    }
     else
-    {
         return sensor;
-    }
 
-    // محاسبه registerOffset
-    sensor.registerOffset = sensor.sensorIndex;
+    if (sensor.sensorIndex + sensor.registerCount > 16) return sensor;  // سرریز اسلات
+
+    sensor.registerOffset = sensor.sensorIndex;   // ✅ اسلاتی
     sensor.valid = true;
     return sensor;
 }

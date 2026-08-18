@@ -412,7 +412,7 @@ void ModbusRtuDriver::processFrame(const QByteArray& frame)
     }
 
     // ===== ۲) Card Response =====
-    if (m_currentCard.valid && m_currentCard.cardIndex == m_pending.tagId)
+    if (m_currentCard.valid )
     {
         const quint8 byteCount = bytes[2];
         if (receivedData.size() < 3 + byteCount)
@@ -504,7 +504,7 @@ void ModbusRtuDriver::sendCardReadRequest(const SensorCard& card)
 
     m_currentCard = card;
     m_pending.transactionId = 0;
-    m_pending.tagId = card.cardIndex;
+    m_pending.tagId = -1;
     m_pending.sentAt = QDateTime::currentDateTimeUtc();
     m_pending.valid = true;
     m_waitingResponse = true;
@@ -512,39 +512,25 @@ void ModbusRtuDriver::sendCardReadRequest(const SensorCard& card)
 
 void ModbusRtuDriver::processCardResponse(const QByteArray& registers, const SensorCard& card)
 {
-    // ✅ decode اسلاتی: هر سنسور از جای ثابت خودش
     for (const SensorInfo& sensor : card.sensors)
     {
-        const int byteOffset = sensor.registerOffset * 2;
-        const int byteCount = sensor.registerCount * 2;
+        const int byteOffset = sensor.registerOffset * 2;      // ✅ اسلات ثابت
+        const int byteCount  = sensor.registerCount * 2;
 
-        if (registers.size() < byteOffset + byteCount)
-        {
-            qWarning() << "ModbusRtuDriver: card data shorter than sensor slot:"
-                       << "card=" << card.cardIndex
-                       << "tagId=" << sensor.tagId
-                       << "need=" << (byteOffset + byteCount)
-                       << "got=" << registers.size();
+        if (registers.size() < byteOffset + byteCount) {
             publishBad(sensor.tagId);
             continue;
         }
 
         const QByteArray sensorRegisters = registers.mid(byteOffset, byteCount);
-
         ModbusTagConfig cfg;
         cfg.tagId = sensor.tagId;
         cfg.dataType = sensor.dataType;
         cfg.wordOrder = sensor.wordOrder;
 
         const double rawValue = decodeRegisters(sensorRegisters, cfg);
-        if (std::isnan(rawValue))
-        {
-            publishBad(sensor.tagId);
-        }
-        else
-        {
-            publishGood(cfg, rawValue);
-        }
+        if (std::isnan(rawValue)) publishBad(sensor.tagId);
+        else publishGood(cfg, rawValue);
     }
 }
 
@@ -676,6 +662,7 @@ ModbusTagConfig ModbusRtuDriver::parseTagConfig(const TagDefinition& tag) const
     cfg.address = obj.value("address").toInt(-1);
     if (cfg.address < 0)
     {
+        cfg.address = obj.value("sensor_index").toInt(-1);
         return cfg;
     }
 

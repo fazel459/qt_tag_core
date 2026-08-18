@@ -144,8 +144,10 @@ void HttpServer::parseRequest(QTcpSocket* socket, const QByteArray& data)
     if (queryPos >= 0) {
         request.path = fullPath.left(queryPos);
         QUrlQuery query(fullPath.mid(queryPos + 1));
+        // decode percent-encoding (مثل %2C و %3A) — dio این کاراکترها را کد میکند
         for (const auto& item : query.queryItems()) {
-            request.queryParams[item.first] = item.second;
+            request.queryParams[item.first] =
+                QUrl::fromPercentEncoding(item.second.toUtf8());
         }
     } else {
         request.path = fullPath;

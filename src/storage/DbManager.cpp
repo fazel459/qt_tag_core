@@ -1454,7 +1454,8 @@ QVector<TagDefinition> DbManager::loadTags()
             sim_profile,
             driver_id,
             address_config,
-            enabled
+            enabled,
+            clamp_enabled
         FROM tags
         ORDER BY tag_id;
     )");

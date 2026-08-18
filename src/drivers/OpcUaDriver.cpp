@@ -64,17 +64,16 @@ OpcUaDriver::~OpcUaDriver()
 bool OpcUaDriver::start()
 {
     m_stopped = false;
-
     m_client = UA_Client_new();
     UA_ClientConfig* config = UA_Client_getConfig(m_client);
     UA_ClientConfig_setDefault(config);
     config->timeout = 5000;
 
-    connectToServer();
-
+    connectToServer();                 // ✅ ناهمگرم
     m_iterateTimer.start(m_iterateMs);
     return true;
 }
+
 
 void OpcUaDriver::stop()
 {
@@ -82,17 +81,15 @@ void OpcUaDriver::stop()
     m_iterateTimer.stop();
     m_reconnectTimer.stop();
     m_pollTimer.stop();
-
     if (m_client) {
-        UA_Client_disconnect(m_client);
+        if (m_sessionActive) UA_Client_disconnect(m_client);
         UA_Client_delete(m_client);
         m_client = nullptr;
     }
-
     m_sessionActive = false;
     m_subscriptionReady = false;
+    m_connectPending = false;
 }
-
 bool OpcUaDriver::isConnected() const
 {
     return m_sessionActive;
@@ -101,16 +98,18 @@ bool OpcUaDriver::isConnected() const
 void OpcUaDriver::connectToServer()
 {
     if (!m_client || m_stopped) return;
+    if (m_connectPending || m_sessionActive) return;
 
-    const UA_StatusCode retval = UA_Client_connect(m_client, m_endpoint.toUtf8().constData());
+    const UA_StatusCode retval =
+        UA_Client_connectAsync(m_client, m_endpoint.toUtf8().constData());  // ✅ غیرمسدود
+
     if (retval != UA_STATUSCODE_GOOD) {
-        qWarning() << "OpcUaDriver: connect failed:" << UA_StatusCode_name(retval);
-        if (!m_reconnectTimer.isActive())
-            m_reconnectTimer.start(3000);
+        qWarning() << "OpcUaDriver: connectAsync failed:" << UA_StatusCode_name(retval);
+        if (!m_reconnectTimer.isActive()) m_reconnectTimer.start(3000);
         return;
     }
-
-    qInfo() << "OpcUaDriver: connected to" << m_endpoint;
+    m_connectPending = true;
+    qInfo() << "OpcUaDriver: async connect started:" << m_endpoint;
 }
 
 void OpcUaDriver::onReconnectTimer()
@@ -118,49 +117,40 @@ void OpcUaDriver::onReconnectTimer()
     if (m_stopped) return;
     connectToServer();
 }
-
 void OpcUaDriver::onIterateTimer()
 {
     if (m_stopped || !m_client) return;
+
+    UA_Client_run_iterate(m_client, 0);   // ✅ پیشبرد state machine بدون بلاک
 
     UA_SecureChannelState channelState;
     UA_SessionState sessionState;
     UA_StatusCode status;
     UA_Client_getState(m_client, &channelState, &sessionState, &status);
 
-    const bool active = (sessionState == UA_SESSIONSTATE_ACTIVATED);
+    if (sessionState == UA_SESSIONSTATE_ACTIVATED) {
+        m_connectPending = false;
+        if (!m_sessionActive) {
+            m_sessionActive = true;
+            qInfo() << "OpcUaDriver: session activated";
+        }
+        if (!m_subscriptionTried) {
+            m_subscriptionTried = true;
+            setupSubscription();
+            if (m_usePolling) m_pollTimer.start();
+        }
+        return;
+    }
 
-    if (!active) {
+    if (status != UA_STATUSCODE_GOOD || channelState == UA_SECURECHANNELSTATE_CLOSED) {
         if (m_sessionActive) {
             qWarning() << "OpcUaDriver: session lost";
             resetSession();
         }
-        if (!m_reconnectTimer.isActive())
-            m_reconnectTimer.start(3000);
-        return;
+        m_connectPending = false;
+        if (!m_reconnectTimer.isActive()) m_reconnectTimer.start(3000);
     }
-
-    // اولین باری که session فعال شد
-    if (!m_sessionActive) {
-        m_sessionActive = true;
-        qInfo() << "OpcUaDriver: session activated";
-    }
-
-    // ساخت subscription یک‌بار
-    if (!m_subscriptionTried) {
-            qInfo() << "OpcUaDriver: attempting subscription...";
-            m_subscriptionTried = true;
-            setupSubscription();
-            if (m_usePolling) {
-                qInfo() << "OpcUaDriver: switching to polling mode";
-                m_pollTimer.start();
-            }
-        }
-
-    // پردازش رویدادهای open62541 (غیرمسدودکننده)
-    UA_Client_run_iterate(m_client, 0);
 }
-
 void OpcUaDriver::resetSession()
 {
     m_sessionActive = false;
