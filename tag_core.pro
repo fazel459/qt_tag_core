@@ -44,7 +44,8 @@ SOURCES += \
     src/drivers/SimulatorDriver.cpp \
     src/rules/RuleEngine.cpp \
     src/storage/HistorianManager.cpp \
-    src/storage/StorageExceptionFilter.cpp
+    src/storage/StorageExceptionFilter.cpp \
+    src/tagbus/TagBus.cpp
 
 SOURCES += 3rdparty/open62541/open62541.c
 

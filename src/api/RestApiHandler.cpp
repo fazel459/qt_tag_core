@@ -8,6 +8,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QDateTime>
+#include <QSet>
 
 
 RestApiHandler::RestApiHandler(DbManager& db, DashboardManager* dashboardManager,ReportGenerator* reportGenerator, QObject *parent)
@@ -135,7 +136,7 @@ HttpResponse RestApiHandler::handleUpdateDriver(const HttpRequest& request, qint
 
     bool restarted = false;
     if (m_driverManager) {
-        if (wasRunning)
+        if (wasRunning || !def.enabled)
             m_driverManager->stopDriver(driverId);      // ✅ restart با کانفیگ جدید
         if (def.enabled)
             restarted = m_driverManager->startDriver(driverId);
@@ -844,6 +845,14 @@ HttpResponse RestApiHandler::handleGetDrivers(const HttpRequest& request)
 
     const QVector<DriverDefinition> driverList = m_db.loadDrivers();
 
+    QSet<qint64> runningIds;
+    if (m_driverManager) {
+        const QVector<qint64> ids = m_driverManager->runningDriverIds();
+        for (qint64 id : ids) {
+            runningIds.insert(id);
+        }
+    }
+
     for (const DriverDefinition& driver : driverList) {
         QJsonObject driverObj;
         driverObj.insert("driver_id", driver.driverId);
@@ -851,6 +860,8 @@ HttpResponse RestApiHandler::handleGetDrivers(const HttpRequest& request)
         driverObj.insert("type", driver.type);
         driverObj.insert("polling_interval_ms", driver.pollingIntervalMs);
         driverObj.insert("enabled", driver.enabled);
+        driverObj.insert("running", runningIds.contains(driver.driverId));
+        driverObj.insert("tag_count", m_db.tagCountForDriver(driver.driverId));
 
         QJsonDocument configDoc = QJsonDocument::fromJson(driver.connectionConfig.toUtf8());
         if (configDoc.isObject()) {

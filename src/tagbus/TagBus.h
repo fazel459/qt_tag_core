@@ -1,10 +1,12 @@
-#pragma once
+#ifndef TAGBUS_H
+#define TAGBUS_H
 
+#include <QMutex>
+#include <QQueue>
+#include <QThread>
+#include <QVector>
+#include <QWaitCondition>
 #include <functional>
-#include <vector>
-
-#include <QString>
-
 #include "../core/Models.h"
 
 struct BusMessage
@@ -13,56 +15,46 @@ struct BusMessage
     TagValue value;
 };
 
-class TagBus
+class TagBus : public QThread
 {
+    Q_OBJECT
 public:
-    using Handler = std::function<void(const BusMessage&)>;
+    using Callback = std::function<void(const BusMessage&)>;
 
-    void subscribe(const QString& filter, Handler handler)
-    {
-        m_subscriptions.push_back({filter, std::move(handler)});
-    }
+    explicit TagBus(QObject* parent = nullptr);
+    ~TagBus() override;
 
-    void publish(const QString& topic, const TagValue& value)
-    {
-        BusMessage message {topic, value};
+    int subscribe(const QString& topicFilter, Callback cb);
+    void unsubscribe(int subscriptionId);
 
-        for (auto& subscription : m_subscriptions)
-        {
-            if (matches(subscription.filter, topic))
-            {
-                subscription.handler(message);
-            }
-        }
-    }
+    // غیرمسدودکننده — هرگز داده را دور نمی‌ریزد
+    void publish(const QString& topic, const TagValue& value);
+
+    int pendingCount() const;
+    void stop();
+
+protected:
+    void run() override;   // thread dispatcher
 
 private:
+    static bool matches(const QString& filter, const QString& topic);
+
     struct Subscription
     {
+        int id = 0;
         QString filter;
-        Handler handler;
+        Callback cb;
     };
 
-    std::vector<Subscription> m_subscriptions;
+    mutable QMutex m_queueMutex;
+    QQueue<BusMessage> m_queue;
+    QWaitCondition m_cond;
+    bool m_stopping = false;
+    int m_highWaterMark = 0;
 
-    bool matches(const QString& filter, const QString& topic) const
-    {
-        if (filter == "#")
-        {
-            return true;
-        }
-
-        if (filter == topic)
-        {
-            return true;
-        }
-
-        if (filter.endsWith("/#"))
-        {
-            QString prefix = filter.left(filter.size() - 2);
-            return topic == prefix || topic.startsWith(prefix + "/");
-        }
-
-        return false;
-    }
+    QMutex m_subMutex;
+    QVector<Subscription> m_subs;
+    int m_nextId = 1;
 };
+
+#endif // TAGBUS_H

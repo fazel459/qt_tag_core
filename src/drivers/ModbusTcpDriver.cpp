@@ -116,6 +116,18 @@ ModbusTcpDriver::ModbusTcpDriver(
         onTimeoutTimer();
     });
 
+    m_bus.subscribe("commands/#", [this](const BusMessage& message)
+    {
+        if (!message.topic.endsWith("/write")) return;
+        const TagValue command = message.value;
+
+        // ✅ marshal به thread خود درایور (main)
+        QMetaObject::invokeMethod(this, [this, command]()
+        {
+            writeValue(command.tagId, command.engineeringValue);
+        }, Qt::QueuedConnection);
+    });
+
     qInfo() << "ModbusTcpDriver created:"
             << driver.name
             << "host:" << m_host

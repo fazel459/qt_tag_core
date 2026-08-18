@@ -41,6 +41,7 @@ release/SimulatorDriver.o
 release/RuleEngine.o
 release/HistorianManager.o
 release/StorageExceptionFilter.o
+release/TagBus.o
 release/open62541.o
 release/moc_qmqtt_client.o
 release/moc_qmqtt_network_p.o
@@ -62,3 +63,4 @@ release/moc_UserManager.o
 release/moc_WebSocketHandler.o
 release/moc_WebSocketServer.o
 release/moc_OpcUaDriver.o
+release/moc_TagBus.o

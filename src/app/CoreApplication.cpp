@@ -227,6 +227,8 @@ bool CoreApplication::initialize()
 
     qInfo() << "Starting DriverManager...";
 
+    m_bus.start();
+
     m_driverManager = std::make_unique<DriverManager>(m_bus, m_config);
 
     if (!m_driverManager->startAll())

@@ -2,7 +2,7 @@
 
 #include <QSqlDatabase>
 #include <QJsonObject>
-
+#include <QThread>
 #include "../core/Models.h"
 
 
@@ -123,6 +123,12 @@ public:
     bool updateDriver(const DriverDefinition& driver);
     bool deleteDriver(qint64 driverId);
     int tagCountForDriver(qint64 driverId);
+
+    QThread* m_mainThread = nullptr;
+    QString m_sqlDriverName;
+    QString m_odbcConnectionString;
+    QString m_dbHost, m_dbName, m_dbUser, m_dbPass;
+    int m_dbPort = 5432;
 
 private:
     bool migrate();

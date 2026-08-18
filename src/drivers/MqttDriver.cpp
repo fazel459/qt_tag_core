@@ -56,6 +56,7 @@ MqttDriver::MqttDriver(
         }
     }
 
+
     qInfo() << "MqttDriver created:"
             << driver.name
             << "host:" << m_host

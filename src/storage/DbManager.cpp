@@ -179,6 +179,11 @@ bool DbManager::initialize(const AppConfig& cfg)
         qCritical() << "Unsupported SQL driver for this application:" << driverName;
         return false;
     }
+    m_mainThread = QThread::currentThread();
+    m_sqlDriverName = driverName;
+    m_dbHost = cfg.dbHost; m_dbPort = cfg.dbPort;
+    m_dbName = cfg.dbName; m_dbUser = cfg.dbUser; m_dbPass = cfg.dbPassword;
+    // برای ODBC همان connectionString ساخته‌شده را در m_odbcConnectionString ذخیره کن
 
     if (!m_db.open())
     {
@@ -757,7 +762,7 @@ bool DbManager::migrate()
 
     for (const QString& sql : statements)
     {
-        QSqlQuery query(m_db);
+        QSqlQuery query(database());
 
         if (!query.exec(sql))
         {
@@ -771,7 +776,7 @@ bool DbManager::migrate()
 
 bool DbManager::upsertTag(const TagDefinition& tag)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         INSERT INTO tags (
@@ -886,7 +891,7 @@ bool DbManager::upsertTag(const TagDefinition& tag)
 
 bool DbManager::insertRaw(const TagValue& value)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         INSERT INTO tag_values_raw (
@@ -925,7 +930,7 @@ bool DbManager::insertRaw(const TagValue& value)
 
 bool DbManager::upsertCurrent(const TagValue& value)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         INSERT INTO tag_current_state (
@@ -972,7 +977,7 @@ bool DbManager::insertAlarm(
     const QString& message
 )
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         INSERT INTO alarms (
@@ -1023,7 +1028,7 @@ bool DbManager::insertAlarm(
 
 bool DbManager::clearActiveAlarms(qint64 tagId, const QString& ruleType)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         UPDATE alarms
@@ -1057,15 +1062,15 @@ bool DbManager::writeBatch(const QVector<TagValue> &rawValues, const QVector<Tag
             return true;
         }
 
-        if (!m_db.transaction())
+        if (!database().transaction())
         {
-            qWarning() << "Cannot start database transaction:" << m_db.lastError().text();
+            qWarning() << "Cannot start database transaction:" << database().lastError().text();
             return false;
         }
 
         if (!rawValues.isEmpty())
         {
-            QSqlQuery rawQuery(m_db);
+            QSqlQuery rawQuery(database());
 
             rawQuery.prepare(R"(
                 INSERT INTO tag_values_raw (
@@ -1098,7 +1103,7 @@ bool DbManager::writeBatch(const QVector<TagValue> &rawValues, const QVector<Tag
                 if (!rawQuery.exec())
                 {
                     qWarning() << "Batch raw insert failed:" << rawQuery.lastError().text();
-                    m_db.rollback();
+                    database().rollback();
                     return false;
                 }
             }
@@ -1106,7 +1111,7 @@ bool DbManager::writeBatch(const QVector<TagValue> &rawValues, const QVector<Tag
 
         if (!latestValues.isEmpty())
         {
-            QSqlQuery currentQuery(m_db);
+            QSqlQuery currentQuery(database());
 
             currentQuery.prepare(R"(
                 INSERT INTO tag_current_state (
@@ -1140,15 +1145,15 @@ bool DbManager::writeBatch(const QVector<TagValue> &rawValues, const QVector<Tag
                 if (!currentQuery.exec())
                 {
                     qWarning() << "Batch current state upsert failed:" << currentQuery.lastError().text();
-                    m_db.rollback();
+                    database().rollback();
                     return false;
                 }
             }
         }
 
-        if (!m_db.commit())
+        if (!database().commit())
         {
-            qWarning() << "Cannot commit database transaction:" << m_db.lastError().text();
+            qWarning() << "Cannot commit database transaction:" << database().lastError().text();
             return false;
         }
 
@@ -1163,13 +1168,13 @@ bool DbManager::insertRawBatch(const QVector<TagValue>& rawValues)
         return true;
     }
 
-    if (!m_db.transaction())
+    if (!database().transaction())
     {
-        qWarning() << "Cannot start database transaction:" << m_db.lastError().text();
+        qWarning() << "Cannot start database transaction:" << database().lastError().text();
         return false;
     }
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         INSERT INTO tag_values_raw (
@@ -1202,14 +1207,14 @@ bool DbManager::insertRawBatch(const QVector<TagValue>& rawValues)
         if (!query.exec())
         {
             qWarning() << "Batch raw insert failed:" << query.lastError().text();
-            m_db.rollback();
+            database().rollback();
             return false;
         }
     }
 
-    if (!m_db.commit())
+    if (!database().commit())
     {
-        qWarning() << "Cannot commit database transaction:" << m_db.lastError().text();
+        qWarning() << "Cannot commit database transaction:" << database().lastError().text();
         return false;
     }
 
@@ -1223,13 +1228,13 @@ bool DbManager::upsertCurrentBatch(const QVector<TagValue>& latestValues)
         return true;
     }
 
-    if (!m_db.transaction())
+    if (!database().transaction())
     {
-        qWarning() << "Cannot start database transaction:" << m_db.lastError().text();
+        qWarning() << "Cannot start database transaction:" << database().lastError().text();
         return false;
     }
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         INSERT INTO tag_current_state (
@@ -1263,14 +1268,14 @@ bool DbManager::upsertCurrentBatch(const QVector<TagValue>& latestValues)
         if (!query.exec())
         {
             qWarning() << "Batch current state upsert failed:" << query.lastError().text();
-            m_db.rollback();
+            database().rollback();
             return false;
         }
     }
 
-    if (!m_db.commit())
+    if (!database().commit())
     {
-        qWarning() << "Cannot commit database transaction:" << m_db.lastError().text();
+        qWarning() << "Cannot commit database transaction:" << database().lastError().text();
         return false;
     }
 
@@ -1302,7 +1307,7 @@ QString DbManager::sourceToString(SourceKind source)
 
 void DbManager::seedDefaults()
 {
-    QSqlQuery q(m_db);
+    QSqlQuery q(database());
 
     // درایورها فقط اگر نوعشان وجود نداشته باشد
     q.exec(R"(
@@ -1391,7 +1396,7 @@ bool DbManager::migrateApiTables()
 
 int DbManager::countTags()
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     if (!query.exec("SELECT count(*) FROM tags;"))
     {
@@ -1409,7 +1414,7 @@ int DbManager::countTags()
 
 int DbManager::countRules()
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     if (!query.exec("SELECT count(*) FROM threshold_rules;"))
     {
@@ -1429,7 +1434,7 @@ QVector<TagDefinition> DbManager::loadTags()
 {
     QVector<TagDefinition> tags;
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         SELECT
@@ -1514,7 +1519,7 @@ QVector<ThresholdRule> DbManager::loadRules()
 {
     QVector<ThresholdRule> rules;
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         SELECT
@@ -1592,7 +1597,7 @@ QVector<ThresholdRule> DbManager::loadRules()
 
 bool DbManager::insertRule(const ThresholdRule& rule)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         INSERT INTO threshold_rules (
@@ -1653,7 +1658,7 @@ bool DbManager::insertRule(const ThresholdRule& rule)
 
 QString DbManager::settingValue(const QString& key, const QString& defaultValue) const
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare("SELECT value_text FROM system_settings WHERE key = :key;");
     query.bindValue(":key", key);
@@ -1674,7 +1679,7 @@ QString DbManager::settingValue(const QString& key, const QString& defaultValue)
 
 bool DbManager::setSetting(const QString& key, const QString& value)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         INSERT INTO system_settings (
@@ -1748,7 +1753,7 @@ QVector<DriverDefinition> DbManager::loadDrivers()
 {
     QVector<DriverDefinition> drivers;
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         SELECT
@@ -1794,7 +1799,7 @@ qint64 DbManager::raiseAlarm(
     const QString& message
 )
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         INSERT INTO alarms (
@@ -1863,7 +1868,7 @@ qint64 DbManager::raiseAlarm(
 
 bool DbManager::clearAlarmByTagAndType(qint64 tagId, const QString& alarmType)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         UPDATE alarms
@@ -1899,7 +1904,7 @@ bool DbManager::clearAlarmByTagAndType(qint64 tagId, const QString& alarmType)
 
 bool DbManager::acknowledgeAlarm(qint64 alarmId, const QString& userName)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         UPDATE alarms
@@ -1933,7 +1938,7 @@ bool DbManager::addAlarmEvent(
     const QString& userName
 )
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         INSERT INTO alarm_events (
@@ -1970,7 +1975,7 @@ QVector<RangeViolationRule> DbManager::loadRangeViolationRules()
 {
     QVector<RangeViolationRule> rules;
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         SELECT rule_id, tag_id, min_value, max_value, severity
@@ -2005,7 +2010,7 @@ QVector<RateOfChangeRule> DbManager::loadRateOfChangeRules()
 {
     QVector<RateOfChangeRule> rules;
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         SELECT rule_id, tag_id, max_rate_per_second, window_ms, severity
@@ -2040,7 +2045,7 @@ QVector<StuckValueRule> DbManager::loadStuckValueRules()
 {
     QVector<StuckValueRule> rules;
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         SELECT rule_id, tag_id, stuck_duration_ms, epsilon, severity
@@ -2075,7 +2080,7 @@ QVector<BooleanRule> DbManager::loadBooleanRules()
 {
     QVector<BooleanRule> rules;
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         SELECT rule_id, tag_id, alarm_on_true, alarm_on_false, duration_ms, severity
@@ -2111,7 +2116,7 @@ QVector<NotificationRule> DbManager::loadNotificationRules()
 {
     QVector<NotificationRule> rules;
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         SELECT
@@ -2157,7 +2162,7 @@ QVector<ComputedTag> DbManager::loadComputedTags()
 {
     QVector<ComputedTag> computedTags;
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         SELECT
@@ -2204,7 +2209,7 @@ bool DbManager::logNotification(
     const QString& message
 )
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     query.prepare(R"(
         INSERT INTO notification_log (
@@ -2243,7 +2248,7 @@ bool DbManager::logNotification(
 QJsonObject DbManager::getTagCurrentState(int tagId)
 {
     QJsonObject result;
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare(QStringLiteral(
         "SELECT tag_id, last_value, last_quality, last_timestamp, updated_at "
         "FROM tag_current_state WHERE tag_id = :tagId"
@@ -2279,7 +2284,7 @@ QVector<QJsonObject> DbManager::getTagsCurrentState(const QVector<int>& tagIds)
         "FROM tag_current_state WHERE tag_id IN (%1)"
     ).arg(placeholders.join(","));
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare(sql);
 
     for (int i = 0; i < tagIds.size(); ++i) {
@@ -2305,7 +2310,7 @@ QVector<QJsonObject> DbManager::loadAlarms(int limit, int offset)
 {
     QVector<QJsonObject> alarms;
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare(QStringLiteral(
         "SELECT alarm_id, tag_id, alarm_type, severity, state, value, threshold, "
         "message, active_time, clear_time, ack_time, ack_user "
@@ -2352,27 +2357,46 @@ QVector<QJsonObject> DbManager::loadAlarms(int limit, int offset)
 }
 
 
-
 QSqlDatabase DbManager::database() const
 {
-    return m_db;
+    if (QThread::currentThread() == m_mainThread)
+        return m_db;
+
+    const QString name = QStringLiteral("conn_%1")
+        .arg(reinterpret_cast<quintptr>(QThread::currentThread()));
+
+    if (!QSqlDatabase::contains(name)) {
+        QSqlDatabase db = QSqlDatabase::addDatabase(m_sqlDriverName, name);
+        if (m_sqlDriverName == "QPSQL") {
+            db.setHostName(m_dbHost);
+            db.setPort(m_dbPort);
+            db.setDatabaseName(m_dbName);
+            db.setUserName(m_dbUser);
+            db.setPassword(m_dbPass);
+        } else if (m_sqlDriverName == "QODBC") {
+            db.setDatabaseName(m_odbcConnectionString);
+        }
+        if (!db.open())
+            qWarning() << "DbManager: per-thread DB open failed:" << name;
+    }
+    return QSqlDatabase::database(name);
 }
 
 bool DbManager::deleteTag(qint64 tagId)
 {
-    if (!m_db.transaction()) {
-        qWarning() << "Cannot start transaction for deleteTag:" << m_db.lastError().text();
+    if (!database().transaction()) {
+        qWarning() << "Cannot start transaction for deleteTag:" << database().lastError().text();
         return false;
     }
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     // اول rule های مرتبط را حذف کن
     query.prepare("DELETE FROM threshold_rules WHERE tag_id = :tag_id;");
     query.bindValue(":tag_id", tagId);
     if (!query.exec()) {
         qWarning() << "Delete threshold_rules failed:" << query.lastError().text();
-        m_db.rollback();
+        database().rollback();
         return false;
     }
 
@@ -2402,15 +2426,15 @@ bool DbManager::deleteTag(qint64 tagId)
     query.bindValue(":tag_id", tagId);
     if (!query.exec()) {
         qWarning() << "Delete tag failed:" << query.lastError().text();
-        m_db.rollback();
+        database().rollback();
         return false;
     }
 
     const int affectedRows = query.numRowsAffected();
 
-    if (!m_db.commit()) {
-        qWarning() << "Cannot commit deleteTag:" << m_db.lastError().text();
-        m_db.rollback();
+    if (!database().commit()) {
+        qWarning() << "Cannot commit deleteTag:" << database().lastError().text();
+        database().rollback();
         return false;
     }
 
@@ -2427,7 +2451,7 @@ QVector<QJsonObject> DbManager::queryTagHistory(
 {
     QVector<QJsonObject> results;
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
 
     if (interval.isEmpty()) {
         // Raw data query
@@ -2517,7 +2541,7 @@ QVector<DashboardDefinition> DbManager::loadDashboards()
 {
     QVector<DashboardDefinition> dashboards;
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare(R"(
         SELECT dashboard_id, name, description, owner, dashboard_type,
                is_public, created_at, updated_at
@@ -2550,7 +2574,7 @@ DashboardDefinition DbManager::loadDashboard(qint64 dashboardId)
 {
     DashboardDefinition d;
 
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare(R"(
         SELECT dashboard_id, name, description, owner, dashboard_type,
                is_public, created_at, updated_at
@@ -2580,7 +2604,7 @@ DashboardDefinition DbManager::loadDashboard(qint64 dashboardId)
 
 qint64 DbManager::insertDashboard(const DashboardDefinition& dashboard)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare(R"(
         INSERT INTO dashboards (name, description, owner, dashboard_type, is_public)
         VALUES (:name, :description, :owner, :dashboard_type, :is_public)
@@ -2609,7 +2633,7 @@ qint64 DbManager::insertDashboard(const DashboardDefinition& dashboard)
 
 bool DbManager::updateDashboard(const DashboardDefinition& dashboard)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare(R"(
         UPDATE dashboards
         SET name = :name,
@@ -2638,7 +2662,7 @@ bool DbManager::updateDashboard(const DashboardDefinition& dashboard)
 
 bool DbManager::deleteDashboard(qint64 dashboardId)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("DELETE FROM dashboards WHERE dashboard_id = :id");
     query.bindValue(":id", dashboardId);
 
@@ -2652,7 +2676,7 @@ bool DbManager::deleteDashboard(qint64 dashboardId)
 
 bool DbManager::touchDashboard(qint64 dashboardId)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("UPDATE dashboards SET updated_at = now() WHERE dashboard_id = :id");
     query.bindValue(":id", dashboardId);
     return query.exec();
@@ -2660,7 +2684,7 @@ bool DbManager::touchDashboard(qint64 dashboardId)
 
 int DbManager::userCount()
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     if (!query.exec("SELECT count(*) FROM users;")) return -1;
     if (query.next()) return query.value(0).toInt();
     return -1;
@@ -2688,7 +2712,7 @@ static UserDefinition readUserRow(QSqlQuery& query, bool withSecret)
 UserDefinition DbManager::loadUserByUsername(const QString& username)
 {
     UserDefinition u;
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("SELECT user_id, username, password_hash, salt, display_name, role, is_active "
                   "FROM users WHERE username = :username");
     query.bindValue(":username", username);
@@ -2699,7 +2723,7 @@ UserDefinition DbManager::loadUserByUsername(const QString& username)
 UserDefinition DbManager::loadUserById(qint64 userId)
 {
     UserDefinition u;
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("SELECT user_id, username, password_hash, salt, display_name, role, is_active "
                   "FROM users WHERE user_id = :id");
     query.bindValue(":id", userId);
@@ -2710,7 +2734,7 @@ UserDefinition DbManager::loadUserById(qint64 userId)
 QVector<UserDefinition> DbManager::loadUsers()
 {
     QVector<UserDefinition> users;
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("SELECT user_id, username, display_name, role, is_active FROM users ORDER BY user_id");
     if (!query.exec()) return users;
     while (query.next()) users.append(readUserRow(query, false));
@@ -2720,7 +2744,7 @@ QVector<UserDefinition> DbManager::loadUsers()
 qint64 DbManager::insertUserRaw(const QString& username, const QString& passwordHash,
                                 const QString& salt, const QString& displayName, const QString& role)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("INSERT INTO users (username, password_hash, salt, display_name, role) "
                   "VALUES (:username, :hash, :salt, :display, :role) RETURNING user_id");
     query.bindValue(":username", username);
@@ -2738,7 +2762,7 @@ qint64 DbManager::insertUserRaw(const QString& username, const QString& password
 
 bool DbManager::updateUser(const UserDefinition& user)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("UPDATE users SET display_name = :display, role = :role, is_active = :active, "
                   "updated_at = now() WHERE user_id = :id");
     query.bindValue(":display", user.displayName);
@@ -2750,7 +2774,7 @@ bool DbManager::updateUser(const UserDefinition& user)
 
 bool DbManager::deleteUser(qint64 userId)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("DELETE FROM users WHERE user_id = :id");
     query.bindValue(":id", userId);
     return query.exec() && query.numRowsAffected() > 0;
@@ -2758,7 +2782,7 @@ bool DbManager::deleteUser(qint64 userId)
 
 bool DbManager::updateUserPassword(qint64 userId, const QString& passwordHash, const QString& salt)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("UPDATE users SET password_hash = :hash, salt = :salt, updated_at = now() "
                   "WHERE user_id = :id");
     query.bindValue(":hash", passwordHash);
@@ -2769,7 +2793,7 @@ bool DbManager::updateUserPassword(qint64 userId, const QString& passwordHash, c
 
 bool DbManager::touchLastLogin(qint64 userId)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("UPDATE users SET last_login_at = now() WHERE user_id = :id");
     query.bindValue(":id", userId);
     return query.exec();
@@ -2778,7 +2802,7 @@ bool DbManager::touchLastLogin(qint64 userId)
 DriverDefinition DbManager::loadDriver(qint64 driverId)
 {
     DriverDefinition d;
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("SELECT driver_id, name, type, connection_config, polling_interval_ms, enabled "
                   "FROM drivers WHERE driver_id = :id");
     query.bindValue(":id", driverId);
@@ -2795,7 +2819,7 @@ DriverDefinition DbManager::loadDriver(qint64 driverId)
 
 qint64 DbManager::insertDriver(const DriverDefinition& driver)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("INSERT INTO drivers (name, type, connection_config, polling_interval_ms, enabled) "
                   "VALUES (:name, :type, :config, :polling, :enabled) RETURNING driver_id");
     query.bindValue(":name", driver.name);
@@ -2813,7 +2837,7 @@ qint64 DbManager::insertDriver(const DriverDefinition& driver)
 
 bool DbManager::updateDriver(const DriverDefinition& driver)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("UPDATE drivers SET name = :name, type = :type, connection_config = :config, "
                   "polling_interval_ms = :polling, enabled = :enabled WHERE driver_id = :id");
     query.bindValue(":name", driver.name);
@@ -2827,7 +2851,7 @@ bool DbManager::updateDriver(const DriverDefinition& driver)
 
 bool DbManager::deleteDriver(qint64 driverId)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("DELETE FROM drivers WHERE driver_id = :id");
     query.bindValue(":id", driverId);
     return query.exec() && query.numRowsAffected() > 0;
@@ -2835,7 +2859,7 @@ bool DbManager::deleteDriver(qint64 driverId)
 
 int DbManager::tagCountForDriver(qint64 driverId)
 {
-    QSqlQuery query(m_db);
+    QSqlQuery query(database());
     query.prepare("SELECT count(*) FROM tags WHERE driver_id = :id");
     query.bindValue(":id", driverId);
     if (query.exec() && query.next()) return query.value(0).toInt();

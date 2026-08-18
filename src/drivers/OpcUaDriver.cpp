@@ -51,6 +51,7 @@ OpcUaDriver::OpcUaDriver(TagBus& bus,
     QObject::connect(&m_reconnectTimer, &QTimer::timeout, [this]() { onReconnectTimer(); });
     QObject::connect(&m_pollTimer, &QTimer::timeout, [this]() { onPollTimer(); });
 
+
     qInfo() << "OpcUaDriver created:" << driver.name
             << "endpoint:" << m_endpoint
             << "tags:" << m_nodeIds.size();

@@ -77,6 +77,7 @@ ModbusRtuDriver::ModbusRtuDriver(
     m_cardManager = new ModbusCardManager();
     m_cardManager->buildCards(m_tags);
 
+
     qInfo() << "ModbusRtuDriver created:"
             << driver.name
             << "port:" << m_portName

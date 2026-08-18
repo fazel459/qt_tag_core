@@ -41,6 +41,7 @@ debug/SimulatorDriver.o
 debug/RuleEngine.o
 debug/HistorianManager.o
 debug/StorageExceptionFilter.o
+debug/TagBus.o
 debug/open62541.o
 debug/moc_qmqtt_client.o
 debug/moc_qmqtt_network_p.o
@@ -62,3 +63,4 @@ debug/moc_UserManager.o
 debug/moc_WebSocketHandler.o
 debug/moc_WebSocketServer.o
 debug/moc_OpcUaDriver.o
+debug/moc_TagBus.o
